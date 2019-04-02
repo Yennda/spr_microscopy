@@ -91,28 +91,41 @@ class VideoLoad(object):
         return fig
     
     
-    def new_play(self, fr):
-        video_load=self.video[:, :, fr[0]:fr[1]]
-        fig = plt.figure()
-        data = video_load[:,:,0]
+    def explore(self):
+        fig, ax = plt.subplots()
+        data=self.video[:,:,0]
+        ax.set(xlabel='x [px]', ylabel='y [px]')
+        ax.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+        plt.show()
         
-        im = plt.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1], animated=True)
-        def init():
-            im.set_data(data)
+        i=0;
+        com='n'
+        while com!='q':
+            com=input('in:')
+            if com=='a':
+                i+=1
+            elif com=='d':
+                i-=1
+            elif com=='w':
+                i+=10
+            elif com=='s':
+                i-=10
+                
+            data=self.video[:,:,i]
+            
+            ax.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+            ax.set(xlabel='x [px]', ylabel='y [px]')
+            plt.show()
+            
         
-        def animate(i):
-#            plt.title(str(i)+'/'+str(fr[1]-fr[0]))
-            im.set_data(video_load[:,:,i])
-            return im
         
-        anim = animation.FuncAnimation(fig, animate, init_func=init, frames=fr[1]-fr[0],
-                                       interval=200)
+        
     
     def play(self, fr=[0, -1], delta=0.2):
     
         fig, ax = plt.subplots()
     
-        ax.set(xlabel='x [px]', ylabel='y [px]')
+        
         video_load=self.video[: ,: , fr[0]:fr[1]]
     
         for i in range(0, fr[1]-fr[0]):
