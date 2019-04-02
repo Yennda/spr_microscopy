@@ -1,8 +1,9 @@
-
-
 import numpy as np
 import matplotlib.pyplot as plt
-import time
+from matplotlib import animation
+import skvideo.io
+import skvideo.datasets
+import scipy.misc
 
 class VideoLoad(object):
 
@@ -10,7 +11,7 @@ class VideoLoad(object):
        
         self.file_name = file_name
         self.video_stats = None
-        self.video = None
+        self._video = None
         self.view = None
         self.rng= [-1, 1]
 
@@ -28,7 +29,11 @@ class VideoLoad(object):
 
     def loadData(self):
         self.video_stats = self.loadBinVideoStats()
-        self.video = self.loadBinVideo()
+        self._video = self.loadBinVideo()
+        
+    @property
+    def video(self):
+        return self._video[self.view[1]:self.view[1]+self.view[3], self.view[0]:self.view[0]+self.view[2],: ]
 
     def loadBinVideoStats(self):
         suffix = '.tsv'
@@ -53,30 +58,69 @@ class VideoLoad(object):
 
 
         return np.swapaxes(video, 0, 1)
+    
+    def export(self, name, auto=True):
+        data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)  
+        
+        if auto:
+            data-=data.min()
+            data*=256/data.max()
+        else:
+            data-=self.rng[0]
+            data*=256/(self.rng[1]-self.rng[0])
+
+        
+        
+        if self.video_stats[1][2] == 1:
+            scipy.misc.toimage(data[0, :, :]).save(name+'.png')
+        else:
+            writer = skvideo.io.FFmpegWriter(name+'.mp4')
+            for i in range(self.video_stats[1][2]):
+                writer.writeFrame(data[i, :, :])
+            writer.close()
 
     def frame(self, arg=1):
 
         if type(arg) == int:
-            data = self.video[self.view[1]:self.view[1]+self.view[3], self.view[0]:self.view[0]+self.view[2], arg]
+            data = self.video[:, :, arg]
         else:
             data = np.array(arg)
         fig, ax = plt.subplots()
         ax.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
         ax.set(xlabel='x [px]', ylabel='y [px]')
         return fig
-
+    
+    
+    def new_play(self, fr):
+        video_load=self.video[:, :, fr[0]:fr[1]]
+        fig = plt.figure()
+        data = video_load[:,:,0]
+        
+        im = plt.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1], animated=True)
+        def init():
+            im.set_data(data)
+        
+        def animate(i):
+#            plt.title(str(i)+'/'+str(fr[1]-fr[0]))
+            im.set_data(video_load[:,:,i])
+            return im
+        
+        anim = animation.FuncAnimation(fig, animate, init_func=init, frames=fr[1]-fr[0],
+                                       interval=200)
+    
     def play(self, fr=[0, -1], delta=0.2):
-
+    
         fig, ax = plt.subplots()
-
+    
         ax.set(xlabel='x [px]', ylabel='y [px]')
-
-        for i in range(fr[0], fr[1]):
-            data = self.video[self.view[1]:self.view[1]+self.view[3], self.view[0]:self.view[0]+self.view[2], i]
+        video_load=self.video[: ,: , fr[0]:fr[1]]
+    
+        for i in range(0, fr[1]-fr[0]):
             ax.set_title(str(i)+'/'+str(fr[1]-fr[0]))
-            ax.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+            ax.imshow(video_load[:, :, i], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
             plt.pause(delta)
         return fig
+    
 
     @staticmethod
     def show(img):
@@ -90,10 +134,4 @@ class VideoLoad(object):
         img=self.video[:, :, 1]
         img[y:y + height, x:x + width]+=0.5
         self.show(img)
-        
-    def area_(self, area):
-        x, y, width, height = area
-        self.video=self.video[y:y + height, x:x + width, :]
-        self.view=[0, 0, width, height]
-
 
