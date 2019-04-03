@@ -125,34 +125,39 @@ class VideoLoad(object):
             ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))         
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
+            
+        def button_press(event):
+            fig = event.canvas.figure
+            ax = fig.axes[0]
+            volume = data
+            if event.key=='c':
+                lim=[i*1.2 for i in img.get_clim()]
+                img.set_clim(lim)
+            if event.key=='d':
+                lim=[i/1.2 for i in img.get_clim()]
+                img.set_clim(lim)
+            img.set_array(volume[ax.index])
+            fig.canvas.draw_idle()
         
 
         fig, ax = plt.subplots()
         volume = data
         ax.volume = volume
         ax.index = 1
-        img = ax.imshow(volume[ax.index], cmap='gray')
+        ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))
+        
+        if self.file_name.find('diff')!=-1:
+            img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+        else:
+            img = ax.imshow(volume[ax.index], cmap='gray')
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
+        fig.canvas.mpl_connect('key_press_event', button_press)
+        
+        cb = fig.colorbar(img, ax=ax)
         plt.show()
-            
         
-        
-        
-    
-    def play(self, fr=[0, -1], delta=0.2):
-    
-        fig, ax = plt.subplots()
-    
-        
-        video_load=self.video[: ,: , fr[0]:fr[1]]
-    
-        for i in range(0, fr[1]-fr[0]):
-            ax.set_title(str(i)+'/'+str(fr[1]-fr[0]))
-            ax.imshow(video_load[:, :, i], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
-            plt.pause(delta)
-        return fig
-    
+        print('Buttons "d"/"c" serve to increasing/decreasing contrast \nMouse scrolling moves to neighboring frames')
 
     @staticmethod
     def show(img):
