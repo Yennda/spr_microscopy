@@ -139,15 +139,15 @@ class VideoLoad(object):
             img.set_array(volume[ax.index])
             ax.set_title(frame_info(ax.index))
         
-        def mouse_click(event):
-            fig = event.canvas.figure
-            ax = fig.axes[0]
-            volume = data
-            ax.volume = volume
-            ax.index = 1
-            ax.set_title(frame_info(ax.index))
-            img.set_array(volume[ax.index])
-            fig.canvas.draw_idle()
+#        def mouse_click(event):
+#            fig = event.canvas.figure
+#            ax = fig.axes[0]
+#            volume = data
+#            ax.volume = volume
+#            ax.index = 1
+#            ax.set_title(frame_info(ax.index))
+#            img.set_array(volume[ax.index])
+#            fig.canvas.draw_idle()
             
         def button_press(event):
             fig = event.canvas.figure
@@ -178,7 +178,7 @@ class VideoLoad(object):
         else:
             img = ax.imshow(volume[ax.index], cmap='gray')
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
-        fig.canvas.mpl_connect('button_press_event', mouse_click)
+#        fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)
         
         cb = fig.colorbar(img, ax=ax)

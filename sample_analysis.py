@@ -7,8 +7,11 @@ import tools
 
 plt.close("all")
 
-folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/19_03_19_C5/'
-file='meas_01_raw_1'
+#folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/19_03_13_C3/'
+folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/19_03_28_C6/'
+
+
+file='meas_diff_02_1'
 #file='meas_04_diff_1'
 
 
