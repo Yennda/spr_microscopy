@@ -5,15 +5,27 @@ import skvideo.io
 import skvideo.datasets
 import scipy.misc
 
+def frame_times(file_content):
+    time0=int(file_content[1].split()[0])
+    time_info=[]
+    time_last=time0
+    for line in file_content[1:]:
+        time_actual=int(line.split()[0])
+        time_info.append([(time_actual-time0)/1e7, (time_actual-time_last)/1e7])
+        time_last=time_actual
+    return time_info
+
 class VideoLoad(object):
 
-    def __init__(self, file_name):
-       
-        self.file_name = file_name
+    def __init__(self, folder, file):
+        self.folder=folder
+        self.file=file
+        self.file_name = folder+file
         self.video_stats = None
         self._video = None
         self.view = None
         self.rng= [-1, 1]
+        self.time_info=None
 
     def __iter__(self):
         self.n = -1
@@ -39,6 +51,8 @@ class VideoLoad(object):
         suffix = '.tsv'
         with open(self.file_name+suffix, mode='r') as fid:
             file_content = fid.readlines()
+            
+        self.time_info=frame_times(file_content)
         stats = file_content[1].split()
         video_length = len(file_content) - 1
         video_width = int(stats[1])
@@ -94,6 +108,15 @@ class VideoLoad(object):
     def explore(self):
         data=np.swapaxes(np.swapaxes(self.video,0,2),1,2) 
         #Mouse scroll event.
+        
+        def frame_info(i):
+            return '{}/{}  t= {:.2f} s dt= {:.2f} s'.format(
+                    i, 
+                    volume.shape[0], 
+                    self.time_info[i][0], 
+                    self.time_info[i][1]
+                    )
+            
         def mouse_scroll(event):
             fig = event.canvas.figure
             ax = fig.axes[0]
@@ -106,15 +129,15 @@ class VideoLoad(object):
         #Next slice func.
         def next_slice(ax):
             volume = ax.volume
-            ax.index = (ax.index - 1) % volume.shape[0]
+            ax.index = (ax.index + 1) % volume.shape[0]
             img.set_array(volume[ax.index])
-            ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))
+            ax.set_title(frame_info(ax.index))
         
         def prev_slice(ax):
             volume = ax.volume
-            ax.index = (ax.index + 1) % volume.shape[0]
+            ax.index = (ax.index - 1) % volume.shape[0]
             img.set_array(volume[ax.index])
-            ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))
+            ax.set_title(frame_info(ax.index))
         
         def mouse_click(event):
             fig = event.canvas.figure
@@ -122,7 +145,7 @@ class VideoLoad(object):
             volume = data
             ax.volume = volume
             ax.index = 1
-            ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))         
+            ax.set_title(frame_info(ax.index))
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
             
@@ -130,21 +153,25 @@ class VideoLoad(object):
             fig = event.canvas.figure
             ax = fig.axes[0]
             volume = data
-            if event.key=='c':
+            if event.key=='m':
                 lim=[i*1.2 for i in img.get_clim()]
                 img.set_clim(lim)
-            if event.key=='d':
+            elif event.key=='j':
                 lim=[i/1.2 for i in img.get_clim()]
                 img.set_clim(lim)
+            elif event.key=='a':
+                fig.savefig('{}/export/{}_T{:.2f}_dt{:.2f}.png'.format(self.folder, self.file, self.time_info[ax.index][0], self.time_info[ax.index][0]), dpi=300)
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
+            
+            
         
 
         fig, ax = plt.subplots()
         volume = data
         ax.volume = volume
         ax.index = 1
-        ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))
+        ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, volume.shape[0], self.time_info[ax.index][0], self.time_info[ax.index][1]))
         
         if self.file_name.find('diff')!=-1:
             img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
@@ -157,7 +184,7 @@ class VideoLoad(object):
         cb = fig.colorbar(img, ax=ax)
         plt.show()
         
-        print('Buttons "d"/"c" serve to increasing/decreasing contrast \nMouse scrolling moves to neighboring frames')
+        print('Buttons "j"/"m" serve to increasing/decreasing contrast \nMouse scrolling moves to neighboring framesznOfficial shortcuts here https://matplotlib.org/users/navigation_toolbar.html')
 
     @staticmethod
     def show(img):

@@ -8,10 +8,11 @@ import tools
 plt.close("all")
 
 folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/19_03_19_C5/'
-file='meas_01_raw_1'
+#file='meas_01_raw_1'
+file='meas_04_diff_1'
 
 
-video=VideoLoad(folder+file)
+video=VideoLoad(folder,file)
 video.loadData()
 
 

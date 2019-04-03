@@ -18,3 +18,4 @@ def all_bin_files(folder):
             if file[-3:]=='bin':
                 out.append(file[:-4])
     return out
+
