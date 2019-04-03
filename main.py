@@ -18,7 +18,7 @@ video.loadData()
 video.rng=[-0.01, 0.01]
 f=20
 
-video.frame(f)
+#video.frame(f)
 
 
 #video.area_show([20, 280, 1900, 850])

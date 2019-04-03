@@ -92,30 +92,49 @@ class VideoLoad(object):
     
     
     def explore(self):
-        fig, ax = plt.subplots()
-        data=self.video[:,:,0]
-        ax.set(xlabel='x [px]', ylabel='y [px]')
-        ax.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
-        plt.show()
+        data=np.swapaxes(np.swapaxes(self.video,0,2),1,2) 
+        #Mouse scroll event.
+        def mouse_scroll(event):
+            fig = event.canvas.figure
+            ax = fig.axes[0]
+            if event.button == 'down':
+                next_slice(ax)
+            elif event.button == 'up':
+                prev_slice(ax)
+            fig.canvas.draw()
         
-        i=0;
-        com='n'
-        while com!='q':
-            com=input('in:')
-            if com=='a':
-                i+=1
-            elif com=='d':
-                i-=1
-            elif com=='w':
-                i+=10
-            elif com=='s':
-                i-=10
-                
-            data=self.video[:,:,i]
-            
-            ax.imshow(data, cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
-            ax.set(xlabel='x [px]', ylabel='y [px]')
-            plt.show()
+        #Next slice func.
+        def next_slice(ax):
+            volume = ax.volume
+            ax.index = (ax.index - 1) % volume.shape[0]
+            img.set_array(volume[ax.index])
+            ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))
+        
+        def prev_slice(ax):
+            volume = ax.volume
+            ax.index = (ax.index + 1) % volume.shape[0]
+            img.set_array(volume[ax.index])
+            ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))
+        
+        def mouse_click(event):
+            fig = event.canvas.figure
+            ax = fig.axes[0]
+            volume = data
+            ax.volume = volume
+            ax.index = 1
+            ax.set_title('{}/{}'.format(ax.index, volume.shape[0]))         
+            img.set_array(volume[ax.index])
+            fig.canvas.draw_idle()
+        
+
+        fig, ax = plt.subplots()
+        volume = data
+        ax.volume = volume
+        ax.index = 1
+        img = ax.imshow(volume[ax.index], cmap='gray')
+        fig.canvas.mpl_connect('scroll_event', mouse_scroll)
+        fig.canvas.mpl_connect('button_press_event', mouse_click)
+        plt.show()
             
         
         

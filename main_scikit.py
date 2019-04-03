@@ -6,7 +6,7 @@ import scipy.misc
 import matplotlib.pyplot as plt
 import cv2 
 
-
+plt.close('all')
 
 
 
@@ -16,27 +16,52 @@ import cv2
 videodata = skvideo.io.vread(skvideo.datasets.bigbuckbunny())
 print(videodata.shape)
 videodata=skvideo.utils.rgb2gray(videodata)
+videodata=videodata[:,:,:,0]
 
 
-def callback_left_button(event):
-    ''' this function gets called if we hit the left button'''
-    print('Left button pressed')
+fig2 = plt.figure()
+ax2=fig2.add_axes([0.1, 0.1, 0.8, 0.8])
+ax2.imshow(videodata[5,:,:], cmap='gray')
+ax2.set_title('old')
+ax2.set(xlabel='x [px]', ylabel='y [px]')
 
 
-def callback_right_button(event):
-    ''' this function gets called if we hit the left button'''
-    print('Right button pressed')
-    ax.set(xlabel='nuc', ylabel='dfg')
-    
-fig, ax = plt.subplots()
+#Mouse scroll event.
+def mouse_scroll(event):
+    fig = event.canvas.figure
+    ax = fig.axes[0]
+    if event.button == 'down':
+        next_slice(ax)
+    elif event.button == 'up':
+        prev_slice(ax)
+    fig.canvas.draw()
 
-toolbar_elements = fig.canvas.toolbar.children()
-left_button = toolbar_elements[6]
-right_button = toolbar_elements[8]
+#Next slice func.
+def next_slice(ax):
+    volume = ax.volume
+    ax.index = (ax.index - 1) % volume.shape[0]
+    img.set_array(volume[ax.index])
 
-left_button.clicked.connect(callback_left_button)
-right_button.clicked.connect(callback_right_button)
+def prev_slice(ax):
+    volume = ax.volume
+    ax.index = (ax.index + 1) % volume.shape[0]
+    img.set_array(volume[ax.index])
 
-ax.imshow(videodata[5,:,:,0], cmap='gray')
-ax.set(xlabel='x [px]', ylabel='y [px]')
+def mouse_click(event):
+    fig = event.canvas.figure
+    ax = fig.axes[0]
+    volume = videodata
+    ax.volume = volume
+    ax.index = (ax.index - 1) % volume.shape[0]              
+    img.set_array(volume[ax.index])
+    fig.canvas.draw_idle()
 
+if __name__ == '__main__':
+    fig, ax = plt.subplots()
+    volume = videodata
+    ax.volume = volume
+    ax.index = 1
+    img = ax.imshow(volume[ax.index], cmap='gray')
+    fig.canvas.mpl_connect('scroll_event', mouse_scroll)
+    fig.canvas.mpl_connect('button_press_event', mouse_click)
+    plt.show()
