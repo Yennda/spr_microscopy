@@ -4,6 +4,7 @@ from matplotlib import animation
 import skvideo.io
 import skvideo.datasets
 import scipy.misc
+from PIL import Image
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -160,7 +161,13 @@ class VideoLoad(object):
                 lim=[i/1.2 for i in img.get_clim()]
                 img.set_clim(lim)
             elif event.key=='a':
-                fig.savefig('{}/export/{}_T{:.2f}_dt{:.2f}.png'.format(self.folder, self.file, self.time_info[ax.index][0], self.time_info[ax.index][0]), dpi=300)
+#                fig.savefig('{}/export_img/{}_T{:.2f}_dt{:.2f}.png'.format(self.folder, self.file, self.time_info[ax.index][0], self.time_info[ax.index][1]), dpi=300)
+                pilimage = Image.fromarray(img.get_array())
+                print(img.get_window_extent())
+                pilimage.save('image.tiff')
+            
+            
+            
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
             

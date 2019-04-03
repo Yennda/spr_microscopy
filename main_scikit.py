@@ -6,6 +6,8 @@ import scipy.misc
 import matplotlib.pyplot as plt
 import cv2 
 
+from PIL import Image
+from skimage.external.tifffile import TiffWriter
 plt.close('all')
 
 
@@ -24,6 +26,12 @@ ax2=fig2.add_axes([0.1, 0.1, 0.8, 0.8])
 ax2.imshow(videodata[5,:,:], cmap='gray')
 ax2.set_title('old')
 ax2.set(xlabel='x [px]', ylabel='y [px]')
+
+pilimage = Image.fromarray(videodata[5,:,:])
+pilimage.save('image.tiff')
+
+
+
 
 
 #Mouse scroll event.
