@@ -163,7 +163,7 @@ class VideoLoad(object):
                 img.set_clim(lim)
             elif event.key=='a':
                 #checks and eventually creates the folder 'export_image' in the folder of data
-                if os.path.isdir(self.folder+'/export_img'):
+                if not os.path.isdir(self.folder+'/export_img'):
                     os.mkdir(self.folder+'/export_img')
                 
                 #creates the name, appends the rigth numeb at the end
@@ -207,12 +207,13 @@ class VideoLoad(object):
         fig.canvas.mpl_connect('key_press_event', button_press)
         
         cb = fig.colorbar(img, ax=ax)
+        plt.tight_layout()
         plt.show()
         
         print('''
-              Buttons "j"/"m" serve to increasing/decreasing contrast 
-              \n Button "s" saves the current image as tiff file
-              \nMouse scrolling moves to neighboring framesznOfficial shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+Buttons "j"/"m" serve to increasing/decreasing contrast 
+Button "s" saves the current image as tiff file
+Mouse scrolling moves to neighboring framesznOfficial shortcuts here https://matplotlib.org/users/navigation_toolbar.html
               ''')
 
     @staticmethod

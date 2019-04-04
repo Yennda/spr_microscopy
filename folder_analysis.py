@@ -6,7 +6,7 @@ import tools
 plt.close("all")
 
 folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/19_03_14_C5/'
-tools.new_export(folder)
+tools.new_export(folder, 'export')
 files=tools.all_bin_files(folder)
 
 
