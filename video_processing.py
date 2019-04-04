@@ -5,6 +5,7 @@ import skvideo.io
 import skvideo.datasets
 import scipy.misc
 from PIL import Image
+import os
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -161,12 +162,23 @@ class VideoLoad(object):
                 lim=[i/1.2 for i in img.get_clim()]
                 img.set_clim(lim)
             elif event.key=='a':
-#                fig.savefig('{}/export_img/{}_T{:.2f}_dt{:.2f}.png'.format(self.folder, self.file, self.time_info[ax.index][0], self.time_info[ax.index][1]), dpi=300)
-                pilimage = Image.fromarray(img.get_array())
-                print(img.get_window_extent())
-                pilimage.save('image.tiff')
-            
-            
+                name='{}/export_img/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder, self.file, self.time_info[ax.index][0]*100, self.time_info[ax.index][1]*100)
+                
+                i=1
+                while os.path.isfile(name+'_{:02d}.png'.format(i)):
+                    i+=1
+                name+='_{:02d}'.format(i)
+                
+                print('File SAVED @{}'.format(name))
+                
+                fig.savefig(name+'.png' , dpi=300)
+                
+                xlim=[int(i) for i in ax.get_xlim()]
+                ylim=[int(i) for i in ax.get_ylim()]
+
+                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
+                pilimage.save(name+'.tiff')
+                        
             
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
