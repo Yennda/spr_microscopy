@@ -1,8 +1,8 @@
 
 import os
 
-def new_export(folder):
-    path = folder+"export"
+def new_export(folder, name):
+    path = folder+name
     
     try:  
         os.mkdir(path)

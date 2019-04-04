@@ -162,6 +162,11 @@ class VideoLoad(object):
                 lim=[i/1.2 for i in img.get_clim()]
                 img.set_clim(lim)
             elif event.key=='a':
+                #checks and eventually creates the folder 'export_image' in the folder of data
+                if os.path.isdir(self.folder+'/export_img'):
+                    os.mkdir(self.folder+'/export_img')
+                
+                #creates the name, appends the rigth numeb at the end
                 name='{}/export_img/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder, self.file, self.time_info[ax.index][0]*100, self.time_info[ax.index][1]*100)
                 
                 i=1
@@ -169,16 +174,17 @@ class VideoLoad(object):
                     i+=1
                 name+='_{:02d}'.format(i)
                 
-                print('File SAVED @{}'.format(name))
+                #saves the png file of the view
                 
                 fig.savefig(name+'.png' , dpi=300)
                 
                 xlim=[int(i) for i in ax.get_xlim()]
                 ylim=[int(i) for i in ax.get_ylim()]
-
+                
+                #saves the exact nad precise tiff file
                 pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
                 pilimage.save(name+'.tiff')
-                        
+                print('File SAVED @{}'.format(name))
             
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
@@ -203,7 +209,11 @@ class VideoLoad(object):
         cb = fig.colorbar(img, ax=ax)
         plt.show()
         
-        print('Buttons "j"/"m" serve to increasing/decreasing contrast \nMouse scrolling moves to neighboring framesznOfficial shortcuts here https://matplotlib.org/users/navigation_toolbar.html')
+        print('''
+              Buttons "j"/"m" serve to increasing/decreasing contrast 
+              \n Button "s" saves the current image as tiff file
+              \nMouse scrolling moves to neighboring framesznOfficial shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+              ''')
 
     @staticmethod
     def show(img):
