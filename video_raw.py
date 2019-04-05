@@ -11,7 +11,7 @@ class RawVideo(Video):
         self.reference=None
         
     def loadData(self):
-        super().loadData()
+#        super().loadData()
         self.reference=self.loadBinStatic()
         
     def loadBinStatic(self):
@@ -19,9 +19,10 @@ class RawVideo(Video):
         suffix = '.bin'
         with open(self.static_name+suffix, mode='rb') as fid:
             video = np.fromfile(fid, dtype=code_format)
-        video = np.reshape(video, (self.video_stats[1][0],
-                                   self.video_stats[1][1],
-                                   self.video_stats[1][2]), order='F')
+        print(video.shape)
+#        video = np.reshape(video, (self.video_stats[1][0],
+#                                   self.video_stats[1][1],
+#                                   self.video_stats[1][2]), order='F')
 
-
+        return video
         return np.swapaxes(video, 0, 1)
