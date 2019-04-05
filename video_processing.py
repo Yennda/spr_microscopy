@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import animation
 import skvideo.io
 import skvideo.datasets
 import scipy.misc
@@ -17,7 +16,7 @@ def frame_times(file_content):
         time_last=time_actual
     return time_info
 
-class VideoLoad(object):
+class Video(object):
 
     def __init__(self, folder, file):
         self.folder=folder
@@ -140,16 +139,6 @@ class VideoLoad(object):
             ax.index = (ax.index - 1) % volume.shape[0]
             img.set_array(volume[ax.index])
             ax.set_title(frame_info(ax.index))
-        
-#        def mouse_click(event):
-#            fig = event.canvas.figure
-#            ax = fig.axes[0]
-#            volume = data
-#            ax.volume = volume
-#            ax.index = 1
-#            ax.set_title(frame_info(ax.index))
-#            img.set_array(volume[ax.index])
-#            fig.canvas.draw_idle()
             
         def button_press(event):
             fig = event.canvas.figure

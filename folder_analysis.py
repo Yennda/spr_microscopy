@@ -1,4 +1,4 @@
-from video_processing import VideoLoad
+from video_processing import Video
 
 import matplotlib.pyplot as plt
 import tools
@@ -14,7 +14,7 @@ files=tools.all_bin_files(folder)
 i=0
 for file in files:
     print('{} / {}'.format(i, len(files)))
-    video=VideoLoad(folder,file)
+    video=Video(folder,file)
     video.loadData()
     video.rng=[-0.01, 0.01]
     if file.find('diff')!=-1:
