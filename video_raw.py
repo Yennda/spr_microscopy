@@ -7,22 +7,61 @@ class RawVideo(Video):
         super().__init__(folder, file)
         
         if static_name==None:
-            self.static_name=folder + file.replace('diff', 'static_TE')
+            self.static_name=folder + file.replace('raw', 'static_TE')
         self.reference=None
+        self._video_ref=None
+        self._video_diff=None
         
     def loadData(self):
-#        super().loadData()
+        super().loadData()
         self.reference=self.loadBinStatic()
+        self._video_ref=np.ones(self.video.shape[0:2])
+        self._video_diff=np.ones(self.video.shape[0:2])
         
     def loadBinStatic(self):
         code_format = np.float64  # type double
         suffix = '.bin'
         with open(self.static_name+suffix, mode='rb') as fid:
             video = np.fromfile(fid, dtype=code_format)
-        print(video.shape)
+        video = np.reshape(video, (self.video_stats[1][0],
+                                   self.video_stats[1][1]), order='F')
+
+        return video.T
+    #refresh reference
+    def refref(self):
+        sh=self._video.shape
+        out=np.zeros(sh)
+        
+        for i in range(sh[-1]):
+            out[:,:,i]=self._video[:,:,i]/self.reference
+        self._video_ref=out
+        
+    def refdiff(self):
+        sh=self._video.shape
+        out=np.zeros(sh)
+        out[:,:,0]=np.yeros(sh[0:2])
+        for i in range(1, sh[-1]):
+            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,i-1])/self.reference
+        self._video_diff=out
+
+    @property
+    def video_ref(self):
+        return self._video_ref[self.view[1]:self.view[1]+self.view[3], self.view[0]:self.view[0]+self.view[2],: ]
+     
+    @property
+    def video_diff(self):
+        return self._video_diff[self.view[1]:self.view[1]+self.view[3], self.view[0]:self.view[0]+self.view[2],: ]
+    
+    
+#    
+#        def loadBinVideo(self):
+#        code_format = np.float64  # type double
+#        suffix = '.bin'
+#        with open(self.file_name+suffix, mode='rb') as fid:
+#            video = np.fromfile(fid, dtype=code_format)
 #        video = np.reshape(video, (self.video_stats[1][0],
 #                                   self.video_stats[1][1],
 #                                   self.video_stats[1][2]), order='F')
-
-        return video
-        return np.swapaxes(video, 0, 1)
+#
+#
+#        return np.swapaxes(video, 0, 1)

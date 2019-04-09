@@ -106,8 +106,13 @@ class Video(object):
         return fig
     
     
-    def explore(self):
-        data=np.swapaxes(np.swapaxes(self.video,0,2),1,2) 
+    def explore(self, source='vid'):
+        if source=='vid':
+            data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)
+        elif source=='diff':
+            data=np.swapaxes(np.swapaxes(self.video_diff,0,2),1,2) 
+        elif source=='ref':
+            data=np.swapaxes(np.swapaxes(self.video_ref,0,2),1,2) 
         #Mouse scroll event.
         
         def frame_info(i):
@@ -122,29 +127,33 @@ class Video(object):
             fig = event.canvas.figure
             ax = fig.axes[0]
             if event.button == 'down':
-                next_slice(ax)
+                next_slice(ax, 1)
             elif event.button == 'up':
-                prev_slice(ax)
+                next_slice(ax, -1)
             fig.canvas.draw()
         
         #Next slice func.
-        def next_slice(ax):
+        def next_slice(ax, i):
             volume = ax.volume
-            ax.index = (ax.index + 1) % volume.shape[0]
+            ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
             ax.set_title(frame_info(ax.index))
-        
-        def prev_slice(ax):
-            volume = ax.volume
-            ax.index = (ax.index - 1) % volume.shape[0]
-            img.set_array(volume[ax.index])
-            ax.set_title(frame_info(ax.index))
-            
+
         def button_press(event):
             fig = event.canvas.figure
             ax = fig.axes[0]
             volume = data
-            if event.key=='m':
+            if event.key=='right':
+                fig = event.canvas.figure
+                ax = fig.axes[0]
+                next_slice(ax, 10)
+                fig.canvas.draw()
+            elif event.key=='left':
+                fig = event.canvas.figure
+                ax = fig.axes[0]
+                next_slice(ax, -10)
+                fig.canvas.draw()
+            elif event.key=='m':
                 lim=[i*1.2 for i in img.get_clim()]
                 img.set_clim(lim)
             elif event.key=='j':
