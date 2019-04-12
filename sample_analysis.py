@@ -9,14 +9,10 @@ import tools
 plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
-#folder=main_folder+'19_03_13_C3/'
-#folder=main_folder+'19_03_14_C7/'
-folder=main_folder+'19_03_19_C7/'
-#folder=main_folder+'19_03_28_C6/'
 
-#file='meas_01_norm_diff_1'
-file='meas_05_diff_1'
-#file='meas_diff_05_1'
+folder=main_folder+'19_04_11_C5/'
+
+file='meas_diff_07_1'
 
 
 video=Video(folder, file)

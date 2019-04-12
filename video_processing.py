@@ -6,6 +6,9 @@ import scipy.misc
 from PIL import Image
 import os
 
+def SecToMin(sec):
+    return '{:.0f}:{:.1f}'.format(sec//60, sec%60)
+
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
     time_info=[]
@@ -107,19 +110,19 @@ class Video(object):
     
     
     def explore(self, source='vid'):
-        if source=='vid':
-            data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)
-        elif source=='diff':
+        if source=='diff':
             data=np.swapaxes(np.swapaxes(self.video_diff,0,2),1,2) 
         elif source=='ref':
             data=np.swapaxes(np.swapaxes(self.video_ref,0,2),1,2) 
+        else:
+            data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)
         #Mouse scroll event.
         
         def frame_info(i):
-            return '{}/{}  t= {:.2f} s dt= {:.2f} s'.format(
+            return '{}/{}  t= {} s dt= {:.2f} s'.format(
                     i, 
                     volume.shape[0], 
-                    self.time_info[i][0], 
+                    SecToMin(self.time_info[i][0]), 
                     self.time_info[i][1]
                     )
             
