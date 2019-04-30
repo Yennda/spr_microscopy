@@ -6,6 +6,8 @@ import scipy.misc
 from PIL import Image
 import os
 
+from np_analysis import np_analysis
+
 def SecToMin(sec):
     return '{:.0f}:{:.1f}'.format(sec//60, sec%60)
 
@@ -134,6 +136,14 @@ class Video(object):
             elif event.button == 'up':
                 next_slice(ax, -1)
             fig.canvas.draw()
+            
+        def mouse_click(event):
+            if event.button==3:
+                x=int( event.xdata)
+                y=int( event.ydata)
+                raw=volume[ax.index]
+                np_analysis(raw[y-25: y+25, x-25:x+25])
+                print('you pressed', event.button, event.xdata, event.ydata)
         
         #Next slice func.
         def next_slice(ax, i):
@@ -168,7 +178,7 @@ class Video(object):
                     os.mkdir(self.folder+'/export_img')
                 
                 #creates the name, appends the rigth numeb at the end
-                name='{}/export_img/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder, self.file, self.time_info[ax.index][0]*100, self.time_info[ax.index][1]*100)
+                name='{}/export_img/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder, self.file, self.time_info[ax.index][0], self.time_info[ax.index][1]*100)
                 
                 i=1
                 while os.path.isfile(name+'_{:02d}.png'.format(i)):
@@ -204,8 +214,9 @@ class Video(object):
         else:
             img = ax.imshow(volume[ax.index], cmap='gray')
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
-#        fig.canvas.mpl_connect('button_press_event', mouse_click)
+        fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)
+
         
         cb = fig.colorbar(img, ax=ax)
         plt.tight_layout()
@@ -214,7 +225,9 @@ class Video(object):
         print('''
 Buttons "j"/"m" serve to increasing/decreasing contrast 
 Button "s" saves the current image as tiff file
-Mouse scrolling moves to neighboring framesznOfficial shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+Mouse scrolling moves to neighboring frames
+Official shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+Right mouse button click selects and analysis the NP image
               ''')
 
     @staticmethod

@@ -16,15 +16,16 @@ folder=main_folder+'19_04_11_C5/'
 
 
 
-rawfile='meas_raw_05_1'
+rawfile='meas_raw_06_1'
 #file='meas_03_raw_1'
 raw=RawVideo(folder, rawfile)
 raw.loadData()
 raw.rng=[-0.01, 0.01]
 print('loaded')
 #raw.reference=raw._video[:,:,0]
-raw.refref()
-raw.refdiff()
+#raw.refref()
+raw.refdifffirst()
 print('refreshed')
 raw.explore('diff')
-raw.explore('ref')
+
+#raw.explore('ref')
