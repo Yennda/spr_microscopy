@@ -142,7 +142,7 @@ class Video(object):
                 x=int( event.xdata)
                 y=int( event.ydata)
                 raw=volume[ax.index]
-                np_analysis(raw[y-25: y+25, x-25:x+25])
+                np_analysis(raw[y-25: y+25, x-25:x+25], self.folder, self.file)
                 print('you pressed', event.button, event.xdata, event.ydata)
         
         #Next slice func.
