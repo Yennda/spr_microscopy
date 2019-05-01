@@ -157,12 +157,12 @@ Select the points in the following order:
     
     
     
-    
-    
-plt.close("all")
-
-path='particle_01.tif'
-raw=io.imread(path)
-
-np_analysis(raw)
+#    
+#    
+#plt.close("all")
+#
+#path='particle_01.tif'
+#raw=io.imread(path)
+#
+#np_analysis(raw)
 
