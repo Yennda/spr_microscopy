@@ -25,12 +25,13 @@ plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder=main_folder+'19_04_27_B6/export_np/'
+#file='meas_diff_04_1'
 
-file='meas_diff_04_1'
+files=[2, 3, 4, 6]
 
-files=[2, 4]
 
+print('x\ty\tcx\tcy\tstd\tint')
 for f in files: 
     info=readinfo(folder, 'meas_diff_{:02.0f}_1'.format(f))
     info_stat=statistics(info)
-    print(info_stat)
+    print('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}'.format(*info_stat[0]))

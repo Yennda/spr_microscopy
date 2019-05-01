@@ -12,7 +12,7 @@ folder=main_folder+'19_04_27_B6/'
 #folder=main_folder+'19_04_17_C3/'
 
 
-file='meas_diff_04_1'
+file='meas_diff_06_1'
 
 
 video=Video(folder, file)
