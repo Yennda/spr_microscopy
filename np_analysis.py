@@ -135,7 +135,7 @@ def np_analysis(raw, folder='images', file='image_np'):
             
             # x, y, Cx, Cy, std, intensity
             with open(name[:-2]+'info.txt', "a+", encoding="utf-8") as f:
-                f.write('{}\t{}\t{}\t{}\t{}\t{};\n'.format(*sizes))
+                f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\n'.format(*sizes))
         fig.canvas.draw()     
         
     
@@ -143,7 +143,7 @@ def np_analysis(raw, folder='images', file='image_np'):
     
     fig, ax = plt.subplots()
     img=ax.imshow(raw)
-    img.set_cmap('jet')
+    img.set_cmap('Spectral')
     fig.colorbar(img, ax=ax)
     ax.index=0
     ax.coor=[]
