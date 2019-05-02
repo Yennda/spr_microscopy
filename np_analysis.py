@@ -1,16 +1,15 @@
 import os
-
 import math as m
 import numpy as np
 
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-
-from skimage import data, io, filters, util
 import matplotlib.patches as mpatches
+from skimage import io
+
 import tools
 
 SCALE=2.93 # mu/px
+SHAPE=50    #dimension of the image in px
 
 def stats(raw, p=False):
     avg=np.average(raw)
@@ -50,35 +49,39 @@ def size(data, std):
     # wrong order, no tin agreement with the table in the picture
     return [len(out)*SCALE, np.average(np.abs(out))/std]
 
-def profiles(raw, coor):
-    list_i=[c[1] for c in coor]
-    list_j=[c[0] for c in coor]
+def measure(raw, coor):
+    list_i=[c[0] for c in coor]
+    list_j=[c[1] for c in coor]
     
-    
-    
-    
+    indices_i=[i for i in range(0, list_i[0]+1)]
+    indices_i+=[i for i in range(list_i[1], 50)]
+    indices_j=[i for i in range(0, list_j[2]+1)]
+    indices_j+=[i for i in range(list_j[3], 50)]
+
 #    std=(np.std(raw[0:15, :])+np.std(raw[-15:-1, :])+np.std(raw[15:-15, 0:15])+np.std(raw[15:-15, -15:-1]))/4
-    std=(np.std(raw[min(list_i), :])+np.std(raw[max(list_i):-1, :])+np.std(raw[min(list_i):max(list_i), 0:min(list_j)])+np.std(raw[min(list_i):max(list_i), max(list_j):-1]))/4
+    mask_background=np.array([[(i in indices_i) or (j in indices_j) for i in range(SHAPE)] for j in range(SHAPE)])
+    mask_np=np.array([[not ((i in indices_i) or (j in indices_j)) for i in range(SHAPE)] for j in range(SHAPE)])
     
-    #NP image intensity
-    avg=np.average
-    raw_a=abs(raw)
-    avg_abs=(avg(raw_a[min(list_i), :])+avg(raw_a[max(list_i):-1, :])+avg(raw_a[min(list_i):max(list_i), 0:min(list_j)])+avg(raw_a[min(list_i):max(list_i), max(list_j):-1]))/4
-    np_avg_abs=avg(raw_a[min(list_i):max(list_i), min(list_j):max(list_j)])
+    std=np.std(raw[mask_background])
+    int_np=sum(abs(raw[mask_np]))
+    int_background=sum(abs(raw[mask_background]))/len(raw[mask_background])*len(raw[mask_np])
     
-    intensity=np_avg_abs-avg_abs
+    intensity=int_np-int_background
+    contrast=int_np/len(raw[mask_np])/std
     
-
-
+#    fig, ax = plt.subplots()
+#    raww=raw
+#    raw[list_j[2]+1:list_j[3]+1, list_i[2]]=0.01
+#    img=ax.imshow(raww)
+      
     sizes=[
-            (coor[1][0]-coor[0][0])*SCALE,
-            (coor[3][1]-coor[2][1])*SCALE,
-            np.average(raw[coor[0][1], coor[0][0]:coor[1][0]])/std,
-            np.average(raw[coor[2][1]:coor[3][1], coor[2][0]])/std
+            (list_i[1]-list_i[0]-1)*SCALE,
+            (list_j[3]-list_j[2]-1)*SCALE,
+            np.average(abs(raw[list_j[0], list_i[0]+1:list_i[1]]))/std,
+            np.average(abs(raw[list_j[2]+1:list_j[3], list_i[2]]))/std
             ]
-    
-
-    return sizes + [std, intensity]
+    print(contrast)
+    return sizes + [contrast, std, intensity]
     
 def np_analysis(raw, folder='images', file='image_np'):
     
@@ -86,7 +89,7 @@ def np_analysis(raw, folder='images', file='image_np'):
         
         x=int((event.xdata+0.5)//1)
         y=int((event.ydata+0.5)//1)
-        print(x, y)
+#        print(x, y)
         
         fig = event.canvas.figure
         ax = fig.axes[0]
@@ -96,14 +99,15 @@ def np_analysis(raw, folder='images', file='image_np'):
         ax.add_patch(p)
         
         if ax.index==4:
-            sizes=profiles(raw, ax.coor)
-            info='x ={:.01f}$\mu m$\ny ={:.01f}$\mu m$\nCx={:.01f} \nCy={:.04f} \nstd={:.04f}, \nint={:.04f}'.format(*sizes)
-            ax.text(0, 14, info, fontsize=10, bbox={'facecolor':'white', 'alpha':0.5, 'pad':1})
+            measures=measure(raw, ax.coor)
+            
+            info='x ={:.01f}$\mu m$\ny ={:.01f}$\mu m$\nCx={:.01f} \nCy={:.01f}\nC={:.01f}\nstd={:.04f}, \nint={:.04f}'.format(*measures)
+            ax.text(0, 15, info, fontsize=10, bbox={'facecolor':'white', 'alpha':0.5, 'pad':1})
             ax.index=0
             
             tools.new_export(folder, '/export_np')
-            name='{}/export_np/{}'.format(folder, file)
             
+            name='{}/export_np/{}'.format(folder, file)
             i=1
             while os.path.isfile(name+'_{:02d}.png'.format(i)):
                 i+=1
@@ -121,11 +125,11 @@ def np_analysis(raw, folder='images', file='image_np'):
             data_x=raw[ax.coor[0][1], 0:50]
             data_y=raw[0:50, ax.coor[2][0]]
             
-            std=sizes[4]
+            std=measures[5]
             
             axes.plot(np.arange(0, 50, 1), data_x, color='red', label='x')
             axes.plot(np.arange(0, 50, 1), data_y, color='blue', label='y')
-            axes.plot(np.arange(0, 50, 1), [std*3]*50, color='gray', label='3*std')
+            axes.plot(np.arange(0, 50, 1), [std*3]*50, color='gray', label='3std')
             axes.plot(np.arange(0, 50, 1), [std]*50, color='black', label='std')
             axes.plot(np.arange(0, 50, 1), [-std*3]*50, color='gray')
             axes.plot(np.arange(0, 50, 1), [-std]*50, color='black')
@@ -135,7 +139,7 @@ def np_analysis(raw, folder='images', file='image_np'):
             
             # x, y, Cx, Cy, std, intensity
             with open(name[:-2]+'info.txt', "a+", encoding="utf-8") as f:
-                f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\n'.format(*sizes))
+                f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\t{}\n'.format(*measures))
         fig.canvas.draw()     
         
     
@@ -157,12 +161,12 @@ Select the points in the following order:
     
     
     
-#    
-#    
-#plt.close("all")
-#
-#path='particle_01.tif'
-#raw=io.imread(path)
-#
-#np_analysis(raw)
+    
+    
+plt.close("all")
+
+path='particle_01.tif'
+raw=io.imread(path)
+
+np_analysis(raw)
 
