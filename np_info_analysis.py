@@ -27,8 +27,10 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder=main_folder+'19_04_27_B6/export_np/'
 #file='meas_diff_04_1'
 
-files=[folder+'meas_diff_{:02.0f}_1'.format(f) for f in [2, 3, 5]]
-files+=[main_folder+'19_04_11_C5/export_np/'+'meas_diff_05_1']
+files=[]
+#files=[folder+'meas_diff_{:02.0f}_1'.format(f) for f in [2, 3, 5]]
+files+=[main_folder+'19_04_11_C5/export_np/'+'meas_diff_03_1',
+        main_folder+'19_04_11_C5/export_np/'+'meas_diff_04_1']
 
 print('no\tx\ty\tcx\tcy\tC\tstd\tint\trelBg')
 for file in files: 

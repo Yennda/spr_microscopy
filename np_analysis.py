@@ -140,6 +140,9 @@ def np_analysis(raw, folder='images', file='image_np'):
             # x, y, Cx, Cy, std, intensity
             with open(name[:-2]+'info.txt', "a+", encoding="utf-8") as f:
                 f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\n'.format(*measures))
+                
+            plt.close(2)
+            plt.close(3)
         fig.canvas.draw()     
         
     
@@ -161,12 +164,12 @@ Select the points in the following order:
     
     
     
-    
-    
-plt.close("all")
-
-path='particle_01.tif'
-raw=io.imread(path)
-
-np_analysis(raw)
+#    
+#    
+#plt.close("all")
+#
+#path='particle_01.tif'
+#raw=io.imread(path)
+#
+#np_analysis(raw)
 

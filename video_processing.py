@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import skvideo.io
 import skvideo.datasets
 import scipy.misc
@@ -139,18 +140,25 @@ class Video(object):
             
         def mouse_click(event):
             if event.button==3:
+                fig = event.canvas.figure
+                ax = fig.axes[0]
                 x=int( event.xdata)
                 y=int( event.ydata)
                 raw=volume[ax.index]
                 np_analysis(raw[y-25: y+25, x-25:x+25], self.folder, self.file)
+                
+                p=mpatches.Rectangle((x-0.5, y-0.5), 5, 5, color='#FF0000', alpha=0.5)
+                ax.add_patch(p)
                 print('you pressed', event.button, event.xdata, event.ydata)
-        
+                fig.canvas.draw()  
+                
         #Next slice func.
         def next_slice(ax, i):
             volume = ax.volume
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
             ax.set_title(frame_info(ax.index))
+            [p.remove() for p in reversed(ax.patches)]
 
         def button_press(event):
             fig = event.canvas.figure
