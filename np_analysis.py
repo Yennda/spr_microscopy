@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from skimage import io
 
+from PIL import Image
 import tools
 
 SCALE=2.93 # mu/px
@@ -137,11 +138,15 @@ def np_analysis(raw, folder='images', file='image_np'):
             fig.savefig(name+'.png' , dpi=300)
             figgraph.savefig(name+'_graph.png' , dpi=300)
             
+            pilimage = Image.fromarray(img.get_array())
+            pilimage.save(name+'.tiff')
+            print('File SAVED @{}'.format(name))
+            
             # x, y, Cx, Cy, std, intensity
             with open(name[:-2]+'info.txt', "a+", encoding="utf-8") as f:
                 f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\n'.format(*measures))
                 
-            plt.close(2)
+#            plt.close(2)
             plt.close(3)
         fig.canvas.draw()     
         
@@ -164,7 +169,7 @@ Select the points in the following order:
     
     
     
-#    
+    
 #    
 #plt.close("all")
 #

@@ -35,6 +35,7 @@ class RawVideo(Video):
         for i in range(sh[-1]):
             out[:,:,i]=self._video[:,:,i]/self.reference
         self._video_ref=out
+        print('refreshed')
         
     def refdiff(self):
         sh=self._video.shape
@@ -43,6 +44,7 @@ class RawVideo(Video):
         for i in range(1, sh[-1]):
             out[:,:,i]=(self._video[:,:,i]-self._video[:,:,i-1])/self.reference
         self._video_diff=out
+        print('refreshed')
         
     def refdifffirst(self):
         sh=self._video.shape
@@ -52,6 +54,7 @@ class RawVideo(Video):
 #            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,0])
             out[:,:,i]=(self._video[:,:,i]-self._video[:,:,0])/self.reference
         self._video_diff=out
+        print('refreshed')
         
     @property
     def video_ref(self):

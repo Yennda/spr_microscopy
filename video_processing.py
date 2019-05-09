@@ -217,7 +217,7 @@ class Video(object):
         ax.index = 1
         ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, volume.shape[0], self.time_info[ax.index][0], self.time_info[ax.index][1]))
         
-        if self.file_name.find('diff')!=-1:
+        if source=='diff' or source=='vid':
             img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
         else:
             img = ax.imshow(volume[ax.index], cmap='gray')
