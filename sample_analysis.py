@@ -8,11 +8,12 @@ plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 
-folder=main_folder+'19_04_27_B3/'
+#folder=main_folder+'19_04_27_B3/'
 #folder=main_folder+'19_04_11_C5/'
 #folder=main_folder+'19_04_17_C3/'
+folder=main_folder+'19_05_09_B6/'
 
-file='meas_diff01_1'
+file='meas_diff_12_1'
 
 
 video=Video(folder, file)

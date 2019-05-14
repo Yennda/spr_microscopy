@@ -28,6 +28,18 @@ class RawVideo(Video):
 
         return video.T
     #refresh reference
+    def integrate(self, n):
+
+        out=np.ones(list(self.video.shape[0:2])+[self.video.shape[2]//n])
+
+        for i in range(n,self._video.shape[-1]//n*n,n):
+            out[:,:,i//n]=(np.sum(self._video[:,:,i-n: i], axis=2))/n
+        
+        self._video=out
+        self.reference=self.loadBinStatic()
+        self._video_ref=np.ones(self.video.shape[0:2])
+        self._video_diff=np.ones(self.video.shape[0:2])
+        
     def refref(self):
         sh=self._video.shape
         out=np.zeros(sh)
