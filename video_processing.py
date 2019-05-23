@@ -158,7 +158,7 @@ class Video(object):
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
             ax.set_title(frame_info(ax.index))
-            [p.remove() for p in reversed(ax.patches)]
+            
 
         def button_press(event):
             fig = event.canvas.figure
@@ -174,6 +174,8 @@ class Video(object):
                 ax = fig.axes[0]
                 next_slice(ax, -10)
                 fig.canvas.draw()
+            elif event.key=='x':
+                [p.remove() for p in reversed(ax.patches)]
             elif event.key=='m':
                 lim=[i*1.2 for i in img.get_clim()]
                 img.set_clim(lim)
