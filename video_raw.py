@@ -7,14 +7,15 @@ class RawVideo(Video):
         super().__init__(folder, file)
         
         if static_name==None:
-            self.static_name=folder + file.replace('raw', 'static_TE')
+#            self.static_name=folder + file.replace('raw', 'static_TE')
+            self.static_name=folder + file.replace('raw', 'te')
         self.reference=None
         self._video_ref=None
         self._video_diff=None
         
     def loadData(self):
         super().loadData()
-        self.reference=self.loadBinStatic()
+#        self.reference=self.loadBinStatic()
         self._video_ref=np.ones(self.video.shape[0:2])
         self._video_diff=np.ones(self.video.shape[0:2])
         
@@ -54,7 +55,7 @@ class RawVideo(Video):
         out=np.zeros(sh)
         out[:,:,0]=np.zeros(sh[0:2])
         for i in range(1, sh[-1]):
-            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,i-1])/self.reference
+            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,i-1]) #/self.reference
         self._video_diff=out
         print('refreshed')
         
@@ -63,8 +64,8 @@ class RawVideo(Video):
         out=np.zeros(sh)
         out[:,:,0]=np.zeros(sh[0:2])
         for i in range(1, sh[-1]):
-#            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,0])
-            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,0])/self.reference
+            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,10])
+#            out[:,:,i]=(self._video[:,:,i]-self._video[:,:,0])/self.reference
         self._video_diff=out
         print('refreshed')
         
