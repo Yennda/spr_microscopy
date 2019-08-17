@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import skvideo.io
-import skvideo.datasets
+#import skvideo.io
+#import skvideo.datasets
 import scipy.misc
 from PIL import Image
 import os
@@ -80,25 +80,25 @@ class Video(object):
 
         return np.swapaxes(video, 0, 1)
     
-    def export(self, name, auto=True):
-        data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)  
-        
-        if auto:
-            data-=data.min()
-            data*=256/data.max()
-        else:
-            data-=self.rng[0]
-            data*=256/(self.rng[1]-self.rng[0])
-
-        
-        
-        if self.video_stats[1][2] == 1:
-            scipy.misc.toimage(data[0, :, :]).save(name+'.png')
-        else:
-            writer = skvideo.io.FFmpegWriter(name+'.mp4')
-            for i in range(self.video_stats[1][2]):
-                writer.writeFrame(data[i, :, :])
-            writer.close()
+#    def export(self, name, auto=True):
+#        data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)  
+#        
+#        if auto:
+#            data-=data.min()
+#            data*=256/data.max()
+#        else:
+#            data-=self.rng[0]
+#            data*=256/(self.rng[1]-self.rng[0])
+#
+#        
+#        
+#        if self.video_stats[1][2] == 1:
+#            scipy.misc.toimage(data[0, :, :]).save(name+'.png')
+#        else:
+#            writer = skvideo.io.FFmpegWriter(name+'.mp4')
+#            for i in range(self.video_stats[1][2]):
+#                writer.writeFrame(data[i, :, :])
+#            writer.close()
 
     def frame(self, arg=1):
 

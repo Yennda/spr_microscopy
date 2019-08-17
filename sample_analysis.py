@@ -16,8 +16,11 @@ folder=main_folder
 folder=main_folder+'19_07_18_C5/'
 #folder=main_folder+'19_03_28_C6/'
 #folder=main_folder+'19_07_16_ultraplacad/'
+folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
 
-file='diff_02_1'
+
+#file='diff_02_1'
+file='norm_05_1'
 #file='meas_diff_03_1'
 #file='R_184_l_182_NP_150_1000x_raw_1'
 
