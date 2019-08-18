@@ -1,18 +1,51 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-#import skvideo.io
-#import skvideo.datasets
+
 import scipy.misc
 from PIL import Image
 import os
 
 from np_analysis import np_analysis
   
-
+from scipy.optimize import curve_fit
 
 def SecToMin(sec):
     return '{:.0f}:{:.1f}'.format(sec//60, sec%60)
+
+def h(x): return 0.5 * (np.sign(x) + 1)
+
+def step(x, a, b): return b*0.5 * (np.sign(x-a) + 1)
+
+def chute(x, a0, a1, b0, b1):
+    return b0*h(a0-x)+b1*h(x-a1)+((b1-b0)/(a1-a0)*(x-a0)+b0)*h(x-a0)*h(a1-x)
+
+def t2i(boo):
+    if boo:
+        return 1
+    else:
+        return 0
+    
+def is_np(inten, treshold=3e-07, show=False):
+
+    xdata=np.arange(len(inten))
+    popt, pcov = curve_fit(step, xdata, inten, p0=[10,-1e-03], epsfcn=0.01)
+    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
+    if show:
+        print('a, b: {}'.format(popt))
+        #    print(pcov)
+        print('squares: {}'.format(squares))
+        print('variance: {}'.format(np.var(inten)))
+        plt.plot(inten, 'b-', label='data')  
+        plt.plot(xdata, step(xdata, *popt), 'r-')
+        plt.show()
+        
+        fix, axes = plt.subplots()
+        axes.plot(inten,'b-', label='data')
+        axes.plot(xdata, step(xdata, *popt), 'r-')  
+        
+        
+    return np.var(inten)>treshold and m.fabs(popt[1])>1e-03 and squares>5e-06
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -24,7 +57,7 @@ def frame_times(file_content):
         time_last=time_actual
     return time_info
 
-class Video(object):
+class VideoRec(object):
 
     def __init__(self, folder, file):
         self.folder=folder
@@ -141,18 +174,30 @@ class Video(object):
             fig.canvas.draw()
             
         def mouse_click(event):
+            
             if event.button==3:
-                fig = event.canvas.figure
-                ax = fig.axes[0]
-                x=int( event.xdata)
-                y=int( event.ydata)
-                raw=volume[ax.index]
-                np_analysis(raw[y-25: y+25, x-25:x+25], self.folder, self.file)
+                x=int((event.xdata-0.5)//1)
+                y=int((event.ydata-0.5)//1)
                 
-                p=mpatches.Rectangle((x-0.5, y-0.5), 5, 5, color='#FF0000', alpha=0.5)
-                ax.add_patch(p)
-                print('you pressed', event.button, event.xdata, event.ydata)
-                fig.canvas.draw()  
+                print([x,y])
+                print('shape')
+                print(self._video[y, x,:].shape)
+                is_np(self._video[y, x,:], show=True)
+            else:
+                print('wrong button')
+#            
+#            
+#                fig = event.canvas.figure
+#                ax = fig.axes[0]
+#                x=int( event.xdata)
+#                y=int( event.ydata)
+#                raw=volume[ax.index]
+#                np_analysis(raw[y-25: y+25, x-25:x+25], self.folder, self.file)
+#                
+#                p=mpatches.Rectangle((), 5, 5, color='#FF0000', alpha=0.5)
+#                ax.add_patch(p)
+#                print('you pressed', event.button, event.xdata, event.ydata)
+#                fig.canvas.draw()  
                 
         #Next slice func.
         def next_slice(ax, i):

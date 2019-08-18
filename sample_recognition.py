@@ -1,4 +1,4 @@
-from video_processing import Video
+from video_recognition import VideoRec
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -27,7 +27,7 @@ file='norm_05_1'
 
 
 
-video=Video(folder, file)
+video=VideoRec(folder, file)
 video.loadData()
 video.rng=[-0.01, 0.01]
 video.explore()

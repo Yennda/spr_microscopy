@@ -18,7 +18,7 @@ def t2i(boo):
     else:
         return 0
 
-def is_np(inten, treshold=1e-07, show=False):
+def is_np(inten, treshold=3e-07, show=False):
 
     xdata=np.arange(len(inten))
     popt, pcov = curve_fit(step, xdata, inten, p0=[10,-1e-03], epsfcn=0.01)
@@ -26,15 +26,27 @@ def is_np(inten, treshold=1e-07, show=False):
     if show:
         print('a, b: {}'.format(popt))
         #    print(pcov)
-        squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
         print('squares: {}'.format(squares))
         print('variance: {}'.format(np.var(inten)))
         plt.plot(inten, 'b-', label='data')  
         plt.plot(xdata, step(xdata, *popt), 'r-')
-#    return popt[1]-popt[0]<4 # and m.fabs(popt[3]-popt[2])>1e-04
-    return np.var(inten)>treshold and m.fabs(popt[1])>1e-04 and squares>1e-06
+        plt.show()
+    return np.var(inten)>treshold and m.fabs(popt[1])>1e-03 and squares>5e-06
 
+def is_np(inten, treshold=3e-07, show=False):
 
+    xdata=np.arange(len(inten))
+    popt, pcov = curve_fit(chute, xdata, inten, p0=[5, 10,0, -1e-03], epsfcn=0.01)
+    squares=sum([(chute(i, *popt)-inten[i])**2 for i in xdata])
+    if show:
+        print('a, b: {}'.format(popt))
+        #    print(pcov)
+        print('squares: {}'.format(squares))
+        print('variance: {}'.format(np.var(inten)))
+        plt.plot(inten, 'b-', label='data')  
+        plt.plot(xdata, chute(xdata, *popt), 'r-')
+        plt.show()
+    return popt[1]-popt[0]<4  and m.fabs(popt[3]-popt[2])>5e-04 and squares>5e-06
 
 plt.close("all")
 folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
@@ -47,7 +59,7 @@ video.loadData()
 
 data=video._video[40:160, 1000:1200, :]
 del video
-#plt.imshow(data[:,:,22])
+#plt.imshow(data[:,:,22]+mask*1e-02)
 
 mask=np.zeros(data[:,:,0].shape)
 
@@ -59,10 +71,11 @@ for i in range(data.shape[0]):
         except:
             mask[i,j]=0
             print('no fit')
+        
 print('done')
-
+#
 plt.imshow(mask)
-#print(is_np(data[45,66,:], show=True))
+#print(is_np(data[0,0,:], show=True))
 #print(is_np(data[68,135,:], show=True))
 #print(is_np(data[50,135,:], show=True))
 #plt.show()
