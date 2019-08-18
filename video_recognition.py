@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import math as m
 
 import scipy.misc
 from PIL import Image
@@ -17,7 +18,9 @@ def h(x): return 0.5 * (np.sign(x) + 1)
 
 def step(x, a, b): return b*0.5 * (np.sign(x-a) + 1)
 
-def chute(x, a0, a1, b0, b1):
+def chute(x, a0, a1):
+    b0=0
+    b1=-5e-04
     return b0*h(a0-x)+b1*h(x-a1)+((b1-b0)/(a1-a0)*(x-a0)+b0)*h(x-a0)*h(a1-x)
 
 def t2i(boo):
@@ -26,26 +29,42 @@ def t2i(boo):
     else:
         return 0
     
+#def is_np(inten, treshold=3e-07, show=False):
+#
+#    xdata=np.arange(len(inten))
+#    popt, pcov = curve_fit(step, xdata, inten, p0=[10,-5e-04], epsfcn=0.1)
+#    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
+#    if show:
+#        print('a, b: {}'.format(popt))
+#        #    print(pcov)
+#        print('squares: {}'.format(squares))
+#        print('variance: {}'.format(np.var(inten)))
+#        plt.plot(inten, 'b-', label='data')  
+#        plt.plot(xdata, step(xdata, *popt), 'r-')
+#        plt.show()
+#        
+#        fix, axes = plt.subplots()
+#        axes.plot(inten,'b-', label='data')
+#        axes.plot(xdata, step(xdata, *popt), 'r-')  
+#        
+#        
+#    return np.var(inten)>treshold and m.fabs(popt[1])>1e-03 and squares>5e-06
 def is_np(inten, treshold=3e-07, show=False):
 
     xdata=np.arange(len(inten))
-    popt, pcov = curve_fit(step, xdata, inten, p0=[10,-1e-03], epsfcn=0.01)
-    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
+    popt, pcov = curve_fit(chute, xdata, inten, p0=[5, 10], epsfcn=0.1)
+    squares=sum([(chute(i, *popt)-inten[i])**2 for i in xdata])
     if show:
         print('a, b: {}'.format(popt))
         #    print(pcov)
         print('squares: {}'.format(squares))
         print('variance: {}'.format(np.var(inten)))
-        plt.plot(inten, 'b-', label='data')  
-        plt.plot(xdata, step(xdata, *popt), 'r-')
-        plt.show()
-        
         fix, axes = plt.subplots()
         axes.plot(inten,'b-', label='data')
-        axes.plot(xdata, step(xdata, *popt), 'r-')  
+        axes.plot(xdata, chute(xdata, *popt), 'r-')  
         
-        
-    return np.var(inten)>treshold and m.fabs(popt[1])>1e-03 and squares>5e-06
+    return popt[1]-popt[0]<4  and m.fabs(popt[3]-popt[2])>5e-04 and squares>5e-06
+
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -178,11 +197,14 @@ class VideoRec(object):
             if event.button==3:
                 x=int((event.xdata-0.5)//1)
                 y=int((event.ydata-0.5)//1)
+#                file = open('data.txt', 'a')
+#                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
+#                file.close()
                 
-                print([x,y])
-                print('shape')
-                print(self._video[y, x,:].shape)
-                is_np(self._video[y, x,:], show=True)
+                print(is_np(self._video[y, x,:], show=True))
+                
+                
+                
             else:
                 print('wrong button')
 #            
