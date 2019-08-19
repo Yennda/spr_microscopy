@@ -3,6 +3,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from video_processing import Video
 
+
+# https://lmfit.github.io/lmfit-py/model.html
+
+
+
 #folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_08_16_K4/'
