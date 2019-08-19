@@ -150,17 +150,30 @@ class VideoRec(object):
         for i in range(self._video.shape[2]):
             f = np.fft.fft2(self.video[:,:,i])
             fshift = np.fft.fftshift(f)
-#            magnitude_spectrum = 20*np.log(np.abs(fshift))
+            magnitude_spectrum = 20*np.log(np.abs(fshift))
             
-            fshift[:, :530] = 0
-            fshift[:, 1120:] = 0
+#            fshift[:, :530] = 0
+#            fshift[:, 1120:] = 0
+            #only strips, efficient
+#            fshift[:, 490:550] = 0
+#            fshift[:, 1120:1180] = 0
+#            rows, cols = self._video[:,:,0].shape
+#            crow,ccol = int(rows/2) , int(cols/2)
+#            fshift[crow-30:crow+30, ccol-30:ccol+30] = 0
+#            fshift[111:136, 139:309] = 0
+#            fshift[133:163, 1318:1522] = 0
+            
+            #pro K4 nejlepsi 30
+            mask=np.abs(np.real(magnitude_spectrum))>30
+            fshift[mask]=0
             
             f_ishift = np.fft.ifftshift(fshift)
 #            magnitude_spectrum_filtered = 20*np.log(np.abs(fshift))
             
             img_back = np.fft.ifft2(f_ishift)
             img_back = np.real(img_back)
-            self._video[:,:,i]=img_back
+            
+            self._video[:,:,i]=cv2.blur(img_back,(2,2))
     
     def np_recognition(self):
         print('in progress')
