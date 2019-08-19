@@ -56,6 +56,8 @@ def is_np(inten, treshold=3e-07, show=False):
 
 plt.close("all")
 folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
+main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
+folder=main_folder+'19_08_16_K4/'
 #vyska, sirka, cas
 file='norm_05_1'
 

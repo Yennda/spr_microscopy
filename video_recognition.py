@@ -2,12 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import math as m
+import cv2
 
-import scipy.misc
 from PIL import Image
 import os
-
-from np_analysis import np_analysis
   
 from scipy.optimize import curve_fit
 
@@ -16,7 +14,10 @@ def SecToMin(sec):
 
 def h(x): return 0.5 * (np.sign(x) + 1)
 
-def step(x, a, b): return b*0.5 * (np.sign(x-a) + 1)
+def step(x, a, b0, b1): return (b1-b0) * (np.sign(x-a) + 1)+b0
+
+def linear(x, a, b):
+    return a*x + b
 
 def chute(x, a0, a1):
     b0=0
@@ -32,39 +33,50 @@ def t2i(boo):
 #def is_np(inten, treshold=3e-07, show=False):
 #
 #    xdata=np.arange(len(inten))
-#    popt, pcov = curve_fit(step, xdata, inten, p0=[10,-5e-04], epsfcn=0.1)
+#    popt, pcov = curve_fit(step, xdata, inten, p0=[10,0, -5e-04], epsfcn=0.1)
 #    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
 #    if show:
 #        print('a, b: {}'.format(popt))
 #        #    print(pcov)
+#        print(popt[2]-popt[1])
 #        print('squares: {}'.format(squares))
 #        print('variance: {}'.format(np.var(inten)))
-#        plt.plot(inten, 'b-', label='data')  
-#        plt.plot(xdata, step(xdata, *popt), 'r-')
-#        plt.show()
+#
 #        
 #        fix, axes = plt.subplots()
 #        axes.plot(inten,'b-', label='data')
 #        axes.plot(xdata, step(xdata, *popt), 'r-')  
 #        
 #        
-#    return np.var(inten)>treshold and m.fabs(popt[1])>1e-03 and squares>5e-06
+#    return m.fabs(popt[2]-popt[1])>1e-04
 def is_np(inten, treshold=3e-07, show=False):
 
     xdata=np.arange(len(inten))
-    popt, pcov = curve_fit(chute, xdata, inten, p0=[5, 10], epsfcn=0.1)
-    squares=sum([(chute(i, *popt)-inten[i])**2 for i in xdata])
+    popt, pcov = curve_fit(step, xdata, inten, p0=[10,0, -5e-04], epsfcn=0.1)
+    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
+    
+    lpopt, lpcov = curve_fit(linear, xdata, inten, p0=[1e-4, 0], epsfcn=0.1)
+    lsquares=sum([(linear(i, *lpopt)-inten[i])**2 for i in xdata])  
+    
+    
     if show:
         print('a, b: {}'.format(popt))
         #    print(pcov)
-        print('squares: {}'.format(squares))
+        print(squares)
+        print(lsquares)
+        print(lsquares>squares)
+#        print('squares: {}'.format(squares))
         print('variance: {}'.format(np.var(inten)))
+
+        
         fix, axes = plt.subplots()
         axes.plot(inten,'b-', label='data')
-        axes.plot(xdata, chute(xdata, *popt), 'r-')  
+        axes.plot(xdata, step(xdata, *popt), 'r-')  
+        axes.plot(xdata, linear(xdata, *lpopt), 'g-')  
         
-    return popt[1]-popt[0]<4  and m.fabs(popt[3]-popt[2])>5e-04 and squares>5e-06
-
+        
+        
+    return m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -134,26 +146,37 @@ class VideoRec(object):
 
         return np.swapaxes(video, 0, 1)
     
-#    def export(self, name, auto=True):
-#        data=np.swapaxes(np.swapaxes(self.video,0,2),1,2)  
-#        
-#        if auto:
-#            data-=data.min()
-#            data*=256/data.max()
-#        else:
-#            data-=self.rng[0]
-#            data*=256/(self.rng[1]-self.rng[0])
-#
-#        
-#        
-#        if self.video_stats[1][2] == 1:
-#            scipy.misc.toimage(data[0, :, :]).save(name+'.png')
-#        else:
-#            writer = skvideo.io.FFmpegWriter(name+'.mp4')
-#            for i in range(self.video_stats[1][2]):
-#                writer.writeFrame(data[i, :, :])
-#            writer.close()
-
+    def fouriere(self):
+        for i in range(self._video.shape[2]):
+            f = np.fft.fft2(self.video[:,:,i])
+            fshift = np.fft.fftshift(f)
+#            magnitude_spectrum = 20*np.log(np.abs(fshift))
+            
+            fshift[:, :530] = 0
+            fshift[:, 1120:] = 0
+            
+            f_ishift = np.fft.ifftshift(fshift)
+#            magnitude_spectrum_filtered = 20*np.log(np.abs(fshift))
+            
+            img_back = np.fft.ifft2(f_ishift)
+            img_back = np.real(img_back)
+            self._video[:,:,i]=img_back
+    
+    def np_recognition(self):
+        print('in progress')
+        mask=np.zeros(self._video.shape[:2])
+        for i in range(self._video.shape[0]):
+            print('done {}/{}'.format(i, self._video.shape[0]))
+            for j in range(self._video.shape[1]):
+                try:
+                    mask[i,j]=t2i(is_np(self._video[i,j,:]))
+                except:
+                    mask[i,j]=0
+                    print('no fit')
+        plt.show(mask)
+        return mask
+            
+#   
     def frame(self, arg=1):
 
         if type(arg) == int:
