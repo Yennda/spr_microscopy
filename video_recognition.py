@@ -62,9 +62,10 @@ def is_np(inten, treshold=3e-07, show=False):
     if show:
         print('a, b: {}'.format(popt))
         #    print(pcov)
-        print(squares)
-        print(lsquares)
-        print(lsquares>squares)
+        print('delta: {}'.format(m.fabs(popt[2]-popt[1])))
+        print('step: {}'.format(squares))
+        print('linear {}: '.format(lsquares))
+        print(2*lsquares>squares)
 #        print('squares: {}'.format(squares))
         print('variance: {}'.format(np.var(inten)))
 

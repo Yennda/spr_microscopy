@@ -14,15 +14,17 @@ folder=main_folder
 #folder=main_folder+'19_04_17_C3/'  #low noise
 #folder=main_folder+'19_05_09_B6/'
 #folder=main_folder+'19_05_15_B3/'   #high noise
-folder=main_folder+'19_07_18_C5/'
+#folder=main_folder+'19_07_18_C5/'
 #folder=main_folder+'19_03_28_C6/'
 #folder=main_folder+'19_08_16_K4/'
+folder=main_folder+'19_08_16_L3/'
 #folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
 
 
 #file='diff_02_1'
 #file='norm_05_1'
-file='neref_02_1'
+file='norm_02_1'
+#file='neref_02_1'
 #file='R_184_l_182_NP_150_1000x_raw_1'
 
 
@@ -36,10 +38,10 @@ video.rng=[-0.01, 0.01]
 
 
 video.fouriere()
-video._video=video._video[75:220, 1100:1400,:]
+video._video=video._video[75:220, 900:1200,:]
 #mask=video.np_recognition()
 video.explore()
-
+#
 #
 #gray = mask.astype(np.uint8)
 #th, threshed = cv2.threshold(gray, 100, 255,cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
