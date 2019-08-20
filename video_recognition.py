@@ -29,26 +29,7 @@ def t2i(boo):
         return 1
     else:
         return 0
-    
-#def is_np(inten, treshold=3e-07, show=False):
-#
-#    xdata=np.arange(len(inten))
-#    popt, pcov = curve_fit(step, xdata, inten, p0=[10,0, -5e-04], epsfcn=0.1)
-#    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
-#    if show:
-#        print('a, b: {}'.format(popt))
-#        #    print(pcov)
-#        print(popt[2]-popt[1])
-#        print('squares: {}'.format(squares))
-#        print('variance: {}'.format(np.var(inten)))
-#
-#        
-#        fix, axes = plt.subplots()
-#        axes.plot(inten,'b-', label='data')
-#        axes.plot(xdata, step(xdata, *popt), 'r-')  
-#        
-#        
-#    return m.fabs(popt[2]-popt[1])>1e-04
+
 def is_np(inten, treshold=3e-07, show=False):
 
     xdata=np.arange(len(inten))
@@ -65,8 +46,7 @@ def is_np(inten, treshold=3e-07, show=False):
         print('delta: {}'.format(m.fabs(popt[2]-popt[1])))
         print('step: {}'.format(squares))
         print('linear {}: '.format(lsquares))
-        print(2*lsquares>squares)
-#        print('squares: {}'.format(squares))
+        print(2*squares<lsquares)
         print('variance: {}'.format(np.var(inten)))
 
         
@@ -77,7 +57,7 @@ def is_np(inten, treshold=3e-07, show=False):
         
         
         
-    return m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares
+    return (m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>5e-04 and squares<lsquares)
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -147,6 +127,22 @@ class VideoRec(object):
 
         return np.swapaxes(video, 0, 1)
     
+    def time_fouriere(self):
+        middle=int(self._video.shape[2]/2)
+        video=np.zeros(self._video.shape)
+        for i in range(self._video.shape[0]):
+            print('done {}/{}'.format(i, self._video.shape[0]))
+            for j in range(self._video.shape[1]):
+                signal=self._video[i, j,:]
+                fspec=np.fft.fft(signal)
+                
+                fspec[middle-5:middle+5]=0
+                
+                
+                video[i, j,:] = np.fft.ifft(fspec)
+        self._video=video
+        
+        
     def fouriere(self):
         for i in range(self._video.shape[2]):
             f = np.fft.fft2(self.video[:,:,i])
@@ -165,7 +161,7 @@ class VideoRec(object):
 #            fshift[133:163, 1318:1522] = 0
             
             #pro K4 nejlepsi 30
-            mask=np.abs(np.real(magnitude_spectrum))>30
+            mask=np.real(magnitude_spectrum)>30
             fshift[mask]=0
             
             f_ishift = np.fft.ifftshift(fshift)
@@ -173,8 +169,8 @@ class VideoRec(object):
             
             img_back = np.fft.ifft2(f_ishift)
             img_back = np.real(img_back)
-            
-            self._video[:,:,i]=cv2.blur(img_back,(2,2))
+            self._video[:,:,i]=img_back
+#            self._video[:,:,i]=cv2.blur(img_back,(2,2))
     
     def np_recognition(self):
         print('in progress')
@@ -187,7 +183,6 @@ class VideoRec(object):
                 except:
                     mask[i,j]=0
                     print('no fit')
-        plt.show(mask)
         return mask
             
 #   
@@ -239,7 +234,6 @@ class VideoRec(object):
 #                file.close()
                 
                 print(is_np(self._video[y, x,:], show=True))
-                
                 
                 
             else:
