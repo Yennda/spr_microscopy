@@ -30,7 +30,7 @@ def t2i(boo):
     else:
         return 0
 
-def is_np(inten, treshold=3e-07, show=False):
+def is_np(inten, mx=2e-03, show=False):
 
     xdata=np.arange(len(inten))
     popt, pcov = curve_fit(step, xdata, inten, p0=[10,0, -5e-04], epsfcn=0.1)
@@ -57,7 +57,7 @@ def is_np(inten, treshold=3e-07, show=False):
         
         
         
-    return (m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>5e-04 and squares<lsquares)
+    return (m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>5e-04 and squares<lsquares) or (np.abs(inten[-1])>mx)
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -173,7 +173,6 @@ class VideoRec(object):
 #            self._video[:,:,i]=cv2.blur(img_back,(2,2))
     
     def np_recognition(self):
-        print('in progress')
         mask=np.zeros(self._video.shape[:2])
         for i in range(self._video.shape[0]):
             print('done {}/{}'.format(i, self._video.shape[0]))
