@@ -34,6 +34,7 @@ def is_np(inten, mx=2e-03, show=False):
 
     xdata=np.arange(len(inten))
     popt, pcov = curve_fit(step, xdata, inten, p0=[10,0, -5e-04], epsfcn=0.1)
+       
     squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
     
     lpopt, lpcov = curve_fit(linear, xdata, inten, p0=[1e-4, 0], epsfcn=0.1)

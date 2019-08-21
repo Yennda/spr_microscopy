@@ -40,39 +40,40 @@ video.rng=[-0.01, 0.01]
 video.fouriere()
 #video.time_fouriere()
 #video._video=video._video[75:220, 900:1200,:]
-mask=video.np_recognition()
-#video.explore()
+video._video=video._video[120:260, 550:900,:]
+#mask=video.np_recognition()
+video.explore()
 #plt.imshow(mask)
-
-gray = mask.astype(np.uint8)
-th, threshed = cv2.threshold(gray, 100, 255,cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
-cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
-s1= 2
-s2 = 20
-xcnts = []
-control_mask=np.zeros(mask.shape)
-for cnt in cnts:
-    if s1<cv2.contourArea(cnt) <s2:
-        
-        for c in cnt:
-            control_mask[c[0][1], c[0][0]]=1
-        xcnts.append(cnt)
-
-print("Dots number: {}".format(len(xcnts)))
-
-
-
-video_dark=(video._video[:,:,-1]+1e-02)*1e04
-
-video_rgb=cv2.cvtColor(video_dark.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-video_rgb[:,:,0]=control_mask*255
 #
-plt.imshow(video_rgb)
+#gray = mask.astype(np.uint8)
+#th, threshed = cv2.threshold(gray, 100, 255,cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
+#cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
+#s1= 2
+#s2 = 10
+#xcnts = []
+#control_mask=np.zeros(mask.shape)
+#for cnt in cnts:
+#    if s1<cv2.contourArea(cnt) <s2:
+#        
+#        for c in cnt:
+#            control_mask[c[0][1], c[0][0]]=1
+#        xcnts.append(cnt)
+#
+#print("Dots number: {}".format(len(xcnts)))
+#
+#
+#
+#video_dark=(video._video[:,:,-1]+1e-02)*1e04
+#
+#video_rgb=cv2.cvtColor(video_dark.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+#video_rgb[:,:,0]+=control_mask.astype(np.uint8)*100
+#
+#plt.imshow(video_rgb)
 
 
 
 
-
+#
 #plt.subplot(311),plt.imshow(video._video[:,:,-1], cmap = 'gray')
 #plt.title('Input Image'), plt.xticks([]), plt.yticks([])
 #plt.subplot(312),plt.imshow(mask, cmap = 'gray')
