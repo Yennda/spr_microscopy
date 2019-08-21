@@ -19,10 +19,8 @@ def step(x, a, b0, b1): return (b1-b0) * (np.sign(x-a) + 1)+b0
 def linear(x, a, b):
     return a*x + b
 
-def chute(x, a0, a1):
-    b0=0
-    b1=-5e-04
-    return b0*h(a0-x)+b1*h(x-a1)+((b1-b0)/(a1-a0)*(x-a0)+b0)*h(x-a0)*h(a1-x)
+def find_step(data):
+    return np.argmax([m.fabs(data[i]-data[i+2]) for i in range(len(data)-2)])
 
 def t2i(boo):
     if boo:
@@ -30,15 +28,15 @@ def t2i(boo):
     else:
         return 0
 
-def is_np(inten, mx=2e-03, show=False):
+def is_np(data, mx=2e-03, show=False):
 
-    xdata=np.arange(len(inten))
-    popt, pcov = curve_fit(step, xdata, inten, p0=[10,0, -5e-04], epsfcn=0.1)
+    xdata=np.arange(len(data))
+    popt, pcov = curve_fit(step, xdata, data, p0=[find_step(data),0, -5e-04], epsfcn=0.1)
        
-    squares=sum([(step(i, *popt)-inten[i])**2 for i in xdata])
+    squares=sum([(step(i, *popt)-data[i])**2 for i in xdata])
     
-    lpopt, lpcov = curve_fit(linear, xdata, inten, p0=[1e-4, 0], epsfcn=0.1)
-    lsquares=sum([(linear(i, *lpopt)-inten[i])**2 for i in xdata])  
+    lpopt, lpcov = curve_fit(linear, xdata, data, p0=[1e-4, 0], epsfcn=0.1)
+    lsquares=sum([(linear(i, *lpopt)-data[i])**2 for i in xdata])  
     
     
     if show:
@@ -48,17 +46,17 @@ def is_np(inten, mx=2e-03, show=False):
         print('step: {}'.format(squares))
         print('linear {}: '.format(lsquares))
         print(2*squares<lsquares)
-        print('variance: {}'.format(np.var(inten)))
+        print('variance: {}'.format(np.var(data)))
 
         
         fix, axes = plt.subplots()
-        axes.plot(inten,'b-', label='data')
+        axes.plot(data,'b-', label='data')
         axes.plot(xdata, step(xdata, *popt), 'r-')  
         axes.plot(xdata, linear(xdata, *lpopt), 'g-')  
         
         
         
-    return (m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>5e-04 and squares<lsquares) or (np.abs(inten[-1])>mx)
+    return (m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>5e-04 and squares<lsquares) #or (np.abs(data[-1])>mx)
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
