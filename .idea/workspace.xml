@@ -2,25 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="69ef0d07-f2f9-42fc-af90-b5a64923eeee" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/folder_analysis.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/fouriere.py" beforeDir="false" afterPath="$PROJECT_DIR$/fouriere.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/image.tiff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_scikit.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/np_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/np_analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/np_info_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/np_info_analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/particle_01.tif" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/particle_02.tif" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/particle_recognition.py" beforeDir="false" afterPath="$PROJECT_DIR$/particle_recognition.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pokus.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sample_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sample_analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sample_raw_analysis.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sample_recognition.py" beforeDir="false" afterPath="$PROJECT_DIR$/sample_recognition.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/video_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/video_processing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/video_recognition.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -43,7 +25,7 @@
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -154,5 +136,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="code inspection" />
+    <option name="LAST_COMMIT_MESSAGE" value="code inspection" />
   </component>
 </project>
