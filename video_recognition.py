@@ -28,25 +28,36 @@ def t2i(boo):
     else:
         return 0
 
-def is_np(data, mx=2e-03, show=False):
+def is_np(data, inten_a=1e-04, inten_b=5e-4, show=False):
 
     xdata=np.arange(len(data))
-    popt, pcov = curve_fit(step, xdata, data, p0=[find_step(data),0, -5e-04], epsfcn=0.1)
-       
-    squares=sum([(step(i, *popt)-data[i])**2 for i in xdata])
+    popt_guess, pcov_guess = curve_fit(step, xdata, data, p0=[find_step(data),0, -5e-04], epsfcn=0.1)
+    
+    popt_fixed, pcov_fixed = curve_fit(step, xdata, data, p0=[int(len(data)/2),0, -5e-04], epsfcn=0.1)
+
+    squares_guess=sum([(step(i, *popt_guess)-data[i])**2 for i in xdata])
+    squares_fixed=sum([(step(i, *popt_fixed)-data[i])**2 for i in xdata]) 
+    
+
+    if squares_guess<squares_fixed:
+        popt, pcov=popt_guess, pcov_guess
+        squares=squares_guess
+    else:
+        popt, pcov=popt_fixed, pcov_fixed
+        squares=squares_fixed   
     
     lpopt, lpcov = curve_fit(linear, xdata, data, p0=[1e-4, 0], epsfcn=0.1)
     lsquares=sum([(linear(i, *lpopt)-data[i])**2 for i in xdata])  
     
     
     if show:
-        print('a, b: {}'.format(popt))
+#        print('a, b: {}'.format(popt))
         #    print(pcov)
         print('delta: {}'.format(m.fabs(popt[2]-popt[1])))
         print('step: {}'.format(squares))
         print('linear {}: '.format(lsquares))
         print(2*squares<lsquares)
-        print('variance: {}'.format(np.var(data)))
+#        print('variance: {}'.format(np.var(data)))
 
         
         fix, axes = plt.subplots()
@@ -54,9 +65,7 @@ def is_np(data, mx=2e-03, show=False):
         axes.plot(xdata, step(xdata, *popt), 'r-')  
         axes.plot(xdata, linear(xdata, *lpopt), 'g-')  
         
-        
-        
-    return (m.fabs(popt[2]-popt[1])>1e-04 and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>5e-04 and squares<lsquares) #or (np.abs(data[-1])>mx)
+    return (m.fabs(popt[2]-popt[1])>inten_a and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>inten_b and squares<lsquares) #or (np.abs(data[-1])>mx)
 
 def frame_times(file_content):
     time0=int(file_content[1].split()[0])
@@ -126,6 +135,19 @@ class VideoRec(object):
 
         return np.swapaxes(video, 0, 1)
     
+    def rescale(self, percent=50):
+        self._video.shape
+        width = int(self._video.shape[1] * percent/ 100)
+        height = int(self._video.shape[0] * percent/ 100)
+        dim = (width, height)
+        dim_vid = ( height,width, self._video.shape[2])
+
+        new=np.ndarray(dim_vid)
+        
+        for i in range(self._video.shape[2]):
+           new[:,:,i]=cv2.resize(self._video[:,:,i], dim, interpolation =cv2.INTER_AREA)
+        self._video=new
+
     def time_fouriere(self):
         middle=int(self._video.shape[2]/2)
         video=np.zeros(self._video.shape)
@@ -171,13 +193,13 @@ class VideoRec(object):
             self._video[:,:,i]=img_back
 #            self._video[:,:,i]=cv2.blur(img_back,(2,2))
     
-    def np_recognition(self):
+    def np_recognition(self, inten_a=1e-04, inten_b=5e-4,):
         mask=np.zeros(self._video.shape[:2])
         for i in range(self._video.shape[0]):
             print('done {}/{}'.format(i, self._video.shape[0]))
             for j in range(self._video.shape[1]):
                 try:
-                    mask[i,j]=t2i(is_np(self._video[i,j,:]))
+                    mask[i,j]=t2i(is_np(self._video[i,j,:], inten_a, inten_b))
                 except:
                     mask[i,j]=0
                     print('no fit')

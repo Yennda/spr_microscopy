@@ -1,0 +1,17 @@
+@650:
+    NP100
+        inten_a=1e-04
+        inten_b=5e-4
+        times=2
+        maxsize=2 (snad)
+    
+    NP80
+        inten_a=1e-04
+        inten_b=5e-4
+        times=2
+        maxsize=2 (snad)
+    NP60
+        inten_a=1e-04
+        inten_b=5e-4
+        times=1.5
+        maxsize=4 (snad)     

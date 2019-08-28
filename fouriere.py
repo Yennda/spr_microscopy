@@ -5,6 +5,7 @@ from video_processing import Video
 import copy
 import time
 # https://lmfit.github.io/lmfit-py/model.html
+# https://www.learnopencv.com/blob-detection-using-opencv-python-c/
 
 plt.close('all')
 
