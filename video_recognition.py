@@ -245,7 +245,6 @@ class VideoRec(object):
             fig.canvas.draw()
             
         def mouse_click(event):
-            
             if event.button==3:
                 x=int((event.xdata-0.5)//1)
                 y=int((event.ydata-0.5)//1)

@@ -4,10 +4,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from skimage import io
 
 from PIL import Image
 import tools
+from scipy.optimize import curve_fit
 
 SCALE=2.93 # mu/px
 SHAPE=50    #dimension of the image in px
@@ -47,7 +47,7 @@ def size(data, std):
             out.append(data[i])
             print(i)
             
-    # wrong order, no tin agreement with the table in the picture
+    # wrong order, no thin agreement with the table in the picture
     return [len(out)*SCALE, np.average(np.abs(out))/std]
 
 def measure(raw, coor):
@@ -167,14 +167,53 @@ Select the points in the following order:
         [4]
               ''')
     
+def h(x): return 0.5 * (np.sign(x) + 1)
+
+def step(x, a, b0, b1): return (b1-b0) * (np.sign(x-a) + 1)+b0
+
+def linear(x, a, b):
+    return a*x + b
+
+def find_step(data):
+    return np.argmax([m.fabs(data[i]-data[i+2]) for i in range(len(data)-2)])
+    
+def is_np(data, inten_a=1e-04, inten_b=5e-4, show=False):
+
+    xdata=np.arange(len(data))
+    popt_guess, pcov_guess = curve_fit(step, xdata, data, p0=[find_step(data),0, -5e-04], epsfcn=0.1)
+    
+    popt_fixed, pcov_fixed = curve_fit(step, xdata, data, p0=[int(len(data)/2),0, -5e-04], epsfcn=0.1)
+
+    squares_guess=sum([(step(i, *popt_guess)-data[i])**2 for i in xdata])
+    squares_fixed=sum([(step(i, *popt_fixed)-data[i])**2 for i in xdata]) 
+    
+
+    if squares_guess<squares_fixed:
+        popt, pcov=popt_guess, pcov_guess
+        squares=squares_guess
+    else:
+        popt, pcov=popt_fixed, pcov_fixed
+        squares=squares_fixed   
+    
+    lpopt, lpcov = curve_fit(linear, xdata, data, p0=[1e-4, 0], epsfcn=0.1)
+    lsquares=sum([(linear(i, *lpopt)-data[i])**2 for i in xdata])  
     
     
-    
-#    
-#plt.close("all")
-#
-#path='particle_01.tif'
-#raw=io.imread(path)
-#
-#np_analysis(raw)
+    if show:
+#        print('a, b: {}'.format(popt))
+        #    print(pcov)
+        print('delta: {}'.format(m.fabs(popt[2]-popt[1])))
+        print('step: {}'.format(squares))
+        print('linear {}: '.format(lsquares))
+        print(2*squares<lsquares)
+#        print('variance: {}'.format(np.var(data)))
+
+        
+        fix, axes = plt.subplots()
+        axes.plot(data,'b-', label='data')
+        axes.plot(xdata, step(xdata, *popt), 'r-')  
+        axes.plot(xdata, linear(xdata, *lpopt), 'g-')  
+        
+    return (m.fabs(popt[2]-popt[1])>inten_a and 2*squares<lsquares) or (m.fabs(popt[2]-popt[1])>inten_b and squares<lsquares) #or (np.abs(data[-1])>mx)
+
 
