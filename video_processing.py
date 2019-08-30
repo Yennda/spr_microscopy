@@ -8,6 +8,7 @@ import os
 from np_analysis import np_analysis, is_np
 import tools as tl
 
+FOLDER_NAME = '/exports'
 
 class Video(object):
 
@@ -76,6 +77,7 @@ class Video(object):
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
         for i in range(1, sh[-1]):
+            print('{}/ {}'.format(i, self.video_stats[1][2]))
             out[:, :, i] = self._video[:, :, i] - self._video[:, :, i - 1]
         self._video_new = out
         self.show_original = False
@@ -86,17 +88,37 @@ class Video(object):
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
         for i in range(1, sh[-1]):
-            out[:, :, i] = self._video[:, :, i] - self._video[:, :, 10]
+            print('{}/ {}'.format(i, self.video_stats[1][2]))
+            out[:, :, i] = self._video[:, :, i] - self._video[:, :, 0]
         self._video_new = out
         self.show_original = False
         print('done')
+        
+    def change_fps(self, n):
+
+        out=np.ndarray(list(self.video.shape[0:2])+[self.video.shape[2]//n])
+        t_out=[]
+        for i in range(n,self._video.shape[-1]//n*n,n):
+            out[:,:,i//n]=np.sum(self._video[:,:,i-n: i], axis=2)/n
+            
+            t_time=0
+            t_period=0
+            for t in self.time_info[i-n: i]:
+                t_time+=t[0]
+                t_period+=t[1]
+            t_out.append([t_time, t_period])
+            
+        self._video=out
+        self.time_info=t_out
+        self.refresh()
+#        self.reference=self.loadBinStatic()
 
     def refresh(self):
         self.video_stats[1] = [self.video.shape[1], self.video.shape[0], self.video.shape[2]]
 
     def time_fouriere(self):
         middle = int(self._video.shape[2] / 2)
-        video = np.zeros(self._video.shape)
+        out = np.zeros(self._video.shape)
         for i in range(self._video.shape[0]):
             print('done {}/{}'.format(i, self._video.shape[0]))
             for j in range(self._video.shape[1]):
@@ -104,8 +126,11 @@ class Video(object):
                 fspec = np.fft.fft(signal)
                 fspec[middle - 5:middle + 5] = 0
 
-                video[i, j, :] = np.fft.ifft(fspec)
-        self._video = video
+                out[i, j, :] = np.fft.ifft(fspec)
+            if not self.show_original:
+                self._video_new = out
+            else:
+                self._video = out
 
     def fouriere(self):
         for i in range(self._video.shape[2]):
@@ -115,7 +140,10 @@ class Video(object):
             f[mask] = 0
 
             img_back = np.fft.ifft2(f)
-            self._video[:, :, i] = np.real(img_back)
+            if not self.show_original:
+                self._video_new[:, :, i] = np.real(img_back)
+            else:
+                self._video[:, :, i] = np.real(img_back)
 
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
         mask = np.zeros(self._video.shape[:2])
@@ -179,7 +207,6 @@ class Video(object):
             fig.canvas.draw()
 
         def mouse_click(event):
-            print(event.button == 1)
             if event.button == 3:
                 fig = event.canvas.figure
                 ax = fig.axes[0]
@@ -232,11 +259,12 @@ class Video(object):
                 img.set_clim(lim)
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
-                if not os.path.isdir(self.folder + '/export_img'):
-                    os.mkdir(self.folder + '/export_img')
+                if not os.path.isdir(self.folder + FOLDER_NAME):
+                    os.mkdir(self.folder + FOLDER_NAME)
 
                 # creates the name, appends the rigth numeb at the end
-                name = '{}/export_img/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder, self.file,
+
+                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
                                                                       self.time_info[ax.index][0],
                                                                       self.time_info[ax.index][1] * 100)
 
@@ -284,5 +312,6 @@ Buttons "j"/"m" serve to increasing/decreasing contrast
 Button "s" saves the current image as tiff file
 Mouse scrolling moves to neighboring frames
 Official shortcuts here https://matplotlib.org/users/navigation_toolbar.html
-Right mouse button click selects and analysis the NP image
+Right mouse button click selects and switches to analysis of chosen NP image
+Double click plots the intensity course of the pixel and decides if it includes NP
               ''')

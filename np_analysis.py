@@ -72,6 +72,7 @@ def measure(raw, coor):
     int_background = sum(abs(raw[mask_background])) / len(raw[mask_background]) * len(raw[mask_np])
     rel_background = sum(abs(raw[mask_background])) / len(raw[mask_background])
     intensity = int_np - int_background
+    max_int=np.max(np.absolute(raw[mask_np]))
     contrast = int_np / len(raw[mask_np]) / std
 
     #    fig, ax = plt.subplots()
@@ -86,7 +87,7 @@ def measure(raw, coor):
         np.average(abs(raw[list_j[2] + 1:list_j[3], list_i[2]])) / std
     ]
     print(contrast)
-    return sizes + [contrast, std, intensity, rel_background]
+    return sizes + [contrast, std, intensity, max_int, rel_background]
 
 
 def np_analysis(raw, folder='images', file='image_np'):
@@ -106,7 +107,7 @@ def np_analysis(raw, folder='images', file='image_np'):
         if ax.index == 4:
             measures = measure(raw, ax.coor)
 
-            info = 'x ={:.01f}$\mu m$\ny ={:.01f}$\mu m$\nCx={:.01f} \nCy={:.01f}\nC={:.01f}\nstd={:.04f}, \nint={:.04f}\nrelbg={:.04f}'.format(
+            info = 'x ={:.01f}$\mu m$\ny ={:.01f}$\mu m$\nCx={:.01f} \nCy={:.01f}\nC={:.01f}\nstd={:.04f}, \nint={:.04f}\nmaxint={:.04f}\nrelbg={:.04f}'.format(
                 *measures)
             ax.text(0, 12, info, fontsize=10, bbox={'facecolor': 'white', 'alpha': 1, 'pad': 1})
             ax.index = 0
@@ -147,7 +148,7 @@ def np_analysis(raw, folder='images', file='image_np'):
 
             # x, y, Cx, Cy, std, intensity
             with open(name[:-2] + 'info.txt', "a+", encoding="utf-8") as f:
-                f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\n'.format(*measures))
+                f.write('{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\t{}\n'.format(*measures))
 
             #            plt.close(2)
             plt.close(3)
