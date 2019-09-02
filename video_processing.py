@@ -101,11 +101,13 @@ class Video(object):
         for i in range(n,self._video.shape[-1]//n*n,n):
             out[:,:,i//n]=np.sum(self._video[:,:,i-n: i], axis=2)/n
             
-            t_time=0
+            t_time=self.time_info[i][0]
             t_period=0
             for t in self.time_info[i-n: i]:
-                t_time+=t[0]
+#                print(t)
+#                t_time+=t[0]
                 t_period+=t[1]
+            t_time+=t_period
             t_out.append([t_time, t_period])
             
         self._video=out

@@ -24,34 +24,32 @@ def statistics(info):
 
 plt.close("all")
 
-#main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
-#folder=main_folder+'19_08_29_L3/export_np/'
+main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
+folder=main_folder+'19_08_29_L3/export_np/'
 #
 #main_folder='C:/Users/jabuk/Documents/jaderka/ufe/results/L3/'
 #folder=main_folder
 ##file='meas_diff_04_1'
 #
-#files=[]
+files=[]
 #files=[folder+'norm_{:02.0f}_1'.format(f) for f in [i for i in range(1,15+1)]+[24, 23, 22, 25, 26]]
-##files+=[main_folder+'19_08_29_L3/export_np/'+'norm_01_1',
-##        main_folder+'19_08_29_L3/export_np/'+'norm_02_1',
-##        main_folder+'19_08_29_L3/export_np/'+'norm_03_1',
-##        main_folder+'19_08_29_L3/export_np/'+'norm_04_1',
-##        main_folder+'19_08_29_L3/export_np/'+'norm_05_1',
-##        main_folder+'19_08_29_L3/export_np/'+'norm_05_1']
-#
-#print('no\tx\ty\tcx\tcy\tC\tstd\tint\tmaxint\trelBg')
-#for file in files:
-#   info=readinfo(file)
-#   info_stat=statistics(info)
-#   print('{}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.05f}\t{:.05f}\t{:.05f}\t{:.05f}'.format(file[-4:-2], *info_stat[0]))
-#   print('n= {}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.05f}\t{:.05f}\t{:.05f}\t{:.05f}'.format(info_stat[2], *info_stat[1]))
-#   print('------------------------------------------------------------------')
-#
-#print('[')
-#for file in files:
-#   info=readinfo(file)
-#   info_stat=statistics(info)
-#   print('{},'.format(info_stat[0]))
-#   
-#print(']')
+files+=[main_folder+'19_08_29_L3/export_np/'+'norm_32_10fps',
+        main_folder+'19_08_29_L3/export_np/'+'norm_32_5fps',
+        main_folder+'19_08_29_L3/export_np/'+'norm_32_2fps',
+        main_folder+'19_08_29_L3/export_np/'+'norm_32_1fps',]
+
+print('no\tx\ty\tcx\tcy\tC\tstd\tint\tmaxint\trelBg')
+for file in files:
+   info=readinfo(file)
+   info_stat=statistics(info)
+   print('{}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.05f}\t{:.05f}\t{:.05f}\t{:.05f}'.format(file[-4:-2], *info_stat[0]))
+   print('n= {}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.02f}\t{:.05f}\t{:.05f}\t{:.05f}\t{:.05f}'.format(info_stat[2], *info_stat[1]))
+   print('------------------------------------------------------------------')
+
+print('[')
+for file in files:
+   info=readinfo(file)
+   info_stat=statistics(info)
+   print('{},'.format(info_stat[0]))
+   
+print(']')
