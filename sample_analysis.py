@@ -17,8 +17,8 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_07_18_C5/'
 #folder=main_folder+'19_08_16_K4/'
 #folder=main_folder+'19_08_16_L3/'
-#folder=main_folder+'19_08_29_L3/'
-folder=main_folder+'19_09_02_L3/'
+folder=main_folder+'19_08_29_L3/'
+#folder=main_folder+'19_09_02_L3/'
 #folder=main_folder+'19_07_16_ultraplacad/'
 # folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/'
 
@@ -28,7 +28,7 @@ folder=main_folder+'19_09_02_L3/'
 
 #file = 'norm_11_1'
 #file = 'neref_02_1'
-file = 'raw_30_1'
+file = 'raw_24_1'
 
 
 video = Video(folder, file)
