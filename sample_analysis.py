@@ -30,7 +30,7 @@ folder=main_folder+'19_09_05_M5/'
 
 #file = 'norm_11_1'
 #file = 'neref_02_1'
-file = 'raw_14_1'
+file = 'raw_57_1'
 
 
 video = Video(folder, file)
