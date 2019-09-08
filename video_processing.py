@@ -4,6 +4,8 @@ import matplotlib.patches as mpatches
 from PIL import Image
 import cv2
 import os
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+import matplotlib.font_manager as fm
 
 from np_analysis import np_analysis, is_np
 import tools as tl
@@ -290,6 +292,10 @@ class Video(object):
             img.set_array(volume[ax.index])
             fig.canvas.draw_idle()
 
+
+        
+
+
         fig, ax = plt.subplots()
         volume = data
         ax.volume = volume
@@ -305,7 +311,18 @@ class Video(object):
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)
 
-        cb = fig.colorbar(img, ax=ax)
+        fontprops = fm.FontProperties(size=10)
+        scalebar = AnchoredSizeBar(ax.transData,
+                   34, '100 $\mu m$', 'lower right', 
+                   pad=0.1,
+                   color='black',
+                   frameon=False,
+                   size_vertical=1,
+                   fontproperties=fontprops)
+
+        ax.add_artist(scalebar)
+        
+#        cb = fig.colorbar(img, ax=ax)
         plt.tight_layout()
         plt.show()
 
