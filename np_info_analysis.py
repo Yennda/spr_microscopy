@@ -25,19 +25,21 @@ def statistics(info):
 plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
-folder=main_folder+'19_08_29_L3/export_np/'
-#
+#folder=main_folder+'19_08_29_L3/export_np/'
+#folder=main_folder+'19_09_02_L3/export_np/'
+#folder=main_folder+'19_08_16_K4/export_np/'
+folder=main_folder+'19_09_05_M5/export_np/'
 #main_folder='C:/Users/jabuk/Documents/jaderka/ufe/results/L3/'
 #folder=main_folder
 ##file='meas_diff_04_1'
 #
 if __name__ == "__main__":
     files=[]
-    #files=[folder+'norm_{:02.0f}_1'.format(f) for f in [i for i in range(1,15+1)]+[24, 23, 22, 25, 26]]
-    files+=[main_folder+'19_08_29_L3/export_np/'+'norm_32_10fps',
-            main_folder+'19_08_29_L3/export_np/'+'norm_32_5fps',
-            main_folder+'19_08_29_L3/export_np/'+'norm_32_2fps',
-            main_folder+'19_08_29_L3/export_np/'+'norm_32_1fps',]
+    files=[folder+'raw_{:02.0f}_1'.format(f) for f in   [14, 15, 16, 17]]
+#    files+=[main_folder+'19_08_29_L3/export_np/'+'norm_32_10fps',
+#            main_folder+'19_08_29_L3/export_np/'+'norm_32_5fps',
+#            main_folder+'19_08_29_L3/export_np/'+'norm_32_2fps',
+#            main_folder+'19_08_29_L3/export_np/'+'norm_32_1fps',]
     
     print('no\tx\ty\tcx\tcy\tC\tstd\tint\tmaxint\trelBg')
     for file in files:
