@@ -28,14 +28,19 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_08_29_L3/export_np/'
 #folder=main_folder+'19_09_02_L3/export_np/'
 #folder=main_folder+'19_08_16_K4/export_np/'
-folder=main_folder+'19_09_05_M5/export_np/'
+#folder=main_folder+'19_09_05_M5/export_np/'
+#folder=main_folder+'19_05_15_B3/export_np/'
+folder=main_folder+'19_09_10_K4/export_np/'
 #main_folder='C:/Users/jabuk/Documents/jaderka/ufe/results/L3/'
 #folder=main_folder
 ##file='meas_diff_04_1'
+
 #
 if __name__ == "__main__":
-    files=[]
-    files=[folder+'raw_{:02.0f}_1'.format(f) for f in   [14, 15, 16, 17]]
+    files=[folder+'raw_{:02.0f}_1'.format(f) for f in   [15]]
+#    files=[folder+'meas_raw_{:02.0f}_1'.format(f) for f in   [4]]
+    
+    
 #    files+=[main_folder+'19_08_29_L3/export_np/'+'norm_32_10fps',
 #            main_folder+'19_08_29_L3/export_np/'+'norm_32_5fps',
 #            main_folder+'19_08_29_L3/export_np/'+'norm_32_2fps',

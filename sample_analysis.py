@@ -20,18 +20,23 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_08_29_L3/'
 #folder=main_folder+'19_09_02_L3/'
 #folder=main_folder+'19_09_04_M4/'
-folder=main_folder+'19_09_05_M5/'
+#folder=main_folder+'19_09_05_M5/'
 #folder=main_folder+'19_09_06_K4/'
+folder=main_folder+'19_09_10_K4/'
+
+
+
+#folder=main_folder+'19_08_29_L3_for_SEM/'
 #folder=main_folder+'19_07_16_ultraplacad/'
 # folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/'
 
 
 #file='meas_raw_06_1'
-#file='meas_diff_05_1'
+#file='meas_raw_18f_1'
 
 #file = 'norm_05_1'
 #file = 'neref_02_1'
-file = 'raw_24_1'
+file = 'raw_29_1'
 
 
 video = Video(folder, file)
@@ -40,8 +45,8 @@ video.loadData()
 
 video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
-video._video=video._video[:,:,10:]
-#video._video=video._video[500:500+273,10:1674,25:]
+#video._video=video._video[:,:,85:]
+#video._video=video._video[500:500+273,200:1664+200,:]
 video.refresh()
 
 
