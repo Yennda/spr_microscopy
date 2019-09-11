@@ -43,15 +43,15 @@ video = Video(folder, file)
 video.loadData()
 #video.change_fps(2)
 
-video.rng = [-0.01, 0.01]
+#video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
 #video._video=video._video[:,:,85:]
 #video._video=video._video[500:500+273,200:1664+200,:]
 video.refresh()
 
 
-video.make_int()
-video.fouriere()
+#video.make_int()
+#video.fouriere()
 video.explore()
 
 #mask=video.np_pixels(inten_a=1e-03, inten_b=2e-4)
