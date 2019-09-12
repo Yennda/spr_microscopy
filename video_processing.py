@@ -25,6 +25,7 @@ class Video(object):
         self.time_info = None
         self._video_new = None
         self.show_original = True
+        self.np_number=0
 
     def __iter__(self):
         self.n = -1
@@ -101,7 +102,7 @@ class Video(object):
         out=np.ndarray(list(self.video.shape[0:2])+[self.video.shape[2]//n])
         t_out=[]
         for i in range(n,self._video.shape[-1]//n*n,n):
-            out[:,:,i//n]=np.sum(self._video[:,:,i-n: i], axis=2)/n
+            out[:,:,i//n-1]=np.sum(self._video[:,:,i-n: i], axis=2)/n
             
             t_time=self.time_info[i][0]
             t_period=0
@@ -188,6 +189,7 @@ class Video(object):
         self.np_count(self.np_pixels(), show=True)
 
     def explore(self, source='vid'):
+        
         if not self.show_original:
             data = np.swapaxes(np.swapaxes(self._video_new, 0, 2), 1, 2)
         else:
@@ -212,6 +214,8 @@ class Video(object):
 
         def mouse_click(event):
             if event.button == 3:
+                self.np_number+=1
+                print(self.np_number)
                 fig = event.canvas.figure
                 ax = fig.axes[0]
                 x = int(event.xdata)
@@ -261,6 +265,8 @@ class Video(object):
             elif event.key == 'j':
                 lim = [i / 1.2 for i in img.get_clim()]
                 img.set_clim(lim)
+            elif event.key == 'p':
+                self.np_number=0
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
                 if not os.path.isdir(self.folder + FOLDER_NAME):
@@ -299,7 +305,7 @@ class Video(object):
         fig, ax = plt.subplots()
         volume = data
         ax.volume = volume
-        ax.index = 1
+        ax.index = 0
         ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, volume.shape[0], self.time_info[ax.index][0],
                                                               self.time_info[ax.index][1]))
 
