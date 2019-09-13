@@ -328,7 +328,7 @@ class Video(object):
 
         ax.add_artist(scalebar)
         
-#        cb = fig.colorbar(img, ax=ax)
+        cb = fig.colorbar(img, ax=ax)
         plt.tight_layout()
         plt.show()
 
