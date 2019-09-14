@@ -29,7 +29,7 @@ folder=main_folder+'19_09_13_L3_iv_SEM/'
 
 #folder=main_folder+'19_08_29_L3_for_SEM/'
 #folder=main_folder+'19_07_16_ultraplacad/'
-# folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/'
+folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/M5_02/'
 
 
 #file='meas_raw_06_1'
@@ -37,12 +37,12 @@ folder=main_folder+'19_09_13_L3_iv_SEM/'
 
 #file = 'norm_05_1'
 #file = 'neref_02_1'
-file = 'raw_03_1'
+file = 'raw_10_1'
 
 
 video = Video(folder, file)
 video.loadData()
-video.change_fps(2)
+#video.change_fps(2)
 
 video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
