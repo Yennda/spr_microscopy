@@ -24,12 +24,12 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_09_05_M5/'
 #folder=main_folder+'19_09_06_K4/'
 folder=main_folder+'19_09_10_K4/'
-folder=main_folder+'19_09_11_L3_II_SEM/'
-folder=main_folder+'19_09_13_L3_iv_SEM/'
+#folder=main_folder+'19_09_11_L3_II_SEM/'
+#folder=main_folder+'19_09_13_L3_iv_SEM/'
 
 #folder=main_folder+'19_08_29_L3_for_SEM/'
 #folder=main_folder+'19_07_16_ultraplacad/'
-folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/M5_02/'
+#folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/M5_02/'
 
 
 #file='meas_raw_06_1'
@@ -37,7 +37,7 @@ folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/M5_02/'
 
 #file = 'norm_05_1'
 #file = 'neref_02_1'
-file = 'raw_10_1'
+file = 'raw_01_1'
 
 
 video = Video(folder, file)
