@@ -37,12 +37,12 @@ folder=main_folder+'19_09_10_K4/'
 
 #file = 'norm_05_1'
 #file = 'neref_02_1'
-file = 'raw_01_1'
+file = 'raw_23_1'
 
 
 video = Video(folder, file)
 video.loadData()
-#video.change_fps(2)
+video.change_fps(4♦)
 
 video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
