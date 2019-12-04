@@ -32,10 +32,7 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder=main_folder+'2019_11_29_L3_first_experiment/'
 
 
-
-#folder=main_folder+'19_08_29_L3_for_SEM/'
-#folder=main_folder+'19_07_16_ultraplacad/'
-#folder = 'C:/Users/jabuk/Documents/jaderka/ufe/data/M5_02/'
+folder='C:/SPRUP_data_Jenda/camera_test/'
 
 
 #file='meas_raw_06_1'
@@ -43,7 +40,7 @@ folder=main_folder+'2019_11_29_L3_first_experiment/'
 
 #file = 'norm_05_1'
 #file = 'neref_02_1'
-file = 'raw_01_2'
+file = 'raw_04_2'
 
 
 video = Video(folder, file)
@@ -53,7 +50,7 @@ video.change_fps(2)
 video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
 #video._video=video._video[:,420:900,:]
-video._video=video._video[:,:,100:]
+#video._video=video._video[:,:,100:]
 #video._video=video._video[500:500+273,200:1664+200,:]
 video.refresh()
 
