@@ -45,7 +45,7 @@ file = 'raw_04_2'
 
 video = Video(folder, file)
 video.loadData()
-video.change_fps(2)
+#video.change_fps(2)
 
 video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]

@@ -15,7 +15,7 @@ file = 'raw_04_2'
 
 video = BioVideo(folder, file)
 video.loadData()
-video.change_fps(2)
+#video.change_fps(2)
 
 video.rng = [-0.01, 0.01]
 

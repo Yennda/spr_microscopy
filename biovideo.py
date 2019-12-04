@@ -18,6 +18,10 @@ class BioVideo(Video):
         super().__init__(folder, file)
         self._channels=2
         
+    def loadData(self):
+        self.video_stats = self.loadBinVideoStats()
+        self._video = self.loadBinVideo()
+        
     def explore(self, source='vid'):
         
         if not self.show_original:
@@ -68,12 +72,15 @@ class BioVideo(Video):
 
         # Next slice func.
         def next_slice(axes, i):
-            volume = [axes[i].volume for i in range(self._channels)]
+            volume_list = [axes[ii].volume for ii in range(self._channels)]
             
             for j in range(self._channels):
-                axes[j].index = (axes[j].index + i) % volume[j].shape[0]
-                img.set_array(volume[j][axes[j].index])
+                print(j)
+                print(axes[j].index)
+                axes[j].index = (axes[j].index + i) % volume_list[j].shape[0]
+                img[j].set_array(volume_list[j][axes[j].index])
                 axes[j].set_title(frame_info(axes[j].index))
+
 
         def button_press(event):
             fig = event.canvas.figure
@@ -136,6 +143,8 @@ class BioVideo(Video):
         fig, axes = plt.subplots(nrows=2, ncols=1)
         volume = data
         
+        img=[]
+        
         for i in range(self._channels):
             axes[i].volume = volume
             axes[i].index = 0
@@ -143,12 +152,10 @@ class BioVideo(Video):
                                                                   self.time_info[axes[i].index][1]))
     
             if source == 'diff' or source == 'vid':
-                img = axes[i].imshow(volume[axes[i].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+                img.append(axes[i].imshow(volume[axes[i].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
             else:
-                img = axes[i].imshow(volume[axes[i].index], cmap='gray')
-            fig.canvas.mpl_connect('scroll_event', mouse_scroll)
-            fig.canvas.mpl_connect('button_press_event', mouse_click)
-            fig.canvas.mpl_connect('key_press_event', button_press)
+                img.append(axes[i].imshow(volume[axes[i].index], cmap='gray'))
+
     
             fontprops = fm.FontProperties(size=10)
             scalebar = AnchoredSizeBar(axes[i].transData,
@@ -160,7 +167,9 @@ class BioVideo(Video):
                        fontproperties=fontprops)
     
             axes[i].add_artist(scalebar)
-        
+        fig.canvas.mpl_connect('scroll_event', mouse_scroll)
+        fig.canvas.mpl_connect('button_press_event', mouse_click)
+        fig.canvas.mpl_connect('key_press_event', button_press)       
 #        cb = fig.colorbar(img, ax=ax)
         plt.tight_layout()
         plt.show()
