@@ -15,6 +15,10 @@ file = 'raw_01'
 
 video = BioVideo(folder, file, 2)
 video.loadData()
+#video.ref_frame=-1
+video.makeint()
+
+
 
 video.spr=True
 video.explore()

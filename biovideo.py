@@ -7,6 +7,7 @@ import cv2
 import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
+from matplotlib.backend_bases import LocationEvent
 
 from np_analysis import np_analysis, is_np
 import tools as tl
@@ -37,15 +38,18 @@ class BioVideo():
         self.spr_time = None
         self.spr_signals = None
         self.syn_index = None
+        self.ref_frame = 0
         
     def loadData(self):
         self._videos = []
+        print('Don\'t forget to run a method "make_int" or "make_diff". ')
         for c in self._channels:
             video = Video(self.folder, self.file+'_{}'.format(c+1))
             video.loadData()
             video.rng = [-0.01, 0.01]
             video.refresh()
-            video.make_int()
+#            video.make_int()
+
             self._videos.append(video)
             
         self.time_info=self._videos[0].time_info
@@ -74,7 +78,17 @@ class BioVideo():
             if c == 0:
                 self.spr_time = time
             self.spr_signals.append(signal)
-                
+            
+    def makediff(self):
+        for video in self._videos:
+            video.make_diff()
+            video.refresh()
+    def makeint(self):
+        for video in self._videos:
+            video.ref_frame = self.ref_frame
+            video.make_int()
+            video.refresh()           
+            
     def synchronization(self):
         
         f= open(self.folder+NAME_LOCAL_SPR+self.file[3:]+'_{}.tsv'.format(self._channels[0]+1), 'r')
@@ -85,7 +99,6 @@ class BioVideo():
             signal.append(float(line.split('\t')[1])) 
                 
         for i in range(len(self.spr_time)):
-            print(i)
             if self.spr_signals[0][i:i+2]==signal:
                 self.syn_index = i
                 break
@@ -111,6 +124,7 @@ class BioVideo():
             fig.canvas.draw()
 
         def mouse_click(event):
+            pass
             if event.button == 3:
                 self.np_number+=1
                 print(self.np_number)
@@ -143,59 +157,60 @@ class BioVideo():
                 img[c].set_array(volume_list[c][axes[c].index])
             fig.suptitle(frame_info(c, axes[c].index))
             location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
-
+                
         def button_press(event):
             fig = event.canvas.figure
-            if event.key == 'right':
+            if event.key == '6':
                 fig = event.canvas.figure
                 next_slice(10)
                 fig.canvas.draw()
-            elif event.key == 'left':
+            elif event.key == '4':
                 fig = event.canvas.figure
                 next_slice(-10)
                 fig.canvas.draw()
-            elif event.key == 'x':
-                [p.remove() for p in reversed(axes[1].patches)]
-            elif event.key == 'm':
+#            elif event.key == 'x':
+#                [p.remove() for p in reversed(axes[1].patches)]
+            elif event.key == '5':
                 self.rng = [i * 1.2 for i in self.rng]
                 for im in img:
                     im.set_clim(self.rng)
-            elif event.key == 'j':
+            elif event.key == '8':
                 self.rng = [i / 1.2 for i in self.rng]
                 for im in img:
                     im.set_clim(self.rng)
 #            elif event.key == 'p':
 #                self.np_number=0
-            elif event.key == 'a':
-                # checks and eventually creates the folder 'export_image' in the folder of data
-                if not os.path.isdir(self.folder + FOLDER_NAME):
-                    os.mkdir(self.folder + FOLDER_NAME)
-
-                # creates the name, appends the rigth numeb at the end
-
-                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
-                                                                      self.time_info[axes[1].index][0],
-                                                                      self.time_info[axes[1].index][1] * 100)
-
-                i = 1
-                while os.path.isfile(name + '_{:02d}.png'.format(i)):
-                    i += 1
-                name += '_{:02d}'.format(i)
-
-                # saves the png file of the view
-
-                fig.savefig(name + '.png', dpi=300)
-
-                xlim = [int(i) for i in axes[1].get_xlim()]
-                ylim = [int(i) for i in axes[1].get_ylim()]
-
-                # saves the exact nad precise tiff file
-                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-                pilimage.save(name + '.tiff')
-                print('File SAVED @{}'.format(name))
-
-#            img.set_array(volume[axes[1].index])
+#            elif event.key == 'a':
+#                # checks and eventually creates the folder 'export_image' in the folder of data
+#                if not os.path.isdir(self.folder + FOLDER_NAME):
+#                    os.mkdir(self.folder + FOLDER_NAME)
+#
+#                # creates the name, appends the rigth numeb at the end
+#
+#                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+#                                                                      self.time_info[axes[1].index][0],
+#                                                                      self.time_info[axes[1].index][1] * 100)
+#
+#                i = 1
+#                while os.path.isfile(name + '_{:02d}.png'.format(i)):
+#                    i += 1
+#                name += '_{:02d}'.format(i)
+#
+#                # saves the png file of the view
+#
+#                fig.savefig(name + '.png', dpi=300)
+#
+#                xlim = [int(i) for i in axes[1].get_xlim()]
+#                ylim = [int(i) for i in axes[1].get_ylim()]
+#
+#                # saves the exact nad precise tiff file
+#                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
+#                pilimage.save(name + '.tiff')
+#                print('File SAVED @{}'.format(name))
+#
+##            img.set_array(volume[axes[1].index])
             fig.canvas.draw_idle()
+
 
 
         
@@ -210,7 +225,6 @@ class BioVideo():
             spr_plot = axes_all[0]
             axes = axes_all[1:]
             
-            print(dir(spr_plot))
             spr_plot.grid(linestyle='--')
             spr_plot.set_title('SPR signal')
             spr_plot.set_xlabel('time [min]')
@@ -233,8 +247,8 @@ class BioVideo():
         for c in self._channels:
             axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_new, 0, 2), 1, 2)
             axes[c].index = 0
-#            axes[c].set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(axes[c].index, axes[c].volume.shape[0], self.time_info[axes[c].index][0],
-#                                                                  self.time_info[axes[c].index][1]))
+            axes[c].set_ylabel('channel {}.'.format(c+1))    
+#            axes[c].spines[].set_color(COLORS[c])
     
             if source == 'diff' or source == 'vid':
                 img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
@@ -257,8 +271,7 @@ class BioVideo():
         fig.canvas.mpl_connect('key_press_event', button_press)    
         
         fig.suptitle(frame_info(c, axes[c].index))
-#        fig.suptitle('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(axes[c].index, axes[c].volume.shape[0], self.time_info[axes[c].index][0],
-#                                                                  self.time_info[axes[c].index][1]))
+
         fig.colorbar(img[0], ax=axes.ravel().tolist())
         
         
@@ -266,10 +279,16 @@ class BioVideo():
         plt.show()
 
         print('''
-Buttons "j"/"m" serve to increasing/decreasing contrast 
-Button "s" saves the current image as tiff file
-Mouse scrolling moves to neighboring frames
-Official shortcuts here https://matplotlib.org/users/navigation_toolbar.html
-Right mouse button click selects and switches to analysis of chosen NP image
-Double click plots the intensity course of the pixel and decides if it includes NP
+-------------------------------------------------------------------------------
+Basic shortcuts 
+
+"8"/"5" increases/decreases contrast
+Mouse scrolling moves the time 
+"4" and "6" jumps 10frames in time
+"f" fulscreen
+"o" zooms chosen area
+"s" saves the figure
+
+Official MATPLOTLIB shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+-------------------------------------------------------------------------------
               ''')
