@@ -156,7 +156,9 @@ class BioVideo():
                 axes[c].index = (axes[c].index + i) % volume_list[c].shape[0]
                 img[c].set_array(volume_list[c][axes[c].index])
             fig.suptitle(frame_info(c, axes[c].index))
-            location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
+            
+            if self.spr:
+                location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
                 
         def button_press(event):
             fig = event.canvas.figure
