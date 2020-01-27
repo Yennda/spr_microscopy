@@ -8,6 +8,7 @@ import cv2
 plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
+main_folder='C:/SPRUP_data_Jenda/2020_01_23_Jenda_prism_based_SPRM/'
 # main_folder='C:/SPRUP_data_Jenda/2017_08_09_supercont_NP_imaging/'
 # folder=main_folder
 #folder=main_folder+'19_04_11_C5/'  #low noise
@@ -22,25 +23,38 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_09_02_L3/'
 #folder=main_folder+'19_09_04_M4/'
 #folder=main_folder+'19_09_05_M5/'
-#folder=main_folder+'19_09_06_K4/'
+folder=main_folder+'19_09_06_K4/'
 #folder=main_folder+'19_09_10_K4/'
 #folder=main_folder+'19_09_11_L3_II_SEM/'
 #folder=main_folder+'19_09_13_L3_iv_SEM/'
 #folder=main_folder+'19_09_13_M5/'
 #folder=main_folder+'19_10_30_L3/'
 #folder=main_folder+'19_10_30_K4/'
-folder=main_folder+'2019_11_29_L3_first_experiment/'
+#folder=main_folder+'2019_11_29_L3_first_experiment/'
 
 
-folder='C:/SPRUP_data_Jenda/camera_test/'
+#folder='C:/SPRUP_data_Jenda/camera_test/'
 
 
-#file='meas_raw_06_1'
-#file='meas_raw_06_1'
+folder=main_folder+'19_09_02_L3/'
+#file = 'raw_16_1'
+#file = 'raw_19_1'
+#file = 'raw_26_1'
 
-#file = 'norm_05_1'
-#file = 'neref_02_1'
-file = 'raw_04_2'
+folder=main_folder+'19_09_06_K4/'
+#file = 'raw_07_1'
+#file = 'raw_18_1'
+#file = 'raw_27_1'
+#file = 'raw_33_1'
+folder=main_folder+'19_09_13_M5/'
+file = 'raw_14_1'
+
+
+
+folder=main_folder+'200123_exp_01/'
+
+file = 'raw_11_1'
+
 
 
 video = Video(folder, file)

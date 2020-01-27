@@ -182,35 +182,35 @@ class BioVideo():
                     im.set_clim(self.rng)
 #            elif event.key == 'p':
 #                self.np_number=0
-#            elif event.key == 'a':
-#                # checks and eventually creates the folder 'export_image' in the folder of data
-#                if not os.path.isdir(self.folder + FOLDER_NAME):
-#                    os.mkdir(self.folder + FOLDER_NAME)
-#
-#                # creates the name, appends the rigth numeb at the end
-#
-#                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
-#                                                                      self.time_info[axes[1].index][0],
-#                                                                      self.time_info[axes[1].index][1] * 100)
-#
-#                i = 1
-#                while os.path.isfile(name + '_{:02d}.png'.format(i)):
-#                    i += 1
-#                name += '_{:02d}'.format(i)
-#
-#                # saves the png file of the view
-#
-#                fig.savefig(name + '.png', dpi=300)
-#
-#                xlim = [int(i) for i in axes[1].get_xlim()]
-#                ylim = [int(i) for i in axes[1].get_ylim()]
-#
+            elif event.key == 'a':
+                # checks and eventually creates the folder 'export_image' in the folder of data
+                if not os.path.isdir(self.folder + FOLDER_NAME):
+                    os.mkdir(self.folder + FOLDER_NAME)
+
+                # creates the name, appends the rigth numeb at the end
+
+                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+                                                                      self.time_info[axes[1].index][0],
+                                                                      self.time_info[axes[1].index][1] * 100)
+
+                i = 1
+                while os.path.isfile(name + '_{:02d}.png'.format(i)):
+                    i += 1
+                name += '_{:02d}'.format(i)
+
+                # saves the png file of the view
+
+                fig.savefig(name + '.png', dpi=300)
+
+                xlim = [int(i) for i in axes[1].get_xlim()]
+                ylim = [int(i) for i in axes[1].get_ylim()]
+
 #                # saves the exact nad precise tiff file
 #                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
 #                pilimage.save(name + '.tiff')
 #                print('File SAVED @{}'.format(name))
-#
-##            img.set_array(volume[axes[1].index])
+
+#            img.set_array(volume[axes[1].index])
             fig.canvas.draw_idle()
 
 
@@ -286,11 +286,11 @@ Basic shortcuts
 
 "8"/"5" increases/decreases contrast
 Mouse scrolling moves the time 
-"4" and "6" jumps 10frames in time
+"4" and "6" jumps 10 frames in time
 "f" fulscreen
 "o" zooms chosen area
 "s" saves the figure
 
-Official MATPLOTLIB shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
 -------------------------------------------------------------------------------
               ''')
