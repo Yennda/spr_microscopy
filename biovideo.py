@@ -7,33 +7,110 @@ import cv2
 import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
+from matplotlib.backend_bases import LocationEvent
 
 from np_analysis import np_analysis, is_np
 import tools as tl
 
 FOLDER_NAME = '/exports'
+NAME_LOCAL_SPR = 'spr'
+NAME_GLOBAL_SPR = 'spr_integral'
 
-class BioVideo(Video):
-    def __init__(self, folder, file):
-        super().__init__(folder, file)
-        self._channels=2
+
+yellow='#ffb200'
+red='#DD5544'
+blue='#0284C0'
+black='#000000'
+
+COLORS=[yellow, blue, red, black]
+
+
+class BioVideo():
+    def __init__(self, folder, file, channels):
+        self.folder = folder
+        self.file = file
+        self._channels = [c for c in range(channels)]
+        self._videos = None
+        self.time_info = None
+        self.rng = None
+        
+        self.spr = False
+        self.spr_time = None
+        self.spr_signals = None
+        self.syn_index = None
+        self.ref_frame = 0
         
     def loadData(self):
-        self.video_stats = self.loadBinVideoStats()
-        self._video = self.loadBinVideo()
-        
-    def explore(self, source='vid'):
-        
-        if not self.show_original:
-            data = np.swapaxes(np.swapaxes(self._video_new, 0, 2), 1, 2)
-        else:
-            data = np.swapaxes(np.swapaxes(self.video, 0, 2), 1, 2)
+        self._videos = []
+        print('Don\'t forget to run a method "make_int" or "make_diff". ')
+        for c in self._channels:
+            video = Video(self.folder, self.file+'_{}'.format(c+1))
+            video.loadData()
+            video.rng = [-0.01, 0.01]
+            video.refresh()
+#            video.make_int()
 
-        def frame_info(i):
-            return '{}/{}  t= {} s dt= {:.2f} s'.format(
+            self._videos.append(video)
+            
+        self.time_info=self._videos[0].time_info
+        self.rng=self._videos[0].rng
+        
+        self.loadSPR()
+        self.synchronization()
+        
+    def loadSPR(self):
+        self.spr_signals=[]
+        
+        for c in self._channels:
+            f= open(self.folder+NAME_GLOBAL_SPR+'_{}.tsv'.format(c+1), 'r')
+            contents=f.readlines()
+        
+            time=[]
+            signal=[]
+    
+            for line in contents[:-1]:
+                line_split=line.split('\t')
+                
+                if c == 0:
+                    time.append(float(line_split[0]))
+                signal.append(float(line_split[1])) 
+                
+            if c == 0:
+                self.spr_time = time
+            self.spr_signals.append(signal)
+            
+    def makediff(self):
+        for video in self._videos:
+            video.make_diff()
+            video.refresh()
+    def makeint(self):
+        for video in self._videos:
+            video.ref_frame = self.ref_frame
+            video.make_int()
+            video.refresh()           
+            
+    def synchronization(self):
+        
+        f= open(self.folder+NAME_LOCAL_SPR+self.file[3:]+'_{}.tsv'.format(self._channels[0]+1), 'r')
+        contents=f.readlines()
+        
+        signal=[]
+        for line in contents[:2]:
+            signal.append(float(line.split('\t')[1])) 
+                
+        for i in range(len(self.spr_time)):
+            if self.spr_signals[0][i:i+2]==signal:
+                self.syn_index = i
+                break
+            elif i==len(self.spr_time)-2:
+                raise Exception('Could not match global and local SPR signals.')
+
+    def explore(self, source='vid'):
+        def frame_info(c, i):
+            return '{}/{}  t= {:.1f} s dt= {:.2f} s'.format(
                 i,
-                volume.shape[0],
-                tl.SecToMin(self.time_info[i][0]),
+                axes[c].volume.shape[0],
+                self.spr_time[self.syn_index+i],
                 self.time_info[i][1]
             )
 
@@ -41,12 +118,13 @@ class BioVideo(Video):
             fig = event.canvas.figure
             axes = fig.axes
             if event.button == 'down':
-                next_slice(axes, 1)
+                next_slice(1)
             elif event.button == 'up':
-                next_slice(axes, -1)
+                next_slice(-1)
             fig.canvas.draw()
 
         def mouse_click(event):
+            pass
             if event.button == 3:
                 self.np_number+=1
                 print(self.np_number)
@@ -71,41 +149,39 @@ class BioVideo(Video):
                 print(is_np(self._video[y, x, :], show=True))
 
         # Next slice func.
-        def next_slice(axes, i):
-            volume_list = [axes[ii].volume for ii in range(self._channels)]
+        def next_slice(i):
+            volume_list = [axes[c].volume for c in self._channels]
             
-            for j in range(self._channels):
-                print(j)
-                print(axes[j].index)
-                axes[j].index = (axes[j].index + i) % volume_list[j].shape[0]
-                img[j].set_array(volume_list[j][axes[j].index])
-                axes[j].set_title(frame_info(axes[j].index))
-
-
+            for c in self._channels:
+                axes[c].index = (axes[c].index + i) % volume_list[c].shape[0]
+                img[c].set_array(volume_list[c][axes[c].index])
+            fig.suptitle(frame_info(c, axes[c].index))
+            
+            if self.spr:
+                location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
+                
         def button_press(event):
             fig = event.canvas.figure
-            ax = fig.axes[0]
-            volume = data
-            if event.key == 'right':
+            if event.key == '6':
                 fig = event.canvas.figure
-                ax = fig.axes[0]
-                next_slice(ax, 10)
+                next_slice(10)
                 fig.canvas.draw()
-            elif event.key == 'left':
+            elif event.key == '4':
                 fig = event.canvas.figure
-                ax = fig.axes[0]
-                next_slice(ax, -10)
+                next_slice(-10)
                 fig.canvas.draw()
-            elif event.key == 'x':
-                [p.remove() for p in reversed(axes[1].patches)]
-            elif event.key == 'm':
-                lim = [i * 1.2 for i in img.get_clim()]
-                img.set_clim(lim)
-            elif event.key == 'j':
-                lim = [i / 1.2 for i in img.get_clim()]
-                img.set_clim(lim)
-            elif event.key == 'p':
-                self.np_number=0
+#            elif event.key == 'x':
+#                [p.remove() for p in reversed(axes[1].patches)]
+            elif event.key == '5':
+                self.rng = [i * 1.2 for i in self.rng]
+                for im in img:
+                    im.set_clim(self.rng)
+            elif event.key == '8':
+                self.rng = [i / 1.2 for i in self.rng]
+                for im in img:
+                    im.set_clim(self.rng)
+#            elif event.key == 'p':
+#                self.np_number=0
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
                 if not os.path.isdir(self.folder + FOLDER_NAME):
@@ -129,36 +205,61 @@ class BioVideo(Video):
                 xlim = [int(i) for i in axes[1].get_xlim()]
                 ylim = [int(i) for i in axes[1].get_ylim()]
 
-                # saves the exact nad precise tiff file
-                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-                pilimage.save(name + '.tiff')
-                print('File SAVED @{}'.format(name))
+#                # saves the exact nad precise tiff file
+#                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
+#                pilimage.save(name + '.tiff')
+#                print('File SAVED @{}'.format(name))
 
-            img.set_array(volume[axes[1].index])
+#            img.set_array(volume[axes[1].index])
             fig.canvas.draw_idle()
 
 
+
         
 
-        fig, axes = plt.subplots(nrows=2, ncols=1)
-        volume = data
+        
+        
+        if not self.spr:
+            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
+            
+        else:
+            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
+            spr_plot = axes_all[0]
+            axes = axes_all[1:]
+            
+            spr_plot.grid(linestyle='--')
+            spr_plot.set_title('SPR signal')
+            spr_plot.set_xlabel('time [min]')
+            spr_plot.set_ylabel('intensity [a. u.]')
+            
+            for c in self._channels:            
+                spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
+                
+            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)       
+
+            
+            spr_plot.add_patch(location)
+
+            spr_plot.legend(loc=3)
+        
+        
         
         img=[]
         
-        for i in range(self._channels):
-            axes[i].volume = volume
-            axes[i].index = 0
-            axes[i].set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(axes[i].index, volume.shape[0], self.time_info[axes[i].index][0],
-                                                                  self.time_info[axes[i].index][1]))
+        for c in self._channels:
+            axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_new, 0, 2), 1, 2)
+            axes[c].index = 0
+            axes[c].set_ylabel('channel {}.'.format(c+1))    
+#            axes[c].spines[].set_color(COLORS[c])
     
             if source == 'diff' or source == 'vid':
-                img.append(axes[i].imshow(volume[axes[i].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
+                img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
             else:
-                img.append(axes[i].imshow(volume[axes[i].index], cmap='gray'))
+                img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray'))
 
     
             fontprops = fm.FontProperties(size=10)
-            scalebar = AnchoredSizeBar(axes[i].transData,
+            scalebar = AnchoredSizeBar(axes[c].transData,
                        34, '100 $\mu m$', 'lower right', 
                        pad=0.1,
                        color='black',
@@ -166,19 +267,30 @@ class BioVideo(Video):
                        size_vertical=1,
                        fontproperties=fontprops)
     
-            axes[i].add_artist(scalebar)
+            axes[c].add_artist(scalebar)
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
-        fig.canvas.mpl_connect('key_press_event', button_press)       
-#        cb = fig.colorbar(img, ax=ax)
-        plt.tight_layout()
+        fig.canvas.mpl_connect('key_press_event', button_press)    
+        
+        fig.suptitle(frame_info(c, axes[c].index))
+
+        fig.colorbar(img[0], ax=axes.ravel().tolist())
+        
+        
+#        plt.tight_layout()
         plt.show()
 
         print('''
-Buttons "j"/"m" serve to increasing/decreasing contrast 
-Button "s" saves the current image as tiff file
-Mouse scrolling moves to neighboring frames
-Official shortcuts here https://matplotlib.org/users/navigation_toolbar.html
-Right mouse button click selects and switches to analysis of chosen NP image
-Double click plots the intensity course of the pixel and decides if it includes NP
+-------------------------------------------------------------------------------
+Basic shortcuts 
+
+"8"/"5" increases/decreases contrast
+Mouse scrolling moves the time 
+"4" and "6" jumps 10 frames in time
+"f" fulscreen
+"o" zooms chosen area
+"s" saves the figure
+
+Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
+-------------------------------------------------------------------------------
               ''')

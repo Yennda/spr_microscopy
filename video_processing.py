@@ -26,6 +26,8 @@ class Video(object):
         self._video_new = None
         self.show_original = True
         self.np_number=0
+        self.ref_frame=0
+        
 
     def __iter__(self):
         self.n = -1
@@ -79,23 +81,29 @@ class Video(object):
         sh = self._video.shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
+        print('Computing the differential imageS')
+        
         for i in range(1, sh[-1]):
-            print('{}/ {}'.format(i, self.video_stats[1][2]))
+            print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video[:, :, i] - self._video[:, :, i - 1]
+            
         self._video_new = out
         self.show_original = False
-        print('done')
+        print(' DONE')
 
     def make_int(self):
         sh = self._video.shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
+        print('Referencing the data by the first frame')
+        
         for i in range(1, sh[-1]):
-            print('{}/ {}'.format(i, self.video_stats[1][2]))
-            out[:, :, i] = self._video[:, :, i] - self._video[:, :, 0]
+            print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
+            out[:, :, i] = self._video[:, :, i] - self._video[:, :, self.ref_frame]
+            
         self._video_new = out
         self.show_original = False
-        print('done')
+        print(' DONE')
         
     def change_fps(self, n):
 
