@@ -47,10 +47,28 @@ class BioVideo():
             video = Video(self.folder, self.file+'_{}'.format(c+1))
             video.loadData()
             video.rng = [-0.01, 0.01]
+            
+            video._video=video._video[:,200:1000,:]
             video.refresh()
-#            video.make_int()
-
+            video.make_int()
+            
             self._videos.append(video)
+            
+            
+            
+            # odtud je to jen bastleni kodu
+            video2 = Video(self.folder, self.file+'_{}'.format(c+1))
+            video2.loadData()
+            video2.rng = [-0.01, 0.01]
+            
+            video2._video=video2._video[:,200:1000,:]
+            video2.refresh()
+            video2.make_diff()
+            
+            self._videos.append(video2)            
+        
+        self._channels = [c for c in range(2*len(self._channels))]
+        #dotud
             
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
@@ -274,7 +292,7 @@ class BioVideo():
         
         fig.suptitle(frame_info(c, axes[c].index))
 
-        fig.colorbar(img[0], ax=axes.ravel().tolist())
+#        fig.colorbar(img[0], ax=axes.ravel().tolist())
         
         
 #        plt.tight_layout()

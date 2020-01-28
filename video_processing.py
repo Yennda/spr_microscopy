@@ -81,7 +81,7 @@ class Video(object):
         sh = self._video.shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
-        print('Computing the differential imageS')
+        print('Computing the differential image')
         
         for i in range(1, sh[-1]):
             print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
@@ -95,7 +95,7 @@ class Video(object):
         sh = self._video.shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
-        print('Referencing the data by the first frame')
+        print('Computing the integral image')
         
         for i in range(1, sh[-1]):
             print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")

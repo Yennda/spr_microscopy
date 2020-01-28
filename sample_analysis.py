@@ -63,6 +63,7 @@ video.loadData()
 
 video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
+#video._video=video._video[20:150,950:1250,:]
 #video._video=video._video[:,420:900,:]
 #video._video=video._video[:,:,100:]
 #video._video=video._video[500:500+273,200:1664+200,:]
