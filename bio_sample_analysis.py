@@ -11,7 +11,7 @@ folder=main_folder+'20_01_24_third/'
 file = 'raw_01'
 
 
-video = BioVideo(folder, file, 2)
+video = BioVideo(folder, file, 1)
 video.loadData()
 #video.ref_frame=-1
 #video.makediff()

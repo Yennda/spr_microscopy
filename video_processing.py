@@ -24,6 +24,9 @@ class Video(object):
         self.rng = [-1, 1]
         self.time_info = None
         self._video_new = None
+        self._video_diff = None
+        self._video_int = None
+        
         self.show_original = True
         self.np_number=0
         self.ref_frame=0
@@ -77,7 +80,7 @@ class Video(object):
 
         return np.swapaxes(video, 0, 1)
 
-    def make_diff(self):
+    def process_diff(self):
         sh = self._video.shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
@@ -87,11 +90,10 @@ class Video(object):
             print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video[:, :, i] - self._video[:, :, i - 1]
             
-        self._video_new = out
-        self.show_original = False
         print(' DONE')
-
-    def make_int(self):
+        return out
+    
+    def process_int(self):
         sh = self._video.shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
@@ -101,9 +103,16 @@ class Video(object):
             print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video[:, :, i] - self._video[:, :, self.ref_frame]
             
-        self._video_new = out
-        self.show_original = False
         print(' DONE')
+        return out
+        
+    def make_diff(self):
+        self._video_new = self.process_diff()
+        self.show_original = False
+
+    def make_int(self):
+        self._video_new = self.process_int()
+        self.show_original = False
         
     def change_fps(self, n):
 

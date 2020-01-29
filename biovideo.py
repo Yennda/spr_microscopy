@@ -3,7 +3,6 @@ from video_processing import Video
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from PIL import Image
-import cv2
 import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
@@ -48,7 +47,7 @@ class BioVideo():
             video.loadData()
             video.rng = [-0.01, 0.01]
             
-            video._video=video._video[:,200:1000,:]
+            video._video=video._video[:,200:1000,:2]
             video.refresh()
             video.make_int()
             
@@ -57,17 +56,17 @@ class BioVideo():
             
             
             # odtud je to jen bastleni kodu
-            video2 = Video(self.folder, self.file+'_{}'.format(c+1))
-            video2.loadData()
-            video2.rng = [-0.01, 0.01]
+           # video2 = Video(self.folder, self.file+'_{}'.format(c+1))
+            #video2.loadData()
+            #video2.rng = [-0.01, 0.01]
             
-            video2._video=video2._video[:,200:1000,:]
-            video2.refresh()
-            video2.make_diff()
+           # video2._video=video2._video[:,200:1000,:]
+            #video2.refresh()
+           # video2.make_diff()
             
-            self._videos.append(video2)            
+            #self._videos.append(video2)            
         
-        self._channels = [c for c in range(2*len(self._channels))]
+        #self._channels = [c for c in range(2*len(self._channels))]
         #dotud
             
         self.time_info=self._videos[0].time_info
@@ -123,7 +122,7 @@ class BioVideo():
             elif i==len(self.spr_time)-2:
                 raise Exception('Could not match global and local SPR signals.')
 
-    def explore(self, source='vid'):
+    def explore(self, show='all'):
         def frame_info(c, i):
             return '{}/{}  t= {:.1f} s dt= {:.2f} s'.format(
                 i,
@@ -269,11 +268,9 @@ class BioVideo():
             axes[c].index = 0
             axes[c].set_ylabel('channel {}.'.format(c+1))    
 #            axes[c].spines[].set_color(COLORS[c])
-    
-            if source == 'diff' or source == 'vid':
-                img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
-            else:
-                img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray'))
+
+            img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
+
 
     
             fontprops = fm.FontProperties(size=10)
