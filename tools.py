@@ -1,5 +1,6 @@
 import os
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 def new_export(folder, name):
     path = folder + name

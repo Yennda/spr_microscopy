@@ -13,13 +13,13 @@ folder=main_folder+'19_12_04_second_poc/'
 file = 'raw_01'
 file = 'raw_03'
 
-video = BioVideo(folder, file, 4)
-#video._channels=[0]
+video = BioVideo(folder, file, 1)
+video._channels=[0]
 video.loadData()
 #video.ref_frame=-1
 #video.make_toggle()
-#video.make_diff()
-video.make_both()
+video.make_diff()
+#video.make_both()
 
 #video.ref_frame = 0
 

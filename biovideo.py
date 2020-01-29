@@ -7,9 +7,9 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
 #from matplotlib.backend_bases import LocationEvent
 
-
+from PIL import Image
 from np_analysis import np_analysis, is_np
-
+from classes import Cursor
 
 FOLDER_NAME = '/exports'
 NAME_LOCAL_SPR = 'spr'
@@ -125,6 +125,16 @@ class BioVideo():
                 break
             elif i==len(self.spr_time)-2:
                 raise Exception('Could not match global and local SPR signals.')
+                
+    def save_frame(self, channel, frame):
+        pass  
+        video = self._videos[channel]
+        name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+                                                      self.video[frame][0],
+                                                      self.video[frame][1] * 100)
+        pilimage = Image.fromarray(video[:,:, frame])
+        pilimage.save(name + '.tiff')
+        print('File SAVED @{}'.format(name))
 
     def explore(self, show='all'):
         def frame_info(c, i):
@@ -180,7 +190,7 @@ class BioVideo():
             
             if self.spr:
                 location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
-                
+         
         def button_press(event):
             fig = event.canvas.figure
             if event.key == '6':
@@ -248,8 +258,9 @@ class BioVideo():
             fig.canvas.draw_idle()
 
         if not self.spr:
-            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1, figsize=(16,16))
-            
+            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
+            if self._channels == [0]:
+                axes=[axes]
         else:
             fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
             spr_plot = axes_all[0]
@@ -317,12 +328,13 @@ class BioVideo():
                    fontproperties=fontprops)
             axes[c].add_artist(scalebar)
             
-               
-            
-            
+                   
+        cursor = Cursor(axes[0])
+        
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)    
+        fig.canvas.mpl_connect('motion_notify_event', cursor.mouse_move)
         
         fig.suptitle(frame_info(c, axes[c].index))
 
