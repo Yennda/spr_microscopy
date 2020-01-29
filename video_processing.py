@@ -89,7 +89,7 @@ class Video(object):
         print('Computing the differential image')
         
         for i in range(1, sh[-1]):
-            print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
+            print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video[:, :, i] - self._video[:, :, i - 1]
             
         print(' DONE')
@@ -102,7 +102,7 @@ class Video(object):
         print('Computing the integral image')
         
         for i in range(1, sh[-1]):
-            print('\r{}/ {}'.format(i, self.video_stats[1][2]), end="")
+            print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video[:, :, i] - self._video[:, :, self.ref_frame]
             
         print(' DONE')

@@ -2,11 +2,11 @@ import numpy as np
 from video_processing import Video
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from PIL import Image
 import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
-from matplotlib.backend_bases import LocationEvent
+#from matplotlib.backend_bases import LocationEvent
+
 
 from np_analysis import np_analysis, is_np
 
@@ -97,12 +97,19 @@ class BioVideo():
 #            video.refresh()     
         self._img_type = 'int'
         
+    def make_toggle(self):
+        for video in self._videos:
+             video._video_diff = video.process_diff()
+             video._video_int = video.process_int()
+        self._img_type = 'toggle'
+            
     def make_both(self):
         for video in self._videos:
              video._video_diff = video.process_diff()
              video._video_int = video.process_int()
         self._img_type = 'both'
-            
+        self._channels = [i for i in range(len(self._channels)*2)]
+        
     def synchronization(self):
         
         f= open(self.folder+NAME_LOCAL_SPR+self.file[3:]+'_{}.tsv'.format(self._channels[0]+1), 'r')
@@ -195,6 +202,9 @@ class BioVideo():
                 for im in img:
                     im.set_clim(self.rng)
             elif event.key == 't':
+                if self._img_type != 'toggle':
+                    return
+                
                 fig = event.canvas.figure
                 for c in self._channels:
                     if axes[c].int:
@@ -237,14 +247,8 @@ class BioVideo():
 #            img.set_array(volume[axes[1].index])
             fig.canvas.draw_idle()
 
-
-
-        
-
-        
-        
         if not self.spr:
-            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
+            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1, figsize=(16,16))
             
         else:
             fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
@@ -256,7 +260,12 @@ class BioVideo():
             spr_plot.set_xlabel('time [min]')
             spr_plot.set_ylabel('intensity [a. u.]')
             
-            for c in self._channels:            
+            if self._img_type=='both':
+                channels = [i for i in range(len(self._channels)//2)]
+            else:
+                channels = self._channels
+                
+            for c in channels: 
                 spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
                 
             location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)       
@@ -269,6 +278,8 @@ class BioVideo():
         
         
         img=[]
+
+        
         
         for c in self._channels:
             
@@ -276,30 +287,39 @@ class BioVideo():
                 axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
             elif self._img_type == 'int':
                 axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)                
-            elif self._img_type == 'both':
+            elif self._img_type == 'toggle':
                 axes[c].int = True
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)     
+                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)    
+            elif self._img_type == 'both'  and c%2==0:
+                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c//2]._video_int, 0, 2), 1, 2)   
+            elif self._img_type == 'both'  and c%2==1:
+                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c//2]._video_diff, 0, 2), 1, 2) 
             else:
                 raise Exception('I don\'t have anything to show. Use "make_diff", "make_int" or "make_both" method')
                 
+                
             axes[c].index = 0
-            axes[c].set_ylabel('channel {}.'.format(c+1))    
+            if self._img_type == 'both' and c%2==0:
+                axes[c].set_ylabel('channel {}.'.format(c//2+1)) 
+            elif self._img_type == 'both' and c%2==1:
+                axes[c].set_ylabel('channel {}. \n differential'.format(c//2+1)) 
+            else:
+                axes[c].set_ylabel('channel {}.'.format(c+1))    
 #            axes[c].spines[].set_color(COLORS[c])
-
             img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
-
-
-    
             fontprops = fm.FontProperties(size=10)
             scalebar = AnchoredSizeBar(axes[c].transData,
-                       34, '100 $\mu m$', 'lower right', 
-                       pad=0.1,
-                       color='black',
-                       frameon=False,
-                       size_vertical=1,
-                       fontproperties=fontprops)
-    
+                   34, '100 $\mu m$', 'lower right', 
+                   pad=0.1,
+                   color='black',
+                   frameon=False,
+                   size_vertical=1,
+                   fontproperties=fontprops)
             axes[c].add_artist(scalebar)
+            
+               
+            
+            
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)    
@@ -309,7 +329,9 @@ class BioVideo():
 #        fig.colorbar(img[0], ax=axes.ravel().tolist())
         
         
-#        plt.tight_layout()
+        plt.tight_layout()
+        
+
         plt.show()
 
         print('''
