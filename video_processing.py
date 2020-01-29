@@ -74,6 +74,8 @@ class Video(object):
         suffix = '.bin'
         with open(self.file_name + suffix, mode='rb') as fid:
             video = np.fromfile(fid, dtype=code_format)
+            fid.close()
+            
         video = np.reshape(video, (self.video_stats[1][0],
                                    self.video_stats[1][1],
                                    self.video_stats[1][2]), order='F')

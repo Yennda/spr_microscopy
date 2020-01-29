@@ -9,7 +9,7 @@ import matplotlib.font_manager as fm
 from matplotlib.backend_bases import LocationEvent
 
 from np_analysis import np_analysis, is_np
-import tools as tl
+
 
 FOLDER_NAME = '/exports'
 NAME_LOCAL_SPR = 'spr'
@@ -33,11 +33,14 @@ class BioVideo():
         self.time_info = None
         self.rng = None
         
-        self.spr = False
+
         self.spr_time = None
         self.spr_signals = None
         self.syn_index = None
+        
+        self.spr = False
         self.ref_frame = 0
+        self._img_type = None
         
     def loadData(self):
         self._videos = []
@@ -46,29 +49,9 @@ class BioVideo():
             video = Video(self.folder, self.file+'_{}'.format(c+1))
             video.loadData()
             video.rng = [-0.01, 0.01]
-            
-            video._video=video._video[:,200:1000,:2]
-            video.refresh()
-            video.make_int()
-            
             self._videos.append(video)
             
-            
-            
-            # odtud je to jen bastleni kodu
-           # video2 = Video(self.folder, self.file+'_{}'.format(c+1))
-            #video2.loadData()
-            #video2.rng = [-0.01, 0.01]
-            
-           # video2._video=video2._video[:,200:1000,:]
-            #video2.refresh()
-           # video2.make_diff()
-            
-            #self._videos.append(video2)            
-        
-        #self._channels = [c for c in range(2*len(self._channels))]
-        #dotud
-            
+                        
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
         
@@ -96,15 +79,29 @@ class BioVideo():
                 self.spr_time = time
             self.spr_signals.append(signal)
             
-    def makediff(self):
+    def fouriere(self):
+        pass
+        
+    def make_diff(self):
         for video in self._videos:
-            video.make_diff()
-            video.refresh()
-    def makeint(self):
+            video._video_diff = video.process_diff()
+#            video.make_diff()
+#            video.refresh()
+        self._img_type = 'diff'
+            
+    def make_int(self):
         for video in self._videos:
             video.ref_frame = self.ref_frame
-            video.make_int()
-            video.refresh()           
+            video._video_int = video.process_int()
+#            video.make_int()
+#            video.refresh()     
+        self._img_type = 'int'
+        
+    def make_both(self):
+        for video in self._videos:
+             video._video_diff = video.process_diff()
+             video._video_int = video.process_int()
+        self._img_type = 'both'
             
     def synchronization(self):
         
@@ -197,8 +194,18 @@ class BioVideo():
                 self.rng = [i / 1.2 for i in self.rng]
                 for im in img:
                     im.set_clim(self.rng)
-#            elif event.key == 'p':
-#                self.np_number=0
+            elif event.key == 't':
+                fig = event.canvas.figure
+                for c in self._channels:
+                    if axes[c].int:
+                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
+                        axes[c].int = False
+                    else:
+                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)
+                        axes[c].int = True
+                next_slice(0)
+                fig.canvas.draw()
+                    
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
                 if not os.path.isdir(self.folder + FOLDER_NAME):
@@ -264,7 +271,17 @@ class BioVideo():
         img=[]
         
         for c in self._channels:
-            axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_new, 0, 2), 1, 2)
+            
+            if self._img_type == 'diff':
+                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
+            elif self._img_type == 'int':
+                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)                
+            elif self._img_type == 'both':
+                axes[c].int = True
+                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)     
+            else:
+                raise Exception('I don\'t have anything to show. Use "make_diff", "make_int" or "make_both" method')
+                
             axes[c].index = 0
             axes[c].set_ylabel('channel {}.'.format(c+1))    
 #            axes[c].spines[].set_color(COLORS[c])
@@ -305,6 +322,7 @@ Mouse scrolling moves the time
 "f" fulscreen
 "o" zooms chosen area
 "s" saves the figure
+"t" toggles differential and integral image, when the method "make_both" is used
 
 Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
 -------------------------------------------------------------------------------
