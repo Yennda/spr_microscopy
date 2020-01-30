@@ -41,6 +41,7 @@ class BioVideo():
         self.spr = False
         self.ref_frame = 0
         self._img_type = None
+        self.orientation = None #True-horizontal, False-vertical
         
     def loadData(self):
         self._videos = []
@@ -50,7 +51,7 @@ class BioVideo():
             video.loadData()
             video.rng = [-0.01, 0.01]
             self._videos.append(video)
-            
+        self.orientation = self._videos[0].video_stats[1][1] < self._videos[0].video_stats[1][0]
                         
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
@@ -84,29 +85,27 @@ class BioVideo():
         
     def make_diff(self):
         for video in self._videos:
-            video._video_diff = video.process_diff()
-#            video.make_diff()
-#            video.refresh()
+            video.make_diff()
         self._img_type = 'diff'
             
     def make_int(self):
         for video in self._videos:
-            video.ref_frame = self.ref_frame
-            video._video_int = video.process_int()
-#            video.make_int()
-#            video.refresh()     
+
+            video.make_int()
         self._img_type = 'int'
         
     def make_toggle(self):
         for video in self._videos:
-             video._video_diff = video.process_diff()
-             video._video_int = video.process_int()
+            video.make_diff()
+            video.make_int()
+            video._img_type = True
         self._img_type = 'toggle'
             
     def make_both(self):
         for video in self._videos:
-             video._video_diff = video.process_diff()
-             video._video_int = video.process_int()
+            video.make_diff()
+            video.make_int()
+            video._img_type = True
         self._img_type = 'both'
         self._channels = [i for i in range(len(self._channels)*2)]
         
@@ -138,7 +137,7 @@ class BioVideo():
 
     def explore(self, show='all'):
         def frame_info(c, i):
-            return '{}/{}  t= {:.1f} s dt= {:.2f} s'.format(
+            return '{}/{}  t= {:.1f} min dt= {:.2f} s'.format(
                 i,
                 axes[c].volume.shape[0],
                 self.spr_time[self.syn_index+i],
@@ -217,12 +216,14 @@ class BioVideo():
                 
                 fig = event.canvas.figure
                 for c in self._channels:
-                    if axes[c].int:
-                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
-                        axes[c].int = False
-                    else:
-                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)
-                        axes[c].int = True
+                    axes[c].volume = self._videos[c].video
+                    
+#                    if axes[c].int:
+#                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
+#                        axes[c].int = False
+#                    else:
+#                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)
+#                        axes[c].int = True
                 next_slice(0)
                 fig.canvas.draw()
                     
@@ -258,13 +259,13 @@ class BioVideo():
             fig.canvas.draw_idle()
 
         if not self.spr:
-#            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
-            fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
+            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
+#            fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
             if self._channels == [0]:
                 axes=[axes]
         else:
-#            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
-            fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
+            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
+#            fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
             spr_plot = axes_all[0]
             axes = axes_all[1:]
             
@@ -293,33 +294,21 @@ class BioVideo():
         img=[]
 
         
-        
+        channel_type =  ['' ,' \ndifferential']
         for c in self._channels:
-            
-            if self._img_type == 'diff':
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
-            elif self._img_type == 'int':
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)                
-            elif self._img_type == 'toggle':
-                axes[c].int = True
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)    
-            elif self._img_type == 'both'  and c%2==0:
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c//2]._video_int, 0, 2), 1, 2)   
-            elif self._img_type == 'both'  and c%2==1:
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c//2]._video_diff, 0, 2), 1, 2) 
+                
+            if self._img_type == 'both':
+                axes[c].volume = self._videos[c//2].video  
+                axes[c].set_xlabel('channel {}.{}'.format(c//2+1, channel_type[c%2])) 
+                
             else:
-                raise Exception('I don\'t have anything to show. Use "make_diff", "make_int" or "make_both" method')
-                
-                
+                axes[c].volume = self._videos[c].video
+                axes[c].set_ylabel('channel {}.'.format(c)) 
+
             axes[c].index = 0
-            if self._img_type == 'both' and c%2==0:
-                axes[c].set_ylabel('channel {}.'.format(c//2+1)) 
-            elif self._img_type == 'both' and c%2==1:
-                axes[c].set_xlabel('channel {}. \n differential'.format(c//2+1)) 
-            else:
-                axes[c].set_xlabel('channel {}.'.format(c+1))    
-#            axes[c].spines[].set_color(COLORS[c])
+
             img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
+            
             fontprops = fm.FontProperties(size=10)
             scalebar = AnchoredSizeBar(axes[c].transData,
                    34, '100 $\mu m$', 'lower right', 

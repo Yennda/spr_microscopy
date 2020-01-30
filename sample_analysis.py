@@ -29,8 +29,8 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_09_13_L3_iv_SEM/'
 #folder=main_folder+'19_09_13_M5/'
 #folder=main_folder+'19_10_30_L3/'
-#folder=main_folder+'19_10_30_K4/'
-folder=main_folder+'20_01_24_third/'
+folder=main_folder+'19_10_30_K4/'
+#folder=main_folder+'20_01_24_third/'
 
 
 #folder='C:/SPRUP_data_Jenda/camera_test/'
@@ -49,13 +49,16 @@ video.rng = [-0.01, 0.01]
 #video._video=video._video[20:150,950:1250,:]
 #video._video=video._video[20:150,950:1250,:]
 #video._video=video._video[:,420:900,:]
-video._video=video._video[:,:,-50:]
+
+#video._video['raw']=video._video['raw'][:,:,:]
+
+
 #video._video=video._video[500:500+273,200:1664+200,:]
 video.refresh()
 
 
 video.make_int()
-video.fouriere()
+#video.fouriere()
 video.explore()
 
 #mask=video.np_pixels(inten_a=1e-03, inten_b=2e-4)
