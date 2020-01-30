@@ -258,16 +258,22 @@ class BioVideo():
 #            img.set_array(volume[axes[1].index])
             fig.canvas.draw_idle()
 
-        if not self.spr:
-            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
-#            fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
-            if self._channels == [0]:
-                axes=[axes]
+        
+        if self.orientation:
+            fig, axes = plt.subplots(nrows=len(self._channels)+int(self.spr), ncols=1)
         else:
-            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
-#            fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
-            spr_plot = axes_all[0]
-            axes = axes_all[1:]
+            fig, axes = plt.subplots(ncols=len(self._channels)+int(self.spr), nrows=1)
+        
+        if self._channels == [0] and not self.spr:
+            axes=[axes]
+#        else:
+#            if self.orientation:
+#                fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
+#            else:
+#                fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
+        if self.spr:
+            spr_plot = axes[0]
+            axes = axes[1:]
             
             spr_plot.grid(linestyle='--')
             spr_plot.set_title('SPR signal')
@@ -282,28 +288,28 @@ class BioVideo():
             for c in channels: 
                 spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
                 
-            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)       
-
-            
+            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
             spr_plot.add_patch(location)
-
             spr_plot.legend(loc=3)
-        
-        
+                
         
         img=[]
 
-        
         channel_type =  ['' ,' \ndifferential']
         for c in self._channels:
                 
             if self._img_type == 'both':
-                axes[c].volume = self._videos[c//2].video  
-                axes[c].set_xlabel('channel {}.{}'.format(c//2+1, channel_type[c%2])) 
-                
+                axes[c].volume = self._videos[c//2].video
+                if self.orientation:
+                    axes[c].set_ylabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
+                else:
+                    axes[c].set_xlabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
             else:
                 axes[c].volume = self._videos[c].video
-                axes[c].set_ylabel('channel {}.'.format(c)) 
+                if self.orientation:
+                    axes[c].set_xlabel('channel {}.'.format(c))
+                else:
+                    axes[c].set_xlabel('channel {}.'.format(c)) 
 
             axes[c].index = 0
 
