@@ -19,13 +19,16 @@ class Video(object):
         self.file = file
         self.file_name = folder + file
         self.video_stats = None
+        
         self._video = None
-        self.view = None
-        self.rng = [-1, 1]
-        self.time_info = None
         self._video_new = None
         self._video_diff = None
         self._video_int = None
+        
+        self.view = None
+        self.rng = [-1, 1]
+        self.time_info = None
+
         
         self.show_original = True
         self.np_number=0
@@ -136,6 +139,9 @@ class Video(object):
         self.time_info=t_out
         self.refresh()
 #        self.reference=self.loadBinStatic()
+        
+#    def _delete_video(self):
+#        self._video.__delitem__()
 
     def refresh(self):
         self.video_stats[1] = [self.video.shape[1], self.video.shape[0], self.video.shape[2]]

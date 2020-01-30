@@ -258,11 +258,13 @@ class BioVideo():
             fig.canvas.draw_idle()
 
         if not self.spr:
-            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
+#            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
+            fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
             if self._channels == [0]:
                 axes=[axes]
         else:
-            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
+#            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
+            fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
             spr_plot = axes_all[0]
             axes = axes_all[1:]
             
@@ -313,9 +315,9 @@ class BioVideo():
             if self._img_type == 'both' and c%2==0:
                 axes[c].set_ylabel('channel {}.'.format(c//2+1)) 
             elif self._img_type == 'both' and c%2==1:
-                axes[c].set_ylabel('channel {}. \n differential'.format(c//2+1)) 
+                axes[c].set_xlabel('channel {}. \n differential'.format(c//2+1)) 
             else:
-                axes[c].set_ylabel('channel {}.'.format(c+1))    
+                axes[c].set_xlabel('channel {}.'.format(c+1))    
 #            axes[c].spines[].set_color(COLORS[c])
             img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
             fontprops = fm.FontProperties(size=10)
@@ -329,12 +331,12 @@ class BioVideo():
             axes[c].add_artist(scalebar)
             
                    
-        cursor = Cursor(axes[0])
+#        cursor = Cursor(axes[0])
         
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)    
-        fig.canvas.mpl_connect('motion_notify_event', cursor.mouse_move)
+#        fig.canvas.mpl_connect('motion_notify_event', cursor.mouse_move)
         
         fig.suptitle(frame_info(c, axes[c].index))
 
