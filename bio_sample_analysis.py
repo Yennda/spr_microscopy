@@ -24,18 +24,25 @@ video = BioVideo(folder, file, 1)
 video.loadData()
 #video.ref_frame=-1
 #video.make_toggle()
-video.make_diff()
-#video.make_int()
-#video.make_both()
+#video.make_diff()
 
+
+
+#video.make_int()
+video.make_both()
+
+
+video.fouriere()
 #video.ref_frame = 0
 
 
 
 #video._video=video._video[20:150,950:1250,:]
 
+#video.save_array_form()
 
-video.spr = False
+
+#video.spr = False
 video.explore()
 
 print('{:.2f} s'.format(t.time()-time_start))

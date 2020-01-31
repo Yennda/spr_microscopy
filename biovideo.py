@@ -8,6 +8,7 @@ import matplotlib.font_manager as fm
 #from matplotlib.backend_bases import LocationEvent
 
 from PIL import Image
+import tkinter as tk
 from np_analysis import np_analysis, is_np
 from classes import Cursor
 
@@ -40,7 +41,7 @@ class BioVideo():
         
         self.spr = False
         self.ref_frame = 0
-        self._img_type = None
+        self._img_type = 'raw'
         self.orientation = None #True-horizontal, False-vertical
         
     def loadData(self):
@@ -49,7 +50,7 @@ class BioVideo():
         for c in self._channels:
             video = Video(self.folder, self.file+'_{}'.format(c+1))
             video.loadData()
-            video.rng = [-0.01, 0.01]
+            video.rng = [0, 1]
             self._videos.append(video)
         self.orientation = self._videos[0].video_stats[1][1] < self._videos[0].video_stats[1][0]
                         
@@ -81,17 +82,20 @@ class BioVideo():
             self.spr_signals.append(signal)
             
     def fouriere(self):
-        pass
+        for video in self._videos:
+            video.fouriere()
         
     def make_diff(self):
         for video in self._videos:
             video.make_diff()
+        self.rng = [-0.01, 0.01]
         self._img_type = 'diff'
             
     def make_int(self):
         for video in self._videos:
 
             video.make_int()
+        self.rng = [-0.01, 0.01]
         self._img_type = 'int'
         
     def make_toggle(self):
@@ -99,6 +103,7 @@ class BioVideo():
             video.make_diff()
             video.make_int()
             video._img_type = True
+        self.rng = [-0.01, 0.01]
         self._img_type = 'toggle'
             
     def make_both(self):
@@ -106,8 +111,10 @@ class BioVideo():
             video.make_diff()
             video.make_int()
             video._img_type = True
+        self.rng = [-0.01, 0.01]
         self._img_type = 'both'
         self._channels = [i for i in range(len(self._channels)*2)]
+        
         
     def synchronization(self):
         
@@ -126,14 +133,56 @@ class BioVideo():
                 raise Exception('Could not match global and local SPR signals.')
                 
     def save_frame(self, channel, frame):
-        pass  
-        video = self._videos[channel]
-        name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
-                                                      self.video[frame][0],
-                                                      self.video[frame][1] * 100)
-        pilimage = Image.fromarray(video[:,:, frame])
-        pilimage.save(name + '.tiff')
+        """
+        Saves the specified frame of the specified channel as a tiff file
+        
+        Parameters:
+            channel (int): number of the channel e. g. 1, 2, ...
+            
+        Returns:
+            no return
+            
+        """
+        channel=int(channel)
+        frame=int(frame)
+        video = self._videos[channel-1].video
+        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME, self._img_type,
+                                                              video.shape[0],
+                                                              frame)
+        
+        image_bw = (video[:,:, frame]+np.ones(video.shape[:2])*self.rng[1])*256*50
+        image = Image.fromarray(image_bw)
+        image_rgb = image.convert('RGB')
+        image_rgb.save(name + '.png')
         print('File SAVED @{}'.format(name))
+        
+    def save_array(self, channel, start, end):
+        for i in range(int(start.get()), int(end.get())):
+            self.save_frame(int(channel.get()), i)
+        
+              
+    def save_array_form(self):
+        master = tk.Tk()
+        tk.Label(master, text="channel").grid(row=0)
+        tk.Label(master, text="start").grid(row=1)
+        tk.Label(master, text="end").grid(row=2)
+        
+        channel = tk.Entry(master)
+        start = tk.Entry(master)
+        end = tk.Entry(master)
+        
+        channel.grid(row=0, column=1)
+        start.grid(row=1, column=1)
+        end.grid(row=2, column=1)
+        
+        
+        tk.Button(master, 
+                    text='Save', command=(lambda start = start, end = end, channel = channel: self.save_array(channel, start, end))).grid(row=3, 
+                                                       column=1, 
+                                                       sticky=tk.W, 
+                                                       pady=4)
+        
+        master.mainloop()
 
     def explore(self, show='all'):
         def frame_info(c, i):
@@ -226,7 +275,10 @@ class BioVideo():
 #                        axes[c].int = True
                 next_slice(0)
                 fig.canvas.draw()
-                    
+                
+            elif event.key == 'd':
+                pass
+                 
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
                 if not os.path.isdir(self.folder + FOLDER_NAME):

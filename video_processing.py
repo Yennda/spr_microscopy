@@ -171,14 +171,24 @@ class Video(object):
                 self._video = out
 
     def fouriere(self):
-        for i in range(self._video[self._img_type].shape[2]):
-            f = np.fft.fft2(self.video[self._img_type][:, :, i])
-            magnitude_spectrum = 20 * np.log(np.abs(f))
-            mask = np.real(magnitude_spectrum) > 30
-            f[mask] = 0
+        print('Filtering fouriere frequencies')
+        print(self._img_type)
+        if type(self._img_type) == bool:
+            img_type = ['diff', 'raw']
+        else:
+            img_type = [self._img_type]
+            
+        for it in img_type:
+            for i in range(self._video[it].shape[2]):
 
-            img_back = np.fft.ifft2(f)
-            self._video[self._img_type][:, :, i] = np.real(img_back)
+                print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
+                f = np.fft.fft2(self._video[it][:, :, i])
+                magnitude_spectrum = 20 * np.log(np.abs(f))
+                mask = np.real(magnitude_spectrum) > 30
+                f[mask] = 0
+    
+                img_back = np.fft.ifft2(f)
+                self._video[it][:, :, i] = np.real(img_back)
 
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
         """ 
