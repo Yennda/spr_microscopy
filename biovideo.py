@@ -46,7 +46,7 @@ class BioVideo():
         
     def loadData(self):
         self._videos = []
-        print('Don\'t forget to run a method "make_int" or "make_diff". ')
+        print('Don\'t forget to run one of the "make_..." methods ')
         for c in self._channels:
             video = Video(self.folder, self.file+'_{}'.format(c+1))
             video.loadData()
@@ -251,6 +251,14 @@ class BioVideo():
                 fig.canvas.draw()
 #            elif event.key == 'x':
 #                [p.remove() for p in reversed(axes[1].patches)]
+            elif event.key == '9':
+                fig = event.canvas.figure
+                next_slice(100)
+                fig.canvas.draw()
+            elif event.key == '7':
+                fig = event.canvas.figure
+                next_slice(-100)
+                fig.canvas.draw()
             elif event.key == '5':
                 self.rng = [i * 1.2 for i in self.rng]
                 for im in img:
@@ -402,6 +410,7 @@ Basic shortcuts
 "8"/"5" increases/decreases contrast
 Mouse scrolling moves the time 
 "4" and "6" jumps 10 frames in time
+"7" and "9" jumps 100 frames in time
 "f" fulscreen
 "o" zooms chosen area
 "s" saves the figure
