@@ -375,9 +375,9 @@ class BioVideo():
             else:
                 axes[c].volume = self._videos[c].video
                 if self.orientation:
-                    axes[c].set_xlabel('channel {}.'.format(c))
+                    axes[c].set_xlabel('channel {}.'.format(c+1))
                 else:
-                    axes[c].set_xlabel('channel {}.'.format(c)) 
+                    axes[c].set_xlabel('channel {}.'.format(c+1)) 
 
             axes[c].index = 0
 
