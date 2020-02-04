@@ -22,14 +22,15 @@ video = BioVideo(folder, file, 4)
 video.loadData()
 
 
-#video.ref_frame = 0
+video.ref_frame = 0
 
 
 #video.make_diff()
-#video.make_int()
-video.make_toggle()
+video.make_int()
+#video.make_toggle()
 #video.make_both()
 
+video.fouriere()
 
 #video.spr = False
 
