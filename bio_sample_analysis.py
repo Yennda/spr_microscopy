@@ -19,7 +19,7 @@ folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 file = 'raw_01'
 #file = 'raw_03'
 
-video = BioVideo(folder, file, 1)
+video = BioVideo(folder, file, 4)
 #video._channels=[0]
 video.loadData()
 #video.ref_frame = 0
@@ -34,7 +34,7 @@ video.make_toggle()
 #video.make_both()
 
 
-video.fouriere()
+#video.fouriere()
 
 
 
