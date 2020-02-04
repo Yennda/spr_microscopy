@@ -93,7 +93,7 @@ class BioVideo():
             
     def make_int(self):
         for video in self._videos:
-
+            video.ref_frame = self.ref_frame
             video.make_int()
         self.rng = [-0.01, 0.01]
         self._img_type = 'int'
