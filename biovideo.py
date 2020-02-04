@@ -185,6 +185,7 @@ class BioVideo():
         master.mainloop()
 
     def explore(self, show='all'):
+        
         def frame_info(c, i):
             return '{}/{}  t= {:.1f} min dt= {:.2f} s'.format(
                 i,
@@ -238,6 +239,8 @@ class BioVideo():
             
             if self.spr:
                 location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
+                fig_spr.canvas.draw()
+                fig_spr.suptitle(frame_info(c, axes[c].index))
          
         def button_press(event):
             fig = event.canvas.figure
@@ -328,38 +331,12 @@ class BioVideo():
 
         
         if self.orientation:
-            fig, axes = plt.subplots(nrows=len(self._channels)+int(self.spr), ncols=1)
+            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
         else:
-            fig, axes = plt.subplots(ncols=len(self._channels)+int(self.spr), nrows=1)
+            fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
         
-        if self._channels == [0] and not self.spr:
+        if self._channels == [0]:
             axes=[axes]
-#        else:
-#            if self.orientation:
-#                fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
-#            else:
-#                fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
-        if self.spr:
-            spr_plot = axes[0]
-            axes = axes[1:]
-            
-            spr_plot.grid(linestyle='--')
-            spr_plot.set_title('SPR signal')
-            spr_plot.set_xlabel('time [min]')
-            spr_plot.set_ylabel('intensity [a. u.]')
-            
-            if self._img_type=='both':
-                channels = [i for i in range(len(self._channels)//2)]
-            else:
-                channels = self._channels
-                
-            for c in channels: 
-                spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
-                
-            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
-            spr_plot.add_patch(location)
-            spr_plot.legend(loc=3)
-                
         
         img=[]
 
@@ -404,13 +381,35 @@ class BioVideo():
         fig.suptitle(frame_info(c, axes[c].index))
 
 #        fig.colorbar(img[0], ax=axes.ravel().tolist())
+        if self.spr:
+            fig_spr, spr_plot = plt.subplots()
         
+            spr_plot.grid(linestyle='--')
+            spr_plot.set_title('SPR signal')
+            spr_plot.set_xlabel('time [min]')
+            spr_plot.set_ylabel('intensity [a. u.]')
+            
+            if self._img_type=='both':
+                channels = [i for i in range(len(self._channels)//2)]
+            else:
+                channels = self._channels
+                
+            for c in channels: 
+                spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
+                
+            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
+            spr_plot.add_patch(location)
+            spr_plot.legend(loc=3)
+            
+            fig_spr.suptitle(frame_info(c, axes[c].index))
+            
         
         plt.tight_layout()
         
 
         plt.show()
-
+        
+        
         print('''
 -------------------------------------------------------------------------------
 Basic shortcuts 

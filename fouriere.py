@@ -13,15 +13,24 @@ plt.close('all')
 # folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
 main_folder = 'C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder = main_folder + '19_08_16_K4/'
+folder = main_folder + '20_01_24_third/'
+
+
+
+
+
 # folder=main_folder+'19_07_18_C5/'
 # file='neref_02_1'
 file = 'norm_05_1'
+file = 'raw_01_1'
 
 video = Video(folder, file)
 video.loadData()
+video._video['raw'] = video._video['raw'][:,:,150:210]
+video.make_int()
 
 # img = cv2.imread('AR_images/stinkbug.png',0)
-img = video._video['raw'][:, :, -5]
+img = video._video['int'][:, :, -5]
 
 f = np.fft.fft2(img)
 fshift = np.fft.fftshift(f)
@@ -100,18 +109,22 @@ magnitude_spectrum_filtered01 = 20 * np.log(np.abs(fshift))
 img_back = np.fft.ifft2(f_ishift)
 img_back = np.real(img_back)
 
-plt.subplot(211),plt.imshow(img, cmap = 'gray')
-plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-plt.subplot(212),plt.imshow(img_back, cmap = 'gray')
-plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
-plt.show()
-#
-#plt.subplot(411),plt.imshow(img, cmap = 'gray')
+#plt.subplot(211),plt.imshow(img, cmap = 'gray')
 #plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-#plt.subplot(412),plt.imshow(magnitude_spectrum, cmap = 'gray')
-plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
-plt.subplot(413),plt.imshow(magnitude_spectrum_filtered01, cmap = 'gray')
-#plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
-#plt.subplot(414),plt.imshow(img_back, cmap = 'gray')
+#
+#plt.subplot(212),plt.imshow(img_back, cmap = 'gray')
 #plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
 #plt.show()
+#
+plt.subplot(411),plt.imshow(img, cmap = 'gray')
+plt.title('Input Image'), plt.xticks([]), plt.yticks([])
+
+plt.subplot(412),plt.imshow(magnitude_spectrum, cmap = 'gray')
+plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+
+plt.subplot(413),plt.imshow(magnitude_spectrum_filtered01, cmap = 'gray')
+plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+
+plt.subplot(414),plt.imshow(img_back, cmap = 'gray')
+plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
+plt.show()
