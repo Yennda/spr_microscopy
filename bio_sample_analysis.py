@@ -2,7 +2,6 @@ from biovideo import BioVideo
 import matplotlib.pyplot as plt
 import tools as tl
 import time as t
-import gc
 
 time_start=t.time()
 
@@ -20,31 +19,24 @@ file = 'raw_01'
 #file = 'raw_03'
 
 video = BioVideo(folder, file, 4)
-#video._channels=[0]
 video.loadData()
+
+
 #video.ref_frame = 0
 
-#video.ref_frame=-1
-video.make_toggle()
+
 #video.make_diff()
-
-
-
 #video.make_int()
+video.make_toggle()
 #video.make_both()
 
 
-#video.fouriere()
-
-
+#video.spr = False
 
 
 #video._video=video._video[20:150,950:1250,:]
-
 #video.save_array_form()
 
-
-#video.spr = False
 video.explore()
 
 print('{:.2f} s'.format(t.time()-time_start))
