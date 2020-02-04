@@ -8,6 +8,7 @@ import matplotlib.font_manager as fm
 #from matplotlib.backend_bases import LocationEvent
 
 from PIL import Image
+import tkinter as tk
 from np_analysis import np_analysis, is_np
 from classes import Cursor
 
@@ -40,17 +41,18 @@ class BioVideo():
         
         self.spr = False
         self.ref_frame = 0
-        self._img_type = None
+        self._img_type = 'raw'
+        self.orientation = None #True-horizontal, False-vertical
         
     def loadData(self):
         self._videos = []
-        print('Don\'t forget to run a method "make_int" or "make_diff". ')
+        print('Don\'t forget to run one of the "make_..." methods ')
         for c in self._channels:
             video = Video(self.folder, self.file+'_{}'.format(c+1))
             video.loadData()
-            video.rng = [-0.01, 0.01]
+            video.rng = [0, 1]
             self._videos.append(video)
-            
+        self.orientation = self._videos[0].video_stats[1][1] < self._videos[0].video_stats[1][0]
                         
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
@@ -80,35 +82,39 @@ class BioVideo():
             self.spr_signals.append(signal)
             
     def fouriere(self):
-        pass
+        for video in self._videos:
+            video.fouriere()
         
     def make_diff(self):
         for video in self._videos:
-            video._video_diff = video.process_diff()
-#            video.make_diff()
-#            video.refresh()
+            video.make_diff()
+        self.rng = [-0.01, 0.01]
         self._img_type = 'diff'
             
     def make_int(self):
         for video in self._videos:
-            video.ref_frame = self.ref_frame
-            video._video_int = video.process_int()
-#            video.make_int()
-#            video.refresh()     
+
+            video.make_int()
+        self.rng = [-0.01, 0.01]
         self._img_type = 'int'
         
     def make_toggle(self):
         for video in self._videos:
-             video._video_diff = video.process_diff()
-             video._video_int = video.process_int()
+            video.make_diff()
+            video.make_int()
+            video._img_type = True
+        self.rng = [-0.01, 0.01]
         self._img_type = 'toggle'
             
     def make_both(self):
         for video in self._videos:
-             video._video_diff = video.process_diff()
-             video._video_int = video.process_int()
+            video.make_diff()
+            video.make_int()
+            video._img_type = True
+        self.rng = [-0.01, 0.01]
         self._img_type = 'both'
         self._channels = [i for i in range(len(self._channels)*2)]
+        
         
     def synchronization(self):
         
@@ -127,18 +133,60 @@ class BioVideo():
                 raise Exception('Could not match global and local SPR signals.')
                 
     def save_frame(self, channel, frame):
-        pass  
-        video = self._videos[channel]
-        name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
-                                                      self.video[frame][0],
-                                                      self.video[frame][1] * 100)
-        pilimage = Image.fromarray(video[:,:, frame])
-        pilimage.save(name + '.tiff')
+        """
+        Saves the specified frame of the specified channel as a tiff file
+        
+        Parameters:
+            channel (int): number of the channel e. g. 1, 2, ...
+            
+        Returns:
+            no return
+            
+        """
+        channel=int(channel)
+        frame=int(frame)
+        video = self._videos[channel-1].video
+        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME, self._img_type,
+                                                              video.shape[0],
+                                                              frame)
+        
+        image_bw = (video[:,:, frame]+np.ones(video.shape[:2])*self.rng[1])*256*50
+        image = Image.fromarray(image_bw)
+        image_rgb = image.convert('RGB')
+        image_rgb.save(name + '.png')
         print('File SAVED @{}'.format(name))
+        
+    def save_array(self, channel, start, end):
+        for i in range(int(start.get()), int(end.get())):
+            self.save_frame(int(channel.get()), i)
+        
+              
+    def save_array_form(self):
+        master = tk.Tk()
+        tk.Label(master, text="channel").grid(row=0)
+        tk.Label(master, text="start").grid(row=1)
+        tk.Label(master, text="end").grid(row=2)
+        
+        channel = tk.Entry(master)
+        start = tk.Entry(master)
+        end = tk.Entry(master)
+        
+        channel.grid(row=0, column=1)
+        start.grid(row=1, column=1)
+        end.grid(row=2, column=1)
+        
+        
+        tk.Button(master, 
+                    text='Save', command=(lambda start = start, end = end, channel = channel: self.save_array(channel, start, end))).grid(row=3, 
+                                                       column=1, 
+                                                       sticky=tk.W, 
+                                                       pady=4)
+        
+        master.mainloop()
 
     def explore(self, show='all'):
         def frame_info(c, i):
-            return '{}/{}  t= {:.1f} s dt= {:.2f} s'.format(
+            return '{}/{}  t= {:.1f} min dt= {:.2f} s'.format(
                 i,
                 axes[c].volume.shape[0],
                 self.spr_time[self.syn_index+i],
@@ -203,6 +251,22 @@ class BioVideo():
                 fig.canvas.draw()
 #            elif event.key == 'x':
 #                [p.remove() for p in reversed(axes[1].patches)]
+            elif event.key == '9':
+                fig = event.canvas.figure
+                next_slice(100)
+                fig.canvas.draw()
+            elif event.key == '7':
+                fig = event.canvas.figure
+                next_slice(-100)
+                fig.canvas.draw()
+            elif event.key == '3':
+                fig = event.canvas.figure
+                next_slice(1)
+                fig.canvas.draw()
+            elif event.key == '1':
+                fig = event.canvas.figure
+                next_slice(-1)
+                fig.canvas.draw()
             elif event.key == '5':
                 self.rng = [i * 1.2 for i in self.rng]
                 for im in img:
@@ -217,15 +281,20 @@ class BioVideo():
                 
                 fig = event.canvas.figure
                 for c in self._channels:
-                    if axes[c].int:
-                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
-                        axes[c].int = False
-                    else:
-                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)
-                        axes[c].int = True
+                    axes[c].volume = self._videos[c].video
+                    
+#                    if axes[c].int:
+#                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
+#                        axes[c].int = False
+#                    else:
+#                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)
+#                        axes[c].int = True
                 next_slice(0)
                 fig.canvas.draw()
-                    
+                
+            elif event.key == 'd':
+                pass
+                 
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
                 if not os.path.isdir(self.folder + FOLDER_NAME):
@@ -257,16 +326,22 @@ class BioVideo():
 #            img.set_array(volume[axes[1].index])
             fig.canvas.draw_idle()
 
-        if not self.spr:
-#            fig, axes = plt.subplots(nrows=len(self._channels), ncols=1)
-            fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
-            if self._channels == [0]:
-                axes=[axes]
+        
+        if self.orientation:
+            fig, axes = plt.subplots(nrows=len(self._channels)+int(self.spr), ncols=1)
         else:
-#            fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
-            fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
-            spr_plot = axes_all[0]
-            axes = axes_all[1:]
+            fig, axes = plt.subplots(ncols=len(self._channels)+int(self.spr), nrows=1)
+        
+        if self._channels == [0] and not self.spr:
+            axes=[axes]
+#        else:
+#            if self.orientation:
+#                fig, axes_all = plt.subplots(nrows=len(self._channels)+1, ncols=1)
+#            else:
+#                fig, axes_all = plt.subplots(ncols=len(self._channels)+1, nrows=1)
+        if self.spr:
+            spr_plot = axes[0]
+            axes = axes[1:]
             
             spr_plot.grid(linestyle='--')
             spr_plot.set_title('SPR signal')
@@ -281,45 +356,33 @@ class BioVideo():
             for c in channels: 
                 spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
                 
-            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)       
-
-            
+            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
             spr_plot.add_patch(location)
-
             spr_plot.legend(loc=3)
-        
-        
+                
         
         img=[]
 
-        
-        
+        channel_type =  ['' ,' \ndifferential']
         for c in self._channels:
-            
-            if self._img_type == 'diff':
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
-            elif self._img_type == 'int':
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)                
-            elif self._img_type == 'toggle':
-                axes[c].int = True
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)    
-            elif self._img_type == 'both'  and c%2==0:
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c//2]._video_int, 0, 2), 1, 2)   
-            elif self._img_type == 'both'  and c%2==1:
-                axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c//2]._video_diff, 0, 2), 1, 2) 
+                
+            if self._img_type == 'both':
+                axes[c].volume = self._videos[c//2].video
+                if self.orientation:
+                    axes[c].set_ylabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
+                else:
+                    axes[c].set_xlabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
             else:
-                raise Exception('I don\'t have anything to show. Use "make_diff", "make_int" or "make_both" method')
-                
-                
+                axes[c].volume = self._videos[c].video
+                if self.orientation:
+                    axes[c].set_xlabel('channel {}.'.format(c+1))
+                else:
+                    axes[c].set_xlabel('channel {}.'.format(c+1)) 
+
             axes[c].index = 0
-            if self._img_type == 'both' and c%2==0:
-                axes[c].set_ylabel('channel {}.'.format(c//2+1)) 
-            elif self._img_type == 'both' and c%2==1:
-                axes[c].set_xlabel('channel {}. \n differential'.format(c//2+1)) 
-            else:
-                axes[c].set_xlabel('channel {}.'.format(c+1))    
-#            axes[c].spines[].set_color(COLORS[c])
+
             img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
+            
             fontprops = fm.FontProperties(size=10)
             scalebar = AnchoredSizeBar(axes[c].transData,
                    34, '100 $\mu m$', 'lower right', 
@@ -354,7 +417,9 @@ Basic shortcuts
 
 "8"/"5" increases/decreases contrast
 Mouse scrolling moves the time 
+"1" and "3" jumps 1 frames in time
 "4" and "6" jumps 10 frames in time
+"7" and "9" jumps 100 frames in time
 "f" fulscreen
 "o" zooms chosen area
 "s" saves the figure

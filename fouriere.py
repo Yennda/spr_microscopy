@@ -21,7 +21,7 @@ video = Video(folder, file)
 video.loadData()
 
 # img = cv2.imread('AR_images/stinkbug.png',0)
-img = video._video[:, :, -5]
+img = video._video['raw'][:, :, -5]
 
 f = np.fft.fft2(img)
 fshift = np.fft.fftshift(f)
@@ -44,8 +44,9 @@ magnitude_spectrum = 20 * np.log(np.abs(fshift))
 #        
 # plt.imshow(vid[:,:,-1])
 # video._video=vid
-
-signal = video._video[31, 1102, :]
+#
+signal = video._video['raw'][31, 1102, :]
+#signal = video.video[1102, 31, :]
 fspec = np.fft.fft(signal)
 # magnitude_spectrum_time = 20*np.log(np.abs(fshift))
 
@@ -63,7 +64,7 @@ signal_back2 = np.fft.ifft(ffilt2)
 
 fix, axes = plt.subplots()
 axes.plot(fspec, 'b-', label='fouriere-spectrum')
-# axes.plot(signal_back, 'r-', label='fouriere-filtered')
+#axes.plot(signal_back, 'r-', label='fouriere-filtered')
 axes.legend(loc=3)
 
 fix2, axes2 = plt.subplots()
@@ -99,18 +100,18 @@ magnitude_spectrum_filtered01 = 20 * np.log(np.abs(fshift))
 img_back = np.fft.ifft2(f_ishift)
 img_back = np.real(img_back)
 
-# plt.subplot(211),plt.imshow(img, cmap = 'gray')
-# plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-# plt.subplot(212),plt.imshow(img_back, cmap = 'gray')
-# plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
-# plt.show()
+plt.subplot(211),plt.imshow(img, cmap = 'gray')
+plt.title('Input Image'), plt.xticks([]), plt.yticks([])
+plt.subplot(212),plt.imshow(img_back, cmap = 'gray')
+plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
+plt.show()
 #
-# plt.subplot(411),plt.imshow(img, cmap = 'gray')
-# plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-# plt.subplot(412),plt.imshow(magnitude_spectrum, cmap = 'gray')
-# plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
-# plt.subplot(413),plt.imshow(magnitude_spectrum_filtered01, cmap = 'gray')
-# plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
-# plt.subplot(414),plt.imshow(img_back, cmap = 'gray')
-# plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
-# plt.show()
+#plt.subplot(411),plt.imshow(img, cmap = 'gray')
+#plt.title('Input Image'), plt.xticks([]), plt.yticks([])
+#plt.subplot(412),plt.imshow(magnitude_spectrum, cmap = 'gray')
+plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+plt.subplot(413),plt.imshow(magnitude_spectrum_filtered01, cmap = 'gray')
+#plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+#plt.subplot(414),plt.imshow(img_back, cmap = 'gray')
+#plt.title('Filtered low frequencies'), plt.xticks([]), plt.yticks([])
+#plt.show()

@@ -10,7 +10,7 @@ plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 #folder=main_folder+'19_12_04_second_poc/'
-folder=main_folder+'20_01_24_third/'
+#folder=main_folder+'20_01_24_third/'
 
 folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 
@@ -19,21 +19,24 @@ file = 'raw_01'
 #file = 'raw_03'
 
 video = BioVideo(folder, file, 4)
-#video._channels=[0]
 video.loadData()
-#video.ref_frame=-1
-#video.make_toggle()
-#video.make_diff()
-video.make_both()
+
 
 #video.ref_frame = 0
 
 
+#video.make_diff()
+#video.make_int()
+video.make_toggle()
+#video.make_both()
+
+
+#video.spr = False
+
 
 #video._video=video._video[20:150,950:1250,:]
+#video.save_array_form()
 
-
-video.spr = False
 video.explore()
 
 print('{:.2f} s'.format(t.time()-time_start))

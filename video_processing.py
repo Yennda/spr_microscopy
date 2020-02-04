@@ -20,17 +20,19 @@ class Video(object):
         self.file_name = folder + file
         self.video_stats = None
         
-        self._video = None
-        self._video_new = None
-        self._video_diff = None
-        self._video_int = None
+        self._video = {
+                'raw': None,
+                'diff': None,
+                'int': None
+                }
+        self._toggle = True
+        self._img_type = 'raw'
         
         self.view = None
         self.rng = [-1, 1]
         self.time_info = None
 
         
-        self.show_original = True
         self.np_number=0
         self.ref_frame=0
         
@@ -49,14 +51,18 @@ class Video(object):
 
     @property
     def video(self):
-        if not self.show_original:
-            return self._video_new
+        if self._img_type == True:
+            self._img_type = False
+            return np.swapaxes(np.swapaxes(self._video['int'], 0, 2), 1, 2)
+        elif self._img_type == False:
+            self._img_type = True
+            return np.swapaxes(np.swapaxes(self._video['diff'], 0, 2), 1, 2)
         else:
-            return self._video
+            return np.swapaxes(np.swapaxes(self._video[self._img_type], 0, 2), 1, 2)
 
     def loadData(self):
         self.video_stats = self.loadBinVideoStats()
-        self._video = self.loadBinVideo()
+        self._video['raw'] = self.loadBinVideo()
 
     def loadBinVideoStats(self):
         suffix = '.tsv'
@@ -86,65 +92,67 @@ class Video(object):
         return np.swapaxes(video, 0, 1)
 
     def process_diff(self):
-        sh = self._video.shape
+        sh = self._video['raw'].shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
         print('Computing the differential image')
         
         for i in range(1, sh[-1]):
             print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
-            out[:, :, i] = self._video[:, :, i] - self._video[:, :, i - 1]
+            out[:, :, i] = self._video['raw'][:, :, i] - self._video['raw'][:, :, i - 1]
             
         print(' DONE')
         return out
     
     def process_int(self):
-        sh = self._video.shape
+        sh = self._video['raw'].shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
         print('Computing the integral image')
         
         for i in range(1, sh[-1]):
             print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
-            out[:, :, i] = self._video[:, :, i] - self._video[:, :, self.ref_frame]
+            out[:, :, i] = self._video['raw'][:, :, i] - self._video['raw'][:, :, self.ref_frame]
             
         print(' DONE')
         return out
         
     def make_diff(self):
-        self._video_new = self.process_diff()
-        self.show_original = False
+        self._video['diff'] = self.process_diff()
+        self._img_type = 'diff'
 
     def make_int(self):
-        self._video_new = self.process_int()
-        self.show_original = False
+        self._video['int']= self.process_int()
+        self._img_type = 'int'
+    
+#    def make(self, img_type):
+#        if img_type == 'diff':
+#        self._video[img_type]= self.process_int()
+#        self._img_type = 'int'
         
     def change_fps(self, n):
 
         out=np.ndarray(list(self.video.shape[0:2])+[self.video.shape[2]//n])
         t_out=[]
-        for i in range(n,self._video.shape[-1]//n*n,n):
-            out[:,:,i//n-1]=np.sum(self._video[:,:,i-n: i], axis=2)/n
+        for i in range(n,self._video['raw'].shape[-1]//n*n,n):
+            out[:,:,i//n-1]=np.sum(self._video['raw'][:,:,i-n: i], axis=2)/n
             
             t_time=self.time_info[i][0]
             t_period=0
             for t in self.time_info[i-n: i]:
-#                print(t)
-#                t_time+=t[0]
                 t_period+=t[1]
             t_time+=t_period
             t_out.append([t_time, t_period])
             
-        self._video=out
+        self._video['raw'] = out
         self.time_info=t_out
         self.refresh()
-#        self.reference=self.loadBinStatic()
         
 #    def _delete_video(self):
 #        self._video.__delitem__()
 
     def refresh(self):
-        self.video_stats[1] = [self.video.shape[1], self.video.shape[0], self.video.shape[2]]
+        self.video_stats[1] = [self._video['raw'].shape[1], self._video['raw'].shape[0], self._video['raw'].shape[2]]
 
     def time_fouriere(self):
         middle = int(self._video.shape[2] / 2)
@@ -163,19 +171,28 @@ class Video(object):
                 self._video = out
 
     def fouriere(self):
-        for i in range(self._video.shape[2]):
-            f = np.fft.fft2(self.video[:, :, i])
-            magnitude_spectrum = 20 * np.log(np.abs(f))
-            mask = np.real(magnitude_spectrum) > 30
-            f[mask] = 0
+        print('Filtering fouriere frequencies')
+        if type(self._img_type) == bool:
+            img_type = ['diff', 'int']
+        else:
+            img_type = [self._img_type]
+        for it in img_type:
+            for i in range(self._video[it].shape[2]):
 
-            img_back = np.fft.ifft2(f)
-            if not self.show_original:
-                self._video_new[:, :, i] = np.real(img_back)
-            else:
-                self._video[:, :, i] = np.real(img_back)
+                print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
+                f = np.fft.fft2(self._video[it][:, :, i])
+                magnitude_spectrum = 20 * np.log(np.abs(f))
+                mask = np.real(magnitude_spectrum) > 30
+                f[mask] = 0
+    
+                img_back = np.fft.ifft2(f)
+                self._video[it][:, :, i] = np.real(img_back)
 
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
+        """ 
+        Need to rewrite for changed self.video handling
+        """
+
         mask = np.zeros(self._video.shape[:2])
         for i in range(self._video.shape[0]):
             print('done {}/{}'.format(i, self._video.shape[0]))
@@ -188,6 +205,10 @@ class Video(object):
         return mask
 
     def np_count(self, mask, s1=2, s2=25, show=False):
+        """ 
+        Need to rewrite for changed self.video handling
+        """
+        
         gray = mask.astype(np.uint8)
         th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
         cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
@@ -211,14 +232,13 @@ class Video(object):
         return len(xcnts)
 
     def np_AR(self):
+        """ 
+        Need to rewrite for changed self.video handling
+        """
+        
         self.np_count(self.np_pixels(), show=True)
 
     def explore(self, source='vid'):
-        
-        if not self.show_original:
-            data = np.swapaxes(np.swapaxes(self._video_new, 0, 2), 1, 2)
-        else:
-            data = np.swapaxes(np.swapaxes(self.video, 0, 2), 1, 2)
 
         def frame_info(i):
             return '{}/{}  t= {} s dt= {:.2f} s'.format(
@@ -261,7 +281,6 @@ class Video(object):
 
                 print(is_np(self._video[y, x, :], show=True))
 
-        # Next slice func.
         def next_slice(ax, i):
             volume = ax.volume
             ax.index = (ax.index + i) % volume.shape[0]
@@ -271,7 +290,8 @@ class Video(object):
         def button_press(event):
             fig = event.canvas.figure
             ax = fig.axes[0]
-            volume = data
+#            volume = data
+            
             if event.key == 'right':
                 fig = event.canvas.figure
                 ax = fig.axes[0]
@@ -324,20 +344,18 @@ class Video(object):
             fig.canvas.draw_idle()
 
 
-        
-
-
         fig, ax = plt.subplots()
-        volume = data
+        volume = self.video
         ax.volume = volume
         ax.index = 0
         ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, volume.shape[0], self.time_info[ax.index][0],
                                                               self.time_info[ax.index][1]))
 
-        if source == 'diff' or source == 'vid':
-            img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
-        else:
+        if self._img_type == 'raw':
             img = ax.imshow(volume[ax.index], cmap='gray')
+        else:
+            img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+            
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)
