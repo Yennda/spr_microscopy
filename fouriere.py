@@ -12,15 +12,18 @@ plt.close('all')
 
 # folder='C:/Users/jabuk/Documents/jaderka/ufe/data/'
 main_folder = 'C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
+
 folder = main_folder + '19_08_16_K4/'
 folder = main_folder + '20_01_24_third/'
+folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
+
 
 #[200, 250, 300, 350, 400, 500, 600, 700, 800, 900, 1000]
-
+[1, 2, 5, 10, 20, 30, 40, 50]
 for jj in [1, 2, 5, 10, 20, 30, 40, 50]:
 
-    file = 'raw_01'
-    frame = 900
+    file = 'raw_03'
+    frame = 150
     treshhold = jj
     
     
@@ -36,6 +39,7 @@ for jj in [1, 2, 5, 10, 20, 30, 40, 50]:
     
     # img = cv2.imread('AR_images/stinkbug.png',0)
     img = video._video['int'][:, :, frame]
+    img = img.T
     
     f = np.fft.fft2(img)
     fshift = np.fft.fftshift(f)
@@ -121,12 +125,13 @@ for jj in [1, 2, 5, 10, 20, 30, 40, 50]:
     name = 'frame = {} treshhold = {}'.format(frame, treshhold)
     
     
-    plt.suptitle(name)
-    plt.subplot(111),plt.imshow(img_back[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
-    plt.title('Output image'), plt.xticks([]), plt.yticks([])
-    plt.savefig(folder + 'export_fouriere/output ' + name + '.png', dpi=600)
-    plt.show()
+#    plt.suptitle(name)
+#    plt.subplot(111),plt.imshow(img_back[300:750, :], cmap = 'gray', vmin=-0.01, vmax=0.01)
+#    plt.title('Output image'), plt.xticks([]), plt.yticks([])
+#    plt.savefig(folder + 'export_fouriere/output ' + name + '.png', dpi=600)
+#    plt.show()
     
+    #300:750, :
     
     plt.suptitle(name)
     
