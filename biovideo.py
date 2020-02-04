@@ -259,6 +259,14 @@ class BioVideo():
                 fig = event.canvas.figure
                 next_slice(-100)
                 fig.canvas.draw()
+            elif event.key == '3':
+                fig = event.canvas.figure
+                next_slice(1)
+                fig.canvas.draw()
+            elif event.key == '1':
+                fig = event.canvas.figure
+                next_slice(-1)
+                fig.canvas.draw()
             elif event.key == '5':
                 self.rng = [i * 1.2 for i in self.rng]
                 for im in img:
