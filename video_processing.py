@@ -173,7 +173,7 @@ class Video(object):
     def fouriere(self):
         print('Filtering fouriere frequencies')
         if type(self._img_type) == bool:
-            img_type = ['diff', 'int']
+            img_type = ['int']
         else:
             img_type = [self._img_type]
         for it in img_type:
