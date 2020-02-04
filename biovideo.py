@@ -22,7 +22,8 @@ red='#DD5544'
 blue='#0284C0'
 black='#000000'
 
-COLORS=[yellow, blue, red, black]
+COLORS = [yellow, blue, red, black]
+SIDES = ['left', 'right', 'bottom', 'top']
 
 
 class BioVideo():
@@ -341,6 +342,8 @@ class BioVideo():
         img=[]
 
         channel_type =  ['' ,' \ndifferential']
+        
+        
         for c in self._channels:
                 
             if self._img_type == 'both':
@@ -349,13 +352,18 @@ class BioVideo():
                     axes[c].set_ylabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
                 else:
                     axes[c].set_xlabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
+                for s in SIDES:
+                    axes[c].spines[s].set_color(COLORS[c%2])
+
             else:
                 axes[c].volume = self._videos[c].video
                 if self.orientation:
                     axes[c].set_xlabel('channel {}.'.format(c+1))
                 else:
                     axes[c].set_xlabel('channel {}.'.format(c+1)) 
-
+                for s in SIDES:
+                    axes[c].spines[s].set_color(COLORS[c])
+            
             axes[c].index = 0
 
             img.append(axes[c].imshow(axes[c].volume[axes[c].index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1]))
@@ -379,6 +387,8 @@ class BioVideo():
 #        fig.canvas.mpl_connect('motion_notify_event', cursor.mouse_move)
         
         fig.suptitle(frame_info(c, axes[c].index))
+        
+    
 
 #        fig.colorbar(img[0], ax=axes.ravel().tolist())
         if self.spr:
