@@ -417,6 +417,7 @@ Basic shortcuts
 
 "8"/"5" increases/decreases contrast
 Mouse scrolling moves the time 
+"1" and "3" jumps 1 frames in time
 "4" and "6" jumps 10 frames in time
 "7" and "9" jumps 100 frames in time
 "f" fulscreen
