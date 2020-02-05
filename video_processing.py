@@ -252,9 +252,9 @@ class Video(object):
             fig = event.canvas.figure
             ax = fig.axes[0]
             if event.button == 'down':
-                next_slice(ax, 1)
+                next_slice(1)
             elif event.button == 'up':
-                next_slice(ax, -1)
+                next_slice(-1)
             fig.canvas.draw()
 
         def mouse_click(event):
@@ -281,7 +281,7 @@ class Video(object):
 
                 print(is_np(self._video[y, x, :], show=True))
 
-        def next_slice(ax, i):
+        def next_slice(i):
             volume = ax.volume
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
@@ -292,22 +292,36 @@ class Video(object):
             ax = fig.axes[0]
 #            volume = data
             
-            if event.key == 'right':
+            if event.key == '6':
                 fig = event.canvas.figure
-                ax = fig.axes[0]
-                next_slice(ax, 10)
+                next_slice(10)
                 fig.canvas.draw()
-            elif event.key == 'left':
+            elif event.key == '4':
                 fig = event.canvas.figure
-                ax = fig.axes[0]
-                next_slice(ax, -10)
+                next_slice(-10)
+                fig.canvas.draw()
+            elif event.key == '9':
+                fig = event.canvas.figure
+                next_slice(100)
+                fig.canvas.draw()
+            elif event.key == '7':
+                fig = event.canvas.figure
+                next_slice(-100)
+                fig.canvas.draw()
+            elif event.key == '3':
+                fig = event.canvas.figure
+                next_slice(1)
+                fig.canvas.draw()
+            elif event.key == '1':
+                fig = event.canvas.figure
+                next_slice(-1)
                 fig.canvas.draw()
             elif event.key == 'x':
                 [p.remove() for p in reversed(ax.patches)]
-            elif event.key == 'm':
+            elif event.key == '5':
                 lim = [i * 1.2 for i in img.get_clim()]
                 img.set_clim(lim)
-            elif event.key == 'j':
+            elif event.key == '8':
                 lim = [i / 1.2 for i in img.get_clim()]
                 img.set_clim(lim)
             elif event.key == 'p':
