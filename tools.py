@@ -52,4 +52,8 @@ def clear_all():
         if 'module' in str(globals()[var]): continue
 
         del globals()[var]
+        
+def closest(lst, K): 
+      
+    return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))] 
 

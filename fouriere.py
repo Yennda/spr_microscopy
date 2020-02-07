@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math as m
 from matplotlib import pyplot as plt
 from video_processing import Video
 import copy
@@ -27,23 +28,23 @@ folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 
 
 
-appendix = 'many'
+appendix = 'processing'
 
 
 # folder=main_folder+'19_07_18_C5/'
 # file='neref_02_1'
-file = 'norm_05_1'
-file = 'raw_01_1'
+#file = 'norm_05_1'
+file = 'raw_01_2'
 
 
-for fr in [5]:
+for fr in [1238]:
     
     frame = fr
     
     video = Video(folder, file)
     video.loadData()
     video._video['raw'] = video._video['raw'][:,:,:frame+1]
-    video.ref_frame=0
+    video.ref_frame = 1159
     video.make_int()
     img = video._video['int'][:, :, frame]
     img = img.T
@@ -56,77 +57,32 @@ for fr in [5]:
         f = np.fft.fft2(img)
         fshift = np.fft.fftshift(f)
         magnitude_spectrum = 20 * np.log(np.abs(fshift))
-        #
-        # middle=int(video._video.shape[2]/2)
-        # vid=np.zeros(video._video.shape)
-        # for i in range(video._video.shape[0]):
-        #    print('done {}/{}'.format(i, video._video.shape[0]))
-        #    for j in range(video._video.shape[1]):
-        #        signal=video._video[i, j,:]
-        #        fspec=np.fft.fft(signal)
-        #        
-        #        fspec[middle-10:middle+10]=0
-        #        print(fspec)
-        #
-        #
-        #        
-        #        vid[i, j,:] = np.fft.ifft(fspec)
-        #        
-        # plt.imshow(vid[:,:,-1])
-        # video._video=vid
-        #
-        #signal = video._video['raw'][31, 1102, :]
-        ##signal = video.video[1102, 31, :]
-        #fspec = np.fft.fft(signal)
-        ## magnitude_spectrum_time = 20*np.log(np.abs(fshift))
-        #
-        #ffilt = copy.deepcopy(fspec)
-        #ffilt2 = copy.deepcopy(fspec)
-        #ffilt[5:35] = 0
-        #ffilt2[:15] = 0
-        ## ffilt2[10:30]=0.
-        #ffilt2[25:] = 0
-        ## ffilt2[19:21]=fspec[19:21]
-        #
-        #
-        #signal_back = np.fft.ifft(ffilt)
-        #signal_back2 = np.fft.ifft(ffilt2)
-        #
-        #fix, axes = plt.subplots()
-        #axes.plot(fspec, 'b-', label='fouriere-spectrum')
-        ##axes.plot(signal_back, 'r-', label='fouriere-filtered')
-        #axes.legend(loc=3)
-        #
-        #fix2, axes2 = plt.subplots()
-        #axes2.plot(signal, 'b-', label='signal')
-        #axes2.plot(signal_back, 'r-', label='fouriere-filtered 1st')
-        #axes2.plot(signal_back2, 'g-', label='fouriere-filtered 2nd')
-        #axes2.legend(loc=3)
+
+        
+        Lm = 82/20.0
+        theta = m.pi*39.5/180
         
         
+        k = [m.sin(theta)/Lm*img.shape[0], m.cos(theta)/Lm*img.shape[1]]
         
-        # f_line=np.asarray(f).reshape(-1)
-        # plt.clf()
-        # plt.hist(np.abs(f_line), 1000)
-        # plt.xscale('log')
-        # plt.show()
+
+        
+        coor = []
+        coor.append([int(img.shape[i]/2+k[i]) for i in range(2)])
+        coor.append([int(img.shape[i]/2-k[i]) for i in range(2)])
+        
+        size = 7
+        
+        mask = np.full(magnitude_spectrum.shape, False, dtype=bool)
+        for c in coor:
+            mask[c[0]-size:c[0]+size, c[1]-size:c[1]+size] = True
         
         
         mask = np.real(magnitude_spectrum) > threshold
-        
-        #only strips, efficient
-        #fshift[:, 490:550] = 0
-        #fshift[:, 1130:1190] = 0
+
         fshift[mask] = 0
         
-        # rows, cols = img.shape
-        # crow,ccol = int(rows/2) , int(cols/2)
-        # fshift[crow-30:crow+30, ccol-30:ccol+30] = 0
-        
-        #fshift[111:136, 139:309] = 0
-        #fshift[133:163, 1318:1522] = 0
-        
-        
+       
         f_ishift = np.fft.ifftshift(fshift)
         magnitude_spectrum_filtered01 = 20 * np.log(np.abs(fshift))
         
@@ -134,13 +90,20 @@ for fr in [5]:
         img_back = np.real(img_back)
         
         #threshold == None
-#        name = '{} frame = {} threshold = {}'.format(appendix, frame, threshold)
-        
+#        name = '{} frame = {} size = {}'.format(appendix, frame, size)
+        name = '{} frame = {} threshold = {}'.format(appendix, frame, threshold)
         
         plt.suptitle(name)
         plt.subplot(111),plt.imshow(img_back[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
-        plt.title('Output image'), plt.xticks([]), plt.yticks([])
+#        plt.title('Output image'), plt.xticks([]), plt.yticks([])
         plt.savefig(folder + 'export_fouriere/output ' + name + '.png', dpi=600)
+        plt.show()
+        
+        plt.suptitle(name)
+
+        plt.subplot(111),plt.imshow(img[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
+#        plt.title('Output image'), plt.xticks([]), plt.yticks([])
+        plt.savefig(folder + 'export_fouriere/input ' + name + '.png', dpi=600)
         plt.show()
         
         #300:750, :
@@ -161,6 +124,6 @@ for fr in [5]:
         plt.show()
         
         
-#        plt.savefig(folder + 'export_fouriere/' + name + '.png', dpi=600)
+        plt.savefig(folder + 'export_fouriere/' + name + '.png', dpi=600)
         
 print('{:.2f} s'.format(t.time()-time_start))

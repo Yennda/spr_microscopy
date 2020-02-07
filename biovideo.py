@@ -1,5 +1,6 @@
 import numpy as np
 from video_processing import Video
+import tools as tl
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
@@ -10,6 +11,7 @@ import matplotlib.font_manager as fm
 from PIL import Image
 from np_analysis import np_analysis, is_np
 from classes import Cursor
+
 
 FOLDER_NAME = '/exports_bio'
 NAME_LOCAL_SPR = 'spr'
@@ -173,19 +175,22 @@ class BioVideo():
 
         def mouse_scroll(event):
             fig = event.canvas.figure
-#            axes = fig.axes
             if event.button == 'down':
                 next_slice(1)
             elif event.button == 'up':
                 next_slice(-1)
             fig.canvas.draw()
-
+            
+        def mouse_click_spr(event):
+            if event.button == 1:
+                time = tl.closest(self.spr_time, event.xdata)
+                next_slice(self.spr_time.index(time)-self.syn_index-axes[0].index)
+            fig.canvas.draw()
+                
         def mouse_click(event):
             if event.button == 3:
                 axes_chosen = event.inaxes
-                
-                channel = axes.index(axes_chosen)+1
-                
+
                 if self.orientation:
                     img_type = axes_chosen.get_ylabel()
                 else:
@@ -214,7 +219,11 @@ class BioVideo():
                 image = Image.fromarray(image_bw)
                 image_rgb = image.convert('RGB')
                 image_rgb.save(name + '.png')
+                
+                fig_spr.savefig(name + '_spr.png', dpi=200)
+                
                 print('File SAVED @ {}.png'.format(name.replace('{}/'.format(self.folder), '')))
+                
 
         # Next slice func.
         def next_slice(i):
@@ -353,9 +362,9 @@ class BioVideo():
             elif self._img_type == 'toggle':
                 axes[c].volume = self._videos[c].video
                 if self.orientation:
-                    axes[c].set_ylabel('int {}.'.format(c+1))
+                    axes[c].set_ylabel('int {}'.format(c+1))
                 else:
-                    axes[c].set_xlabel('int {}.'.format(c+1)) 
+                    axes[c].set_xlabel('int {}'.format(c+1)) 
                 for s in SIDES:
                     axes[c].spines[s].set_color(COLORS[c])
             else:
@@ -401,6 +410,7 @@ class BioVideo():
             spr_plot.set_title('SPR signal')
             spr_plot.set_xlabel('time [min]')
             spr_plot.set_ylabel('intensity [a. u.]')
+            spr_plot_std = spr_plot.twinx()
             
             if self._img_type=='both':
                 channels = [i for i in range(len(self._channels)//2)]
@@ -408,18 +418,23 @@ class BioVideo():
                 channels = self._channels
                 
             for c in channels: 
-                spr_plot.plot(self.spr_time, self.spr_signals[c], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
+                
+                stdev = []
+                for v in axes[c].volume:
+                    stdev.append(np. std(v))
+                end = self.syn_index + len(axes[0].volume)
+                spr_plot.plot(self.spr_time[self.syn_index:end], self.spr_signals[c][self.syn_index:end], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
+                spr_plot_std.plot(self.spr_time[self.syn_index:end], stdev, linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1), ls=':')
                 
             location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
             spr_plot.add_patch(location)
             spr_plot.legend(loc=3)
             
             fig_spr.suptitle(frame_info(c, axes[c].index))
+            fig_spr.canvas.mpl_connect('button_press_event', mouse_click_spr)
             
-        
+        cb = fig.colorbar(img[0], ax=axes)        
         plt.tight_layout()
-        
-
         plt.show()
         
         
@@ -436,6 +451,9 @@ Mouse scrolling moves the time
 "o" zooms chosen area
 "s" saves the figure
 "t" toggles differential and integral image, when the method "make_both" is used
+
+"Right mouse button click" saves the image of the chosen channel (the one you clicked)
+"Left mouse button click" to the SPR signal plot navigates the time into the chosen point
 
 Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
 -------------------------------------------------------------------------------
