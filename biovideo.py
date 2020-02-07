@@ -83,7 +83,7 @@ class BioVideo():
             if c == 0:
                 self.spr_time = time
             self.spr_signals.append(signal)
-            
+               
     def fouriere(self):
         for video in self._videos:
             video.fouriere()
