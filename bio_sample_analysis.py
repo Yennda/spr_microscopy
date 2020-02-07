@@ -27,7 +27,7 @@ video.loadData()
 
 #video.make_diff()
 #video.make_int()
-video.make_toggle()
+#video.make_toggle()
 #video.make_both()
 
 #video.fouriere()

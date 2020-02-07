@@ -11,7 +11,7 @@ from PIL import Image
 from np_analysis import np_analysis, is_np
 from classes import Cursor
 
-FOLDER_NAME = '/exports'
+FOLDER_NAME = '/exports_bio'
 NAME_LOCAL_SPR = 'spr'
 NAME_GLOBAL_SPR = 'spr_integral'
 
@@ -147,7 +147,7 @@ class BioVideo():
         channel=int(channel)
         frame=int(frame)
         video = self._videos[channel-1].video
-        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME + '_bio', self._img_type,
+        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME, self._img_type,
                                                               video.shape[0],
                                                               frame)
         
@@ -191,7 +191,9 @@ class BioVideo():
                 else:
                     img_type = axes_chosen.get_xlabel()
                 
-                
+                if not os.path.isdir(self.folder + FOLDER_NAME):
+                    os.mkdir(self.folder + FOLDER_NAME)
+                    
                 name = '{}_frame_{}-{}'.format( 
                         img_type,
                         axes_chosen.index,
