@@ -194,8 +194,9 @@ class BioVideo():
                 if not os.path.isdir(self.folder + FOLDER_NAME):
                     os.mkdir(self.folder + FOLDER_NAME)
                     
-                name = '{}_frame_{}-{}'.format( 
-                        img_type,
+                name = '{}/{}_frame_{}-{}'.format( 
+                        self.folder+FOLDER_NAME,
+                        img_type.replace(' ', '_'),
                         axes_chosen.index,
                         axes_chosen.volume.shape[0])
                 i = 1
@@ -212,8 +213,8 @@ class BioVideo():
 
                 image = Image.fromarray(image_bw)
                 image_rgb = image.convert('RGB')
-                image_rgb.save(self.folder + FOLDER_NAME + '/' + name + '.png')
-                print('File SAVED @ {}'.format(FOLDER_NAME + '/' + name))
+                image_rgb.save(name + '.png')
+                print('File SAVED @ {}.png'.format(name.replace('{}/'.format(self.folder), '')))
 
         # Next slice func.
         def next_slice(i):
