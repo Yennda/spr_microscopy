@@ -36,19 +36,19 @@ file = 'norm_05_1'
 file = 'raw_01_1'
 
 
-for fr in [160, 180, 200, 250, 400]:
+for fr in [5]:
     
     frame = fr
     
     video = Video(folder, file)
     video.loadData()
     video._video['raw'] = video._video['raw'][:,:,:frame+1]
-    video.ref_frame=130
+    video.ref_frame=0
     video.make_int()
     img = video._video['int'][:, :, frame]
     img = img.T
         
-    for tr in [1, 2, 5, 10, 20, 30, 40, 50, 1000]:
+    for tr in [30]:
         threshold = tr
         # img = cv2.imread('AR_images/stinkbug.png',0)
     
@@ -134,7 +134,7 @@ for fr in [160, 180, 200, 250, 400]:
         img_back = np.real(img_back)
         
         #threshold == None
-        name = '{} frame = {} threshold = {}'.format(appendix, frame, threshold)
+#        name = '{} frame = {} threshold = {}'.format(appendix, frame, threshold)
         
         
         plt.suptitle(name)
@@ -161,6 +161,6 @@ for fr in [160, 180, 200, 250, 400]:
         plt.show()
         
         
-        plt.savefig(folder + 'export_fouriere/' + name + '.png', dpi=600)
+#        plt.savefig(folder + 'export_fouriere/' + name + '.png', dpi=600)
         
 print('{:.2f} s'.format(t.time()-time_start))

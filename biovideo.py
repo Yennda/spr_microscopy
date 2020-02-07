@@ -8,7 +8,6 @@ import matplotlib.font_manager as fm
 #from matplotlib.backend_bases import LocationEvent
 
 from PIL import Image
-import tkinter as tk
 from np_analysis import np_analysis, is_np
 from classes import Cursor
 
@@ -43,6 +42,7 @@ class BioVideo():
         self.spr = False
         self.ref_frame = 0
         self._img_type = 'raw'
+        self._toggle = True
         self.orientation = None #True-horizontal, False-vertical
         
     def loadData(self):
@@ -159,32 +159,8 @@ class BioVideo():
         
     def save_array(self, channel, start, end):
         for i in range(int(start.get()), int(end.get())):
-            self.save_frame(int(channel.get()), i)
-        
+            self.save_frame(int(channel.get()), i)        
               
-    def save_array_form(self):
-        master = tk.Tk()
-        tk.Label(master, text="channel").grid(row=0)
-        tk.Label(master, text="start").grid(row=1)
-        tk.Label(master, text="end").grid(row=2)
-        
-        channel = tk.Entry(master)
-        start = tk.Entry(master)
-        end = tk.Entry(master)
-        
-        channel.grid(row=0, column=1)
-        start.grid(row=1, column=1)
-        end.grid(row=2, column=1)
-        
-        
-        tk.Button(master, 
-                    text='Save', command=(lambda start = start, end = end, channel = channel: self.save_array(channel, start, end))).grid(row=3, 
-                                                       column=1, 
-                                                       sticky=tk.W, 
-                                                       pady=4)
-        
-        master.mainloop()
-
     def explore(self, show='all'):
         
         def frame_info(c, i):
@@ -197,7 +173,7 @@ class BioVideo():
 
         def mouse_scroll(event):
             fig = event.canvas.figure
-            axes = fig.axes
+#            axes = fig.axes
             if event.button == 'down':
                 next_slice(1)
             elif event.button == 'up':
@@ -205,29 +181,37 @@ class BioVideo():
             fig.canvas.draw()
 
         def mouse_click(event):
-            pass
             if event.button == 3:
-                self.np_number+=1
-                print(self.np_number)
-                fig = event.canvas.figure
-                ax = fig.axes[0]
-                x = int(event.xdata)
-                y = int(event.ydata)
-                raw = volume[axes[1].index]
-                np_analysis(raw[y - 25: y + 25, x - 25:x + 25], self.folder, self.file)
+                axes_chosen = event.inaxes
+                
+                channel = axes.index(axes_chosen)+1
+                
+                if self.orientation:
+                    img_type = axes_chosen.get_ylabel()
+                else:
+                    img_type = axes_chosen.get_xlabel()
+                
+                
+                name = '{}_frame_{}-{}'.format( 
+                        img_type,
+                        axes_chosen.index,
+                        axes_chosen.volume.shape[0])
+                i = 1
+                while os.path.isfile(name + '_{:02d}.png'.format(i)):
+                    i += 1
+                    
+                name += '_{:02d}'.format(i)
 
-                p = mpatches.Rectangle((x - 0.5, y - 0.5), 5, 5, color='#FF0000', alpha=0.5)
-                axes[1].add_patch(p)
-                print('you pressed', event.button, event.xdata, event.ydata)
-                fig.canvas.draw()
-            elif event.dblclick:
-                x = int((event.xdata - 0.5) // 1)
-                y = int((event.ydata - 0.5) // 1)
-                #                file = open('data.txt', 'a')
-                #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
-                #                file.close()
+                xlims = [int(i+0.5) for i in list(event.inaxes.get_xlim())]
+                ylims = [int(i+0.5) for i in list(event.inaxes.get_ylim())]
+                image_load = axes_chosen.volume[axes_chosen.index][ylims[1]:ylims[0], xlims[0]:xlims[1]]
+                image_bw = (image_load-np.ones(image_load.shape[:2])*self.rng[0])*256*(self.rng[1]-self.rng[0])**-1
 
-                print(is_np(self._video[y, x, :], show=True))
+
+                image = Image.fromarray(image_bw)
+                image_rgb = image.convert('RGB')
+                image_rgb.save(self.folder + FOLDER_NAME + '/' + name + '.png')
+                print('File SAVED @ {}'.format(FOLDER_NAME + '/' + name))
 
         # Next slice func.
         def next_slice(i):
@@ -287,12 +271,19 @@ class BioVideo():
                 for c in self._channels:
                     axes[c].volume = self._videos[c].video
                     
-#                    if axes[c].int:
-#                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_diff, 0, 2), 1, 2)
-#                        axes[c].int = False
-#                    else:
-#                        axes[c].volume = np.swapaxes(np.swapaxes(self._videos[c]._video_int, 0, 2), 1, 2)
-#                        axes[c].int = True
+                    if self._toggle:
+                        self._toggle = False
+                        if self.orientation:
+                            axes[c].set_ylabel('diff {}'.format(c+1))
+                        else:
+                            axes[c].set_xlabel('diff {}'.format(c+1)) 
+                    else:
+                        self._toggle = True
+                        if self.orientation:
+                            axes[c].set_ylabel('int {}'.format(c+1))
+                        else:
+                            axes[c].set_xlabel('int {}'.format(c+1)) 
+                    
                 next_slice(0)
                 fig.canvas.draw()
                 
@@ -319,8 +310,8 @@ class BioVideo():
 
                 fig.savefig(name + '.png', dpi=300)
 
-                xlim = [int(i) for i in axes[1].get_xlim()]
-                ylim = [int(i) for i in axes[1].get_ylim()]
+#                xlim = [int(i) for i in axes[1].get_xlim()]
+#                ylim = [int(i) for i in axes[1].get_ylim()]
 
 #                # saves the exact nad precise tiff file
 #                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
@@ -336,12 +327,14 @@ class BioVideo():
         else:
             fig, axes = plt.subplots(ncols=len(self._channels), nrows=1)
         
-        if self._channels == [0]:
+        if len(self._channels) == 1:
             axes=[axes]
+        else:
+            axes = list(axes)
         
         img=[]
 
-        channel_type =  ['' ,' \ndifferential']
+        channel_type =  ['int' ,' diff']
         
         
         for c in self._channels:
@@ -349,18 +342,25 @@ class BioVideo():
             if self._img_type == 'both':
                 axes[c].volume = self._videos[c//2].video
                 if self.orientation:
-                    axes[c].set_ylabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
+                    axes[c].set_ylabel('{} {}'.format(channel_type[c%2], c//2+1))
                 else:
-                    axes[c].set_xlabel('channel {}.{}'.format(c//2+1, channel_type[c%2]))
+                    axes[c].set_xlabel('{} {}'.format(channel_type[c%2], c//2+1))
                 for s in SIDES:
                     axes[c].spines[s].set_color(COLORS[c%2])
-
+            elif self._img_type == 'toggle':
+                axes[c].volume = self._videos[c].video
+                if self.orientation:
+                    axes[c].set_ylabel('int {}.'.format(c+1))
+                else:
+                    axes[c].set_xlabel('int {}.'.format(c+1)) 
+                for s in SIDES:
+                    axes[c].spines[s].set_color(COLORS[c])
             else:
                 axes[c].volume = self._videos[c].video
                 if self.orientation:
-                    axes[c].set_xlabel('channel {}.'.format(c+1))
+                    axes[c].set_ylabel('{} {}'.format(self._img_type, c+1))
                 else:
-                    axes[c].set_xlabel('channel {}.'.format(c+1)) 
+                    axes[c].set_xlabel('{} {}'.format(self._img_type, c+1)) 
                 for s in SIDES:
                     axes[c].spines[s].set_color(COLORS[c])
             
@@ -377,7 +377,7 @@ class BioVideo():
                    size_vertical=1,
                    fontproperties=fontprops)
             axes[c].add_artist(scalebar)
-            
+          
                    
 #        cursor = Cursor(axes[0])
         
