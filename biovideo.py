@@ -147,7 +147,7 @@ class BioVideo():
         channel=int(channel)
         frame=int(frame)
         video = self._videos[channel-1].video
-        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME, self._img_type,
+        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME + '_bio', self._img_type,
                                                               video.shape[0],
                                                               frame)
         
