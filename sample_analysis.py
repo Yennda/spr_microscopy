@@ -12,8 +12,9 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 
 #folder=main_folder+'20_01_24_third/'
 folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
-
-file = 'raw_01_1'
+folder=main_folder+'19_09_13_M5/'
+folder=main_folder+'19_09_05_M5/'
+file = 'raw_25_1'
 
 
 
@@ -23,7 +24,7 @@ video.loadData()
 
 video.rng = [-0.01, 0.01]
 
-#video._video=video._video[:,420:900,:]
+#video._video['raw']=video._video['raw'][300:800,:,:]
 #video.refresh()
 
 

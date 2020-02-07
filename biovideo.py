@@ -81,7 +81,7 @@ class BioVideo():
             if c == 0:
                 self.spr_time = time
             self.spr_signals.append(signal)
-            
+               
     def fouriere(self):
         for video in self._videos:
             video.fouriere()
@@ -353,9 +353,9 @@ class BioVideo():
             elif self._img_type == 'toggle':
                 axes[c].volume = self._videos[c].video
                 if self.orientation:
-                    axes[c].set_ylabel('int {}.'.format(c+1))
+                    axes[c].set_ylabel('int {}'.format(c+1))
                 else:
-                    axes[c].set_xlabel('int {}.'.format(c+1)) 
+                    axes[c].set_xlabel('int {}'.format(c+1)) 
                 for s in SIDES:
                     axes[c].spines[s].set_color(COLORS[c])
             else:
