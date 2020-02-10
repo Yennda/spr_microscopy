@@ -35,17 +35,18 @@ class BioVideo():
         self._videos = None
         self.time_info = None
         self.rng = None
-        
+        self.ref_frame = 0
 
         self.spr_time = None
         self.spr_signals = None
         self.syn_index = None
         
         self.spr = False
-        self.ref_frame = 0
+        self.spr_std = True
         self._img_type = 'raw'
         self._toggle = True
         self.orientation = None #True-horizontal, False-vertical
+        self.memory = []
         
     def loadData(self):
         self._videos = []
@@ -94,25 +95,25 @@ class BioVideo():
         self.rng = [-0.01, 0.01]
         self._img_type = 'diff'
             
-    def make_int(self):
+    def make_int(self, k = 1):
         for video in self._videos:
             video.ref_frame = self.ref_frame
-            video.make_int()
+            video.make_int(k)
         self.rng = [-0.01, 0.01]
         self._img_type = 'int'
         
-    def make_toggle(self):
+    def make_toggle(self, k = 1):
         for video in self._videos:
             video.make_diff()
-            video.make_int()
+            video.make_int(k)
             video._img_type = True
         self.rng = [-0.01, 0.01]
         self._img_type = 'toggle'
             
-    def make_both(self):
+    def make_both(self, k = 1):
         for video in self._videos:
             video.make_diff()
-            video.make_int()
+            video.make_int(k)
             video._img_type = True
         self.rng = [-0.01, 0.01]
         self._img_type = 'both'
@@ -236,8 +237,8 @@ class BioVideo():
             
             if self.spr:
                 location.xy=[self.spr_time[self.syn_index+axes[0].index], -1]
-                fig_spr.canvas.draw()
                 fig_spr.suptitle(frame_info(c, axes[c].index))
+                fig_spr.canvas.draw()
          
         def button_press(event):
             fig = event.canvas.figure
@@ -410,22 +411,36 @@ class BioVideo():
             spr_plot.set_title('SPR signal')
             spr_plot.set_xlabel('time [min]')
             spr_plot.set_ylabel('intensity [a. u.]')
-            spr_plot_std = spr_plot.twinx()
+            if self.spr_std:
+                spr_plot_std = spr_plot.twinx()
             
             if self._img_type=='both':
                 channels = [i for i in range(len(self._channels)//2)]
             else:
                 channels = self._channels
-                
+             
+            channel_mem = []
             for c in channels: 
                 
-                stdev = []
-                for v in axes[c].volume:
-                    stdev.append(np. std(v))
+                
+
                 end = self.syn_index + len(axes[0].volume)
                 spr_plot.plot(self.spr_time[self.syn_index:end], self.spr_signals[c][self.syn_index:end], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
-                spr_plot_std.plot(self.spr_time[self.syn_index:end], stdev, linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1), ls=':')
                 
+                stdev = []
+                if self.spr_std:
+                    print('Computing the standard deviation')
+                    i = 1
+                    for v in axes[c].volume:
+                        print('\r{}/ {}'.format(i, len(axes[c].volume)), end="")
+                        stdev.append(np. std(v))
+                        i += 1
+                        
+                    print(' DONE')
+                    channel_mem.append([self.spr_time[self.syn_index:end], stdev])
+                    spr_plot_std.plot(self.spr_time[self.syn_index:end], stdev, linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1), ls=':')
+           
+            self.memory.append(channel_mem)    
             location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
             spr_plot.add_patch(location)
             spr_plot.legend(loc=3)

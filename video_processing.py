@@ -91,38 +91,44 @@ class Video(object):
 
         return np.swapaxes(video, 0, 1)
 
-    def process_diff(self):
+    def process_diff(self, k = 1):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
-        out[:, :, 0] = np.zeros(sh[0:2])
+        
+        print((sh[0], sh[1], k))
+        out[:, :, :2*k] = np.zeros((sh[0], sh[1], 2*k))
         print('Computing the differential image')
         
-        for i in range(1, sh[-1]):
+        for i in range(2*k, sh[-1]):
             print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
-            out[:, :, i] = self._video['raw'][:, :, i] - self._video['raw'][:, :, i - 1]
+            current = np.sum(self._video['raw'][:,:,i - k+1: i+1], axis=2)/k
+            previous = np.sum(self._video['raw'][:,:,i - 2*k+1: i - k+1], axis=2)/k
+            out[:, :, i] = current - previous
             
         print(' DONE')
         return out
     
-    def process_int(self):
+    def process_int(self, k = 1):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0:2])
+        reference = np.sum(self._video['raw'][:,:,self.ref_frame: self.ref_frame + k], axis=2)/k
+        
         print('Computing the integral image')
         
         for i in range(1, sh[-1]):
             print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
-            out[:, :, i] = self._video['raw'][:, :, i] - self._video['raw'][:, :, self.ref_frame]
+            out[:, :, i] = self._video['raw'][:, :, i] - reference
             
         print(' DONE')
         return out
         
-    def make_diff(self):
-        self._video['diff'] = self.process_diff()
+    def make_diff(self, k = 1):
+        self._video['diff'] = self.process_diff(k)
         self._img_type = 'diff'
 
-    def make_int(self):
-        self._video['int']= self.process_int()
+    def make_int(self, k = 1):
+        self._video['int']= self.process_int(k)
         self._img_type = 'int'
     
 #    def make(self, img_type):

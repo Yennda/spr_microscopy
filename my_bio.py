@@ -21,12 +21,16 @@ file = 'raw_01'
 video = BioVideo(folder, file, 2)
 video.loadData()
 
+#for vid in video._videos:
+#    vid._video['raw'] = vid._video['raw'][:, :, :400]
+#    vid.refresh()
 
-video.ref_frame = 1159
-#video.ref_frame = 0
 
-video.make_diff()
-#video.make_int()
+#video.ref_frame = 1159
+video.ref_frame = 0
+
+#video.make_diff()
+video.make_int(20)
 #video.make_toggle()
 #video.make_both()
 
@@ -40,3 +44,6 @@ video.spr = True
 video.explore()
 
 print('{:.2f} s'.format(t.time()-time_start))
+
+
+
