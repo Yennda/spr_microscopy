@@ -213,8 +213,8 @@ def is_np(data, inten_a=1e-04, inten_b=5e-4, show=False):
 
         fix, axes = plt.subplots()
         axes.plot(data, 'b-', label='data')
-        axes.plot(xdata, step(xdata, *popt), 'r-')
-        axes.plot(xdata, linear(xdata, *lpopt), 'g-')
+#        axes.plot(xdata, step(xdata, *popt), 'r-')
+#        axes.plot(xdata, linear(xdata, *lpopt), 'g-')
 
     return (m.fabs(popt[2] - popt[1]) > inten_a and 2 * squares < lsquares) or (
                 m.fabs(popt[2] - popt[1]) > inten_b and squares < lsquares)  # or (np.abs(data[-1])>mx)

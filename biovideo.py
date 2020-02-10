@@ -52,7 +52,8 @@ class BioVideo():
         self._videos = []
         print('Don\'t forget to run one of the "make_..." methods ')
         for c in self._channels:
-            video = Video(self.folder, self.file+'_{}'.format(c+1))
+#            video = Video(self.folder, self.file+'_{}'.format(c+1))
+            video = Video(self.folder, self.file+'_{}'.format(2))
             video.loadData()
             video.rng = [0, 1]
             self._videos.append(video)
@@ -89,9 +90,10 @@ class BioVideo():
         for video in self._videos:
             video.fouriere()
         
-    def make_diff(self):
+    def make_diff(self, k = 1):
         for video in self._videos:
-            video.make_diff()
+            video.make_diff(k)
+            k=5
         self.rng = [-0.01, 0.01]
         self._img_type = 'diff'
             
@@ -103,8 +105,10 @@ class BioVideo():
         self._img_type = 'int'
         
     def make_toggle(self, k = 1):
+        l=1
         for video in self._videos:
-            video.make_diff()
+            video.make_diff(l)
+            l=5
             video.make_int(k)
             video._img_type = True
         self.rng = [-0.01, 0.01]

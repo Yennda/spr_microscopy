@@ -279,13 +279,16 @@ class Video(object):
                 print('you pressed', event.button, event.xdata, event.ydata)
                 fig.canvas.draw()
             elif event.dblclick:
-                x = int((event.xdata - 0.5) // 1)
-                y = int((event.ydata - 0.5) // 1)
+                x = int((event.xdata + 0.5) // 1)
+                y = int((event.ydata + 0.5) // 1)
                 #                file = open('data.txt', 'a')
                 #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
                 #                file.close()
-
-                print(is_np(self._video[y, x, :], show=True))
+                print(x)
+                print(y)
+                print(self.video.shape)
+                
+                print(is_np(self.video[:, y, x], show=True))
 
         def next_slice(i):
             volume = ax.volume
