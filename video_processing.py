@@ -149,11 +149,9 @@ class Video(object):
             
         """
 
-        out=np.ndarray(list(self._video['raw'].shape[0:2])+[self._video['raw'].shape[2]//n])
+        out=np.ndarray(list(self._video['raw'].shape[0:2])+[self._video['raw'].shape[2]//n-1])
         t_out=[]
         for i in range(n,self._video['raw'].shape[-1]//n*n,n):
-            print(i)
-            print(out.shape)
             out[:,:,i//n-1]=np.sum(self._video['raw'][:,:,i-n: i], axis=2)/n
             
             t_time=self.time_info[i][0]
@@ -162,7 +160,6 @@ class Video(object):
                 t_period+=t[1]
             t_time+=t_period
             t_out.append([t_time, t_period])
-        print(out.shape)   
         self._video['raw'] = out
         self.time_info=t_out
         self.refresh()

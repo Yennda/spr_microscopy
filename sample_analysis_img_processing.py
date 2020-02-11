@@ -23,7 +23,7 @@ file = 'raw_32_1'
 
 video = Video(folder, file)
 video.loadData()
-video.change_fps(10)
+#video.change_fps(10)
 
 video.rng = [-0.01, 0.01]
 
@@ -40,7 +40,8 @@ video.make_diff(k = 1)
 # a
 #is_np(video.video[:, 212, 673], show=True)
 
-#is_np(video.video[:, 799, 170], show=True)
+#b
+is_np(video.video[:, 88, 733], show=True)
 
-video.explore()
+#video.explore()
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))
