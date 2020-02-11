@@ -137,10 +137,23 @@ class Video(object):
 #        self._img_type = 'int'
         
     def change_fps(self, n):
+        """
+        Sums n frames into one, hence changes the frame rate of the video.
+        Works only on the raw data. Therefore call before calling make_... functions
+        
+        Parameters:
+            n (int): number of integrated frames
+            
+        Returns:
+            no return
+            
+        """
 
-        out=np.ndarray(list(self.video.shape[0:2])+[self.video.shape[2]//n])
+        out=np.ndarray(list(self._video['raw'].shape[0:2])+[self._video['raw'].shape[2]//n])
         t_out=[]
         for i in range(n,self._video['raw'].shape[-1]//n*n,n):
+            print(i)
+            print(out.shape)
             out[:,:,i//n-1]=np.sum(self._video['raw'][:,:,i-n: i], axis=2)/n
             
             t_time=self.time_info[i][0]
@@ -149,7 +162,7 @@ class Video(object):
                 t_period+=t[1]
             t_time+=t_period
             t_out.append([t_time, t_period])
-            
+        print(out.shape)   
         self._video['raw'] = out
         self.time_info=t_out
         self.refresh()
@@ -284,10 +297,9 @@ class Video(object):
                 #                file = open('data.txt', 'a')
                 #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
                 #                file.close()
-                print(x)
-                print(y)
-                print(self.video.shape)
-                
+                print('x = {}'.format(x))
+                print('y = {}'.format(y))
+                                
                 print(is_np(self.video[:, y, x], show=True))
 
         def next_slice(i):
