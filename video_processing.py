@@ -100,11 +100,16 @@ class Video(object):
         print('Computing the differential image')
         
         for i in range(2*k, sh[-1]):
+            
+            
             print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
             current = np.sum(self._video['raw'][:,:,i - k+1: i+1], axis=2)/k
             previous = np.sum(self._video['raw'][:,:,i - 2*k+1: i - k+1], axis=2)/k
+#            difference = current - previous
+#            average = np.average(difference)
+#            print(average)
+#            out[:, :, i] = difference - np.full(difference.shape, average)
             out[:, :, i] = current - previous
-            
         print(' DONE')
         return out
     
@@ -186,7 +191,7 @@ class Video(object):
             else:
                 self._video = out
 
-    def fouriere(self):
+    def fouriere(self, show = False):
         print('Filtering fouriere frequencies')
         if type(self._img_type) == bool:
             img_type = ['int']
@@ -197,12 +202,16 @@ class Video(object):
 
                 print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
                 f = np.fft.fft2(self._video[it][:, :, i])
+                
                 magnitude_spectrum = 20 * np.log(np.abs(f))
                 mask = np.real(magnitude_spectrum) > 30
                 f[mask] = 0
-    
+                  
                 img_back = np.fft.ifft2(f)
                 self._video[it][:, :, i] = np.real(img_back)
+        if show:
+            fig_four, axes_four = plt.subplots()
+            axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
 
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
         """ 
@@ -297,7 +306,7 @@ class Video(object):
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
                                 
-                print(is_np(self.video[:, y, x], show=True))
+                is_np(self.video[:, y, x], show=True)
 
         def next_slice(i):
             volume = ax.volume

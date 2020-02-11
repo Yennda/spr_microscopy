@@ -8,6 +8,7 @@ import matplotlib.patches as mpatches
 from PIL import Image
 import tools
 from scipy.optimize import curve_fit
+from tools import COLORS
 
 SCALE = 2.93  # mu/px
 SHAPE = 50  # dimension of the image in px
@@ -182,39 +183,44 @@ def linear(x, a, b):
 def find_step(data):
     return np.argmax([m.fabs(data[i] - data[i + 2]) for i in range(len(data) - 2)])
 
+def func_tri(x, x0, h, w):
+    """
+   Triangular function
+    
+    Parameters:
+        x0 (float): position of the centre of the triangle
+        h (float): height of the triangle
+        w (float): width of the triangle
+        
+    Returns:
+        y value of a triangular function, based on the parameters x0, h and w
+        
+    """
+    if x >= (x0 - w/2) and x < (x0 + w/2):
+        return -m.fabs(x-x0)*h/w*2+h
+    else:
+        return 0
+    
 
 def is_np(data, inten_a=1e-04, inten_b=5e-4, show=False):
-    xdata = np.arange(len(data))
-    popt_guess, pcov_guess = curve_fit(step, xdata, data, p0=[find_step(data), 0, -5e-04], epsfcn=0.1)
-
-    popt_fixed, pcov_fixed = curve_fit(step, xdata, data, p0=[int(len(data) / 2), 0, -5e-04], epsfcn=0.1)
-
-    squares_guess = sum([(step(i, *popt_guess) - data[i]) ** 2 for i in xdata])
-    squares_fixed = sum([(step(i, *popt_fixed) - data[i]) ** 2 for i in xdata])
-
-    if squares_guess < squares_fixed:
-        popt, pcov = popt_guess, pcov_guess
-        squares = squares_guess
-    else:
-        popt, pcov = popt_fixed, pcov_fixed
-        squares = squares_fixed
-
-    lpopt, lpcov = curve_fit(linear, xdata, data, p0=[1e-4, 0], epsfcn=0.1)
-    lsquares = sum([(linear(i, *lpopt) - data[i]) ** 2 for i in xdata])
+#    xdata = np.arange(len(data))
+    correlation = [0]*10
+    for i in range(10, len(data)-10):
+        tri = [func_tri(x, x0 = i, h = -0.0055, w = 20) for x in range(i-10, i+10)]
+#        print(np. correlate(data, tri))
+        correlation.append(np. correlate(data[i-10:i+10], tri)[0]*1e5)
+    
+#    y = [func_tri(x, x0 = 20, h = -0.01, w = 20) for x in range(len(data))]
 
     if show:
-        #        print('a, b: {}'.format(popt))
-        #    print(pcov)
-        print('delta: {}'.format(m.fabs(popt[2] - popt[1])))
-        print('step: {}'.format(squares))
-        print('linear {}: '.format(lsquares))
-        print(2 * squares < lsquares)
-        #        print('variance: {}'.format(np.var(data)))
 
-        fix, axes = plt.subplots()
-        axes.plot(data, 'b-', label='data')
-#        axes.plot(xdata, step(xdata, *popt), 'r-')
-#        axes.plot(xdata, linear(xdata, *lpopt), 'g-')
+        fig, axes = plt.subplots()
+        axes.plot(data, ls = '-', color = COLORS[1], label='data')
+#        axes.set_xlim(0, 5)
+#        axes.set_ylim(-0.0035, 0.0005)
+        axes.plot(tri, ls = '-', color = COLORS[0], label='triangular function')
+        axes_corr = axes.twinx()
+        axes_corr.plot(correlation, ls = '-', color = COLORS[2], label='correlation')
+        
+        fig.legend(loc=3)
 
-    return (m.fabs(popt[2] - popt[1]) > inten_a and 2 * squares < lsquares) or (
-                m.fabs(popt[2] - popt[1]) > inten_b and squares < lsquares)  # or (np.abs(data[-1])>mx)

@@ -2,6 +2,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+yellow='#ffb200'
+red='#DD5544'
+blue='#0284C0'
+black='#000000'
+
+COLORS = [yellow, blue, red, black]
+SIDES = ['left', 'right', 'bottom', 'top']
+
 def new_export(folder, name):
     path = folder + name
 
