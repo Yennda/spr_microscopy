@@ -442,12 +442,12 @@ class BioVideo():
                         
                     print(' DONE')
                     channel_mem.append([self.spr_time[self.syn_index:end], stdev])
-                    spr_plot_std.plot(self.spr_time[self.syn_index:end], stdev, linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1), ls=':')
+                    spr_plot_std.plot(self.spr_time[self.syn_index:end], stdev, linewidth=1, color=COLORS[c], label='ch. {} std'.format(c+1), ls=':')
            
             self.memory.append(channel_mem)    
             location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
             spr_plot.add_patch(location)
-            spr_plot.legend(loc=3)
+            fig_spr.legend(loc=3)
             
             fig_spr.suptitle(frame_info(c, axes[c].index))
             fig_spr.canvas.mpl_connect('button_press_event', mouse_click_spr)

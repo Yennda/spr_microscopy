@@ -17,9 +17,9 @@ time_start=t.time()
 folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 file = 'raw_01_2'
 
-folder=main_folder+'19_08_29_L3/'
+folder=main_folder+'20_02_18_P3/'
 #folder=main_folder+'20_02_06_Tomas_magnetic_nps/'
-file = 'raw_32_1'
+file = 'raw_14_1'
 
 
 
