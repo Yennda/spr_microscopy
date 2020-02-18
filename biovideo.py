@@ -41,7 +41,7 @@ class BioVideo():
         self.spr_signals = None
         self.syn_index = None
         
-        self.spr = False
+        self.spr = True
         self.spr_std = True
         self._img_type = 'raw'
         self._toggle = True
@@ -61,8 +61,12 @@ class BioVideo():
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
         
-        self.loadSPR()
-        self.synchronization()
+        if self.spr:
+            self.loadSPR()
+            self.synchronization()
+        else:
+            self.syn_index = 0
+            self.spr_time = [i for i in range(self._videos[0].video.shape[0])]
         
     def loadSPR(self):
         self.spr_signals=[]
@@ -448,7 +452,7 @@ class BioVideo():
             fig_spr.suptitle(frame_info(c, axes[c].index))
             fig_spr.canvas.mpl_connect('button_press_event', mouse_click_spr)
             
-        cb = fig.colorbar(img[0], ax=axes)        
+#        cb = fig.colorbar(img[0], ax=axes)        
         plt.tight_layout()
         plt.show()
         
