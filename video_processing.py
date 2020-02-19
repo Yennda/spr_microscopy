@@ -6,6 +6,7 @@ import cv2
 import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
+import image_processing as ip
 
 from np_analysis import np_analysis, is_np
 import tools as tl
@@ -35,7 +36,11 @@ class Video(object):
         
         self.np_number=0
         self.ref_frame=0
-        
+        self.frames_binding = None
+        self.frames_unbinding = None
+        self.mask_binding = None
+        self.mask_unbinding = None        
+        self.recognized = False
 
     def __iter__(self):
         self.n = -1
@@ -136,11 +141,6 @@ class Video(object):
         self._video['int']= self.process_int(k)
         self._img_type = 'int'
     
-#    def make(self, img_type):
-#        if img_type == 'diff':
-#        self._video[img_type]= self.process_int()
-#        self._img_type = 'int'
-        
     def change_fps(self, n):
         """
         Sums n frames into one, hence changes the frame rate of the video.
@@ -156,9 +156,17 @@ class Video(object):
 
         out=np.ndarray(list(self._video['raw'].shape[0:2])+[self._video['raw'].shape[2]//n-1])
         t_out=[]
+#        self.make_diff()
         for i in range(n,self._video['raw'].shape[-1]//n*n,n):
-            out[:,:,i//n-1]=np.sum(self._video['raw'][:,:,i-n: i], axis=2)/n
+#            out[:,:,i//n-1]=np.sum(self._video['raw'][:,:,i-n: i], axis=2)/n
             
+#            weights_std = [np.std(self._video['diff'][:,:,i - n + j]) for j in range(n)]
+#            weights_std = [w/sum(weights_std) for w in weights_std]
+#            print(weights_std)
+            
+#            out[:,:,i//n-1]=np.average(self._video['raw'][:,:,i-n: i], axis = 2, weights = weights_std)
+            out[:,:,i//n-1]=np.average(self._video['raw'][:,:,i-n: i], axis = 2)
+#            out[:,:,i//n-1]=np.median(self._video['raw'][:,:,i-n: i], axis=2)
             t_time=self.time_info[i][0]
             t_period=0
             for t in self.time_info[i-n: i]:
@@ -169,9 +177,6 @@ class Video(object):
         self.time_info=t_out
         self.refresh()
         
-#    def _delete_video(self):
-#        self._video.__delitem__()
-
     def refresh(self):
         self.video_stats[1] = [self._video['raw'].shape[1], self._video['raw'].shape[0], self._video['raw'].shape[2]]
 
@@ -213,6 +218,39 @@ class Video(object):
             fig_four, axes_four = plt.subplots()
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
 
+    def img_process_alpha(self):
+        if self._img_type != 'diff':
+            print('Processes only differential image. Use make_diff method first.')
+            return
+        
+
+#        self.frames_binding = np.zeros(self._video['raw'].shape[1:])
+#        self.frames_unbinding = np.zeros(self._video['raw'].shape[1:])
+        
+        self.frames_binding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.frames_unbinding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+#        self.mask_binding = np.full(self.video.shape[1:], False, dtype=bool)
+        self.mask_binding = np.zeros(self.video.shape[1:])
+        self.mask_unbinding = np.zeros(self.video.shape[1:])
+        print('Correlating all the pixels with triognal function, filtering the peaks.')
+        i = 0
+        whole = self.video.shape[1]*self.video.shape[2]
+        for x in range(self.video.shape[2]):
+            for y in range(self.video.shape[1]):
+                out = ip.correlation_temporal(self.video[:, y, x], 10, -0.0055)
+                self.frames_binding[x][y] = out[0] 
+                self.frames_unbinding[x][y] = out[1]
+                if out[0]!=[]:
+                    self.mask_binding[y, x] = 1
+                if out[1]!=[]:
+                    self.mask_unbinding[y, x] = 1    
+                i+=1
+                print('\r{}/ {}'.format(i+1, whole), end="")   
+                
+                
+        self.recognized = True
+        
+        
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
         """ 
         Need to rewrite for changed self.video handling
@@ -305,8 +343,15 @@ class Video(object):
                 #                file.close()
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
-                                
-                is_np(self.video[:, y, x], show=True)
+                print('--mask--')
+                print(self.mask_binding[y, x])
+                print(self.mask_unbinding[y, x])
+                print('--frames--')
+                print(self.frames_binding[x][y])     
+                print(self.frames_unbinding[x][y]) 
+                print('-------------')
+#                is_np(self.video[:, y, x], show=True)
+                print(ip.correlation_temporal(self.video[:, y, x], 10, -0.0055, show=True))
 
         def next_slice(i):
             volume = ax.volume
@@ -396,6 +441,9 @@ class Video(object):
             img = ax.imshow(volume[ax.index], cmap='gray')
         else:
             img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
+            
+        if self.recognized:
+            ax.imshow(self.mask_binding, cmap = 'Reds', alpha = 0.5)
             
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)

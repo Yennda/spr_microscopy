@@ -9,6 +9,7 @@ from PIL import Image
 import tools
 from scipy.optimize import curve_fit
 from tools import COLORS
+from scipy.signal import argrelextrema
 
 SCALE = 2.93  # mu/px
 SHAPE = 50  # dimension of the image in px
@@ -202,6 +203,8 @@ def func_tri(x, x0, h, w):
         return 0
     
 
+    
+    
 def is_np(data, inten_a=1e-04, inten_b=5e-4, show=False):
 #    xdata = np.arange(len(data))
     correlation = [0]*10

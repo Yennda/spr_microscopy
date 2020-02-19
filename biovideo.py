@@ -88,6 +88,11 @@ class BioVideo():
     def fouriere(self):
         for video in self._videos:
             video.fouriere()
+            
+    def change_fps(self, n):
+        for video in self._videos:
+            video.change_fps(n)
+            video.refresh()
         
     def make_diff(self, k = 1):
         for video in self._videos:

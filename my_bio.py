@@ -22,19 +22,20 @@ video = BioVideo(folder, file, 2)
 video.loadData()
 
 for vid in video._videos:
-    vid._video['raw'] = vid._video['raw'][600:600+273, :, :]
+#    vid._video['raw'] = vid._video['raw'][600:600+273, :, :]
+    vid._video['raw'] = vid._video['raw'][:, :, :600]
     vid.refresh()
-
+#video.change_fps(10)
 
 #video.ref_frame = 1159
 video.ref_frame = 0
 
 #video.make_diff()
 #video.make_int(20)
-video.make_toggle()
+#video.make_toggle()
 #video.make_both()
 
-#video.fouriere()
+#video.fouriere()▼
 video.spr = True
 video.spr_std = True
 
@@ -42,7 +43,7 @@ video.spr_std = True
 #video._video=video._video[20:150,950:1250,:]
 #video.save_array_form()
 
-video.explore()
+#video.explore()
 
 print('{:.2f} s'.format(t.time()-time_start))
 
