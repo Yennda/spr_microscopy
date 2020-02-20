@@ -33,13 +33,18 @@ class Video(object):
         self.rng = [-1, 1]
         self.time_info = None
 
-        
         self.np_number=0
         self.ref_frame=0
+        k_diff = None
+        k_int = None
+        
         self.frames_binding = None
         self.frames_unbinding = None
+        
         self.mask_binding = None
         self.mask_unbinding = None        
+        self.mask_both = None   
+        self.mask_visible = True
         self.recognized = False
 
     def __iter__(self):
@@ -100,7 +105,7 @@ class Video(object):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
         
-        print((sh[0], sh[1], k))
+#        print((sh[0], sh[1], k))
         out[:, :, :2*k] = np.zeros((sh[0], sh[1], 2*k))
         print('Computing the differential image')
         
@@ -115,6 +120,8 @@ class Video(object):
 #            print(average)
 #            out[:, :, i] = difference - np.full(difference.shape, average)
             out[:, :, i] = current - previous
+        self.k_diff = k
+        
         print(' DONE')
         return out
     
@@ -129,6 +136,7 @@ class Video(object):
         for i in range(1, sh[-1]):
             print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video['raw'][:, :, i] - reference
+        self.k_int = k
             
         print(' DONE')
         return out
@@ -218,7 +226,7 @@ class Video(object):
             fig_four, axes_four = plt.subplots()
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
 
-    def img_process_alpha(self):
+    def img_process_alpha(self, threshold = 15):
         if self._img_type != 'diff':
             print('Processes only differential image. Use make_diff method first.')
             return
@@ -229,23 +237,24 @@ class Video(object):
         
         self.frames_binding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         self.frames_unbinding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-#        self.mask_binding = np.full(self.video.shape[1:], False, dtype=bool)
         self.mask_binding = np.zeros(self.video.shape[1:])
         self.mask_unbinding = np.zeros(self.video.shape[1:])
+        
         print('Correlating all the pixels with triognal function, filtering the peaks.')
         i = 0
         whole = self.video.shape[1]*self.video.shape[2]
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
-                out = ip.correlation_temporal(self.video[:, y, x], 10, -0.0055)
+                out = ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold)
                 self.frames_binding[x][y] = out[0] 
                 self.frames_unbinding[x][y] = out[1]
-                if out[0]!=[]:
+                if len(out[0])!=0:
                     self.mask_binding[y, x] = 1
-                if out[1]!=[]:
+                if len(out[1])!=0:
                     self.mask_unbinding[y, x] = 1    
                 i+=1
                 print('\r{}/ {}'.format(i+1, whole), end="")   
+        self.mask_both = (self.mask_binding + self.mask_unbinding)//2
                 
                 
         self.recognized = True
@@ -302,6 +311,7 @@ class Video(object):
         self.np_count(self.np_pixels(), show=True)
 
     def explore(self, source='vid'):
+        
 
         def frame_info(i):
             return '{}/{}  t= {} s dt= {:.2f} s'.format(
@@ -343,27 +353,21 @@ class Video(object):
                 #                file.close()
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
-                print('--mask--')
-                print(self.mask_binding[y, x])
-                print(self.mask_unbinding[y, x])
-                print('--frames--')
-                print(self.frames_binding[x][y])     
-                print(self.frames_unbinding[x][y]) 
-                print('-------------')
 #                is_np(self.video[:, y, x], show=True)
-                print(ip.correlation_temporal(self.video[:, y, x], 10, -0.0055, show=True))
+                ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold=3,  show=True)
 
         def next_slice(i):
-            volume = ax.volume
+#            volume = ax.volume
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
+            masks[0].set_array(volume_mask_bind[ax.index])
+            masks[1].set_array(volume_mask_unbind[ax.index])   
+            
             ax.set_title(frame_info(ax.index))
 
         def button_press(event):
             fig = event.canvas.figure
             ax = fig.axes[0]
-#            volume = data
-            
             if event.key == '6':
                 fig = event.canvas.figure
                 next_slice(10)
@@ -390,6 +394,15 @@ class Video(object):
                 fig.canvas.draw()
             elif event.key == 'x':
                 [p.remove() for p in reversed(ax.patches)]
+            elif event.key == 'm':
+                
+                if self.mask_visible:
+                    img.set_zorder(10)
+                    self.mask_visible = False
+                else:
+                    img.set_zorder(0)
+                    self.mask_visible = True
+                fig.canvas.draw()
             elif event.key == '5':
                 lim = [i * 1.2 for i in img.get_clim()]
                 img.set_clim(lim)
@@ -443,7 +456,50 @@ class Video(object):
             img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
             
         if self.recognized:
-            ax.imshow(self.mask_binding, cmap = 'Reds', alpha = 0.5)
+            volume_mask_bind = np.zeros(list(self.video.shape) + [4])
+            volume_mask_unbind = np.zeros(list(self.video.shape) + [4])
+            
+            k_diff = self.k_diff
+            
+            tri = [ip.func_tri(i, k_diff, 1, 2*k_diff) for i in range(2*k_diff)]
+            for x in range(self.video.shape[2]):
+                for y in range(self.video.shape[1]):
+                    for f in self.frames_binding[x][y]:
+                        
+#                        volume_mask_bind[f, y, x, :] = [0, 255, 0, 255]
+                        volume_mask_bind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 1] = [1]*2*k_diff
+                        volume_mask_bind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
+                        
+                    for f in self.frames_unbinding[x][y]:
+#                        volume_mask_unbind[f, y, x, :] = [255, 0, 0, 255]
+                        volume_mask_unbind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 0] = [1]*2*k_diff
+                        volume_mask_unbind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
+                        
+            ax.volume_mask_bind = volume_mask_bind
+            ax.volume_mask_unbind = volume_mask_unbind
+            
+            masks = []
+            masks.append(ax.imshow(volume_mask_bind[ax.index]))
+            masks.append(ax.imshow(volume_mask_unbind[ax.index]))
+
+            
+#            mask_binding_img = np.zeros(list(self.mask_binding.shape) + [4], dtype=np.uint8)
+#            mask_unbinding_img = np.zeros(list(self.mask_binding.shape) + [4], dtype=np.uint8)
+#            mask_both_img = np.zeros(list(self.mask_both.shape) + [4], dtype=np.uint8)
+#            
+#            mask_binding_img[:,:,1] = self.mask_binding*255 #green => binding
+#            mask_unbinding_img[:,:,0] = self.mask_unbinding*255 #red => unbinding
+#            mask_both_img[:,:,2] = self.mask_both*255 #blue => both
+#            
+#            #alpha channel
+#            mask_binding_img[:,:,3] = self.mask_binding*255/2
+#            mask_unbinding_img[:,:,3] = self.mask_unbinding*255/2
+#            mask_both_img[:,:,3] = self.mask_unbinding*255/2
+#            
+#            masks = []
+#            masks.append(ax.imshow(mask_binding_img))
+#            masks.append(ax.imshow(mask_unbinding_img))
+#            masks.append(ax.imshow(mask_both_img))
             
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)

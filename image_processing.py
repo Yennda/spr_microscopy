@@ -30,7 +30,11 @@ def func_tri(x, x0, h, w):
     else:
         return 0
     
-def correlation_temporal(data, k_diff, step, show=False):
+#k_diffo = 10
+#stepo = -0.0055
+#tri = [func_tri(x, x0 = k_diffo, h = stepo, w = k_diffo*2) for x in range(0, 2*k_diffo)]
+
+def correlation_temporal(data, k_diff, step, threshold = 15, show = False):
     """
     Temporal correlation of data signal with the trigonal function of defined width (k_diff) and height (step). 
     The size of the step is defined according to the positive binding event.
@@ -40,30 +44,30 @@ def correlation_temporal(data, k_diff, step, show=False):
         step (float): height of the trigonal function. 
         
     Returns:
-        no return
+        frames of supposed binding and unbinding events
         
     """
     correlation = [0]*k_diff
+    tri = [func_tri(x, x0 = k_diff, h = step, w = k_diff*2) for x in range(0, 2*k_diff)]
+    
     for i in range(k_diff, len(data)-k_diff):
-        
-        tri = [func_tri(x, x0 = i, h = step, w = k_diff*2) for x in range(i-k_diff, i+k_diff)]
-        correlation.append(np. correlate(data[i-k_diff:i+k_diff], tri)[0]*1e5)
-        
-        peaks_binding, _ = find_peaks(correlation, height=15)
-        peaks_unbinding, _ = find_peaks([-c for c in correlation], height=15)
+
+        correlation.append(np.correlate(data[i-k_diff:i+k_diff], tri)[0]*1e5)
+        peaks_binding, _ = find_peaks(correlation, height=threshold)
+        peaks_unbinding, _ = find_peaks([-c for c in correlation], height=threshold)
         
     if show:             
         fig, axes = plt.subplots()
-        axes.plot(data, ls = '-', color = COLORS[1], label='data')
+        axes.plot(data, ls = '-', color = COLORS[3], label='signal')
     #        axes.set_xlim(0, 5)
     #        axes.set_ylim(-0.0035, 0.0005)
         axes.plot(tri, ls = '-', color = COLORS[0], label='triangular function')
         axes_corr = axes.twinx()
-        axes_corr.plot(correlation, ls = '-', color = COLORS[2], label='correlation')
-        axes_corr.scatter(peaks_binding, [correlation[p] for p in peaks_binding], label='binding', color=COLORS[1])
+        axes_corr.plot(correlation, ls = '-', color = COLORS[1], label='correlation')
+        axes_corr.scatter(peaks_binding, [correlation[p] for p in peaks_binding], label='binding', color=COLORS[4])
         axes_corr.scatter(peaks_unbinding, [correlation[p] for p in peaks_unbinding], label='unbinding', color=COLORS[2])
         fig.legend(loc=3)
-        
+    
 
     
 #    print(peaks_binding)
