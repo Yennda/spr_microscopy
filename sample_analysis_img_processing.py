@@ -19,7 +19,7 @@ file = 'raw_01_2'
 
 folder=main_folder+'20_02_18_P3/'
 #folder=main_folder+'20_02_06_Tomas_magnetic_nps/'
-file = 'raw_14_1'
+file = 'raw_18_1'
 
 
 
