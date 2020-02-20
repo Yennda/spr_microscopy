@@ -33,7 +33,7 @@ video.loadData()
 video.rng = [-0.01, 0.01]
 
 #video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]
-#video._video['raw']=video._video['raw'][70:220,490:660,:200]
+#video._video['raw']=video._video['raw'][70:220,490:660,:]
 video._video['raw']=video._video['raw'][100:150,500:600,:200]
 
 #video.change_fps(10)
@@ -45,7 +45,7 @@ video.make_diff(k = 10)
 
 # t, y, x
 #a
-#is_np(video.video[:, 799, 170],◄ show=True)
+#is_np(video.video[:, 799, 170], show=True)
 #correlation_temporal(video.video[:, 799, 170], 10, -0.0055)
 #b
 #is_np(video.video[:, 739, 218], show=True)
@@ -59,7 +59,7 @@ video.make_diff(k = 10)
 #c
 #is_np(video.video[:, 87, 737], show=True)
 
-video.img_process_alpha(3)
+video.img_process_alpha(3.5)
 
 
 video.explore()

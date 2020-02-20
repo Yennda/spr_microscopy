@@ -61,11 +61,11 @@ def correlation_temporal(data, k_diff, step, threshold = 15, show = False):
         axes.plot(data, ls = '-', color = COLORS[3], label='signal')
     #        axes.set_xlim(0, 5)
     #        axes.set_ylim(-0.0035, 0.0005)
-        axes.plot(tri, ls = '-', color = COLORS[0], label='triangular function')
+        axes.plot(tri, ls = '-', color = COLORS[0], label='tri. f-n')
         axes_corr = axes.twinx()
-        axes_corr.plot(correlation, ls = '-', color = COLORS[1], label='correlation')
-        axes_corr.scatter(peaks_binding, [correlation[p] for p in peaks_binding], label='binding', color=COLORS[4])
-        axes_corr.scatter(peaks_unbinding, [correlation[p] for p in peaks_unbinding], label='unbinding', color=COLORS[2])
+        axes_corr.plot(correlation, ls = '-', color = COLORS[1], label='corr.')
+        axes_corr.scatter(peaks_binding, [correlation[p] for p in peaks_binding], label='bind.', color=COLORS[4])
+        axes_corr.scatter(peaks_unbinding, [correlation[p] for p in peaks_unbinding], label='unbind.', color=COLORS[2])
         fig.legend(loc=3)
     
 

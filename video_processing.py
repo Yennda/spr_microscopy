@@ -41,6 +41,7 @@ class Video(object):
         self.frames_binding = None
         self.frames_unbinding = None
         
+        self.threshold = None
         self.mask_binding = None
         self.mask_unbinding = None        
         self.mask_both = None   
@@ -231,7 +232,7 @@ class Video(object):
             print('Processes only differential image. Use make_diff method first.')
             return
         
-
+        self.threshold = threshold
 #        self.frames_binding = np.zeros(self._video['raw'].shape[1:])
 #        self.frames_unbinding = np.zeros(self._video['raw'].shape[1:])
         
@@ -345,24 +346,23 @@ class Video(object):
                 ax.add_patch(p)
                 print('you pressed', event.button, event.xdata, event.ydata)
                 fig.canvas.draw()
+                
             elif event.dblclick:
                 x = int((event.xdata + 0.5) // 1)
                 y = int((event.ydata + 0.5) // 1)
                 #                file = open('data.txt', 'a')
                 #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
                 #                file.close()
+                print('------------')
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
 #                is_np(self.video[:, y, x], show=True)
-                ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold=3,  show=True)
+                ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold=self.threshold,  show=True)
 
         def next_slice(i):
-#            volume = ax.volume
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
-            masks[0].set_array(volume_mask_bind[ax.index])
-            masks[1].set_array(volume_mask_unbind[ax.index])   
-            
+            mask.set_array(volume_mask[ax.index])         
             ax.set_title(frame_info(ax.index))
 
         def button_press(event):
@@ -456,32 +456,24 @@ class Video(object):
             img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
             
         if self.recognized:
-            volume_mask_bind = np.zeros(list(self.video.shape) + [4])
-            volume_mask_unbind = np.zeros(list(self.video.shape) + [4])
+            volume_mask = np.zeros(list(self.video.shape) + [4])
             
             k_diff = self.k_diff
             
-            tri = [ip.func_tri(i, k_diff, 1, 2*k_diff) for i in range(2*k_diff)]
+            tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
             for x in range(self.video.shape[2]):
                 for y in range(self.video.shape[1]):
                     for f in self.frames_binding[x][y]:
-                        
-#                        volume_mask_bind[f, y, x, :] = [0, 255, 0, 255]
-                        volume_mask_bind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 1] = [1]*2*k_diff
-                        volume_mask_bind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
+                        volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 1] = [1]*2*k_diff
+                        volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
                         
                     for f in self.frames_unbinding[x][y]:
-#                        volume_mask_unbind[f, y, x, :] = [255, 0, 0, 255]
-                        volume_mask_unbind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 0] = [1]*2*k_diff
-                        volume_mask_unbind[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
+                        volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 0] = [1]*2*k_diff
+                        volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
                         
-            ax.volume_mask_bind = volume_mask_bind
-            ax.volume_mask_unbind = volume_mask_unbind
-            
-            masks = []
-            masks.append(ax.imshow(volume_mask_bind[ax.index]))
-            masks.append(ax.imshow(volume_mask_unbind[ax.index]))
+            ax.volume_mask = volume_mask
 
+            mask = ax.imshow(volume_mask[ax.index])
             
 #            mask_binding_img = np.zeros(list(self.mask_binding.shape) + [4], dtype=np.uint8)
 #            mask_unbinding_img = np.zeros(list(self.mask_binding.shape) + [4], dtype=np.uint8)
@@ -521,6 +513,22 @@ class Video(object):
         plt.show()
 
         print('''
+              Basic shortcuts 
+
+"8"/"5" increases/decreases contrast
+Mouse scrolling moves the time 
+"1" and "3" jumps 1 frames in time
+"4" and "6" jumps 10 frames in time
+"7" and "9" jumps 100 frames in time
+"f" fulscreen
+"o" zooms chosen area.
+"a" saves the image
+"s" saves the the whole figure
+"m" disables the mask
+
+"Left mouse button double click" show the time/intensity point of the pixel with the correlation function.
+
+Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
 Buttons "j"/"m" serve to increasing/decreasing contrast 
 Button "s" saves the current image as tiff file
 Mouse scrolling moves to neighboring frames
