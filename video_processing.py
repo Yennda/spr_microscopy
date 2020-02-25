@@ -7,12 +7,25 @@ import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
 import image_processing as ip
-
+import multiprocessing
 from np_analysis import np_analysis, is_np
 import tools as tl
 
 FOLDER_NAME = '/exports'
-
+def initializer():
+    global frames_binding
+    global frames_unbinding
+    frames_binding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+    frames_unbinding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+    
+def correlate_px(data):
+    video, y, x, threshold = data
+    threshold = data[3]
+    out = ip.correlation_temporal(video, 10, -0.003, threshold)
+    frames_binding[x][y] = out[0] 
+    frames_unbinding[x][y] = out[1] 
+            
+            
 class Video(object):
 
     def __init__(self, folder, file):
@@ -226,12 +239,20 @@ class Video(object):
         if show:
             fig_four, axes_four = plt.subplots()
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
+                
+    
+        
 
+       
+                
     def img_process_alpha(self, threshold = 15):
         if self._img_type != 'diff':
             print('Processes only differential image. Use make_diff method first.')
             return
         
+        
+   
+            
         self.threshold = threshold
 #        self.frames_binding = np.zeros(self._video['raw'].shape[1:])
 #        self.frames_unbinding = np.zeros(self._video['raw'].shape[1:])
@@ -244,20 +265,31 @@ class Video(object):
         print('Correlating all the pixels with triognal function, filtering the peaks.')
         i = 0
         whole = self.video.shape[1]*self.video.shape[2]
+        data = []
+        
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
+#                data.append((self.video[:, y, x], y, x, threshold))
+
+                
+                
                 out = ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold)
                 self.frames_binding[x][y] = out[0] 
                 self.frames_unbinding[x][y] = out[1]
                 if len(out[0])!=0:
                     self.mask_binding[y, x] = 1
                 if len(out[1])!=0:
-                    self.mask_unbinding[y, x] = 1    
+                    self.mask_unbinding[y, x] = 1 
                 i+=1
-                print('\r{}/ {}'.format(i+1, whole), end="")   
+                print('\r{}/ {}'.format(i+1, whole), end="") 
+                
+#        with multiprocessing.Pool() as pool:
+#            pool.map(correlate_px, data)        
+            
+#        self.frames_binding = frames_binding
+#        self.frames_unbinding = frames_unbinding
+
         self.mask_both = (self.mask_binding + self.mask_unbinding)//2
-                
-                
         self.recognized = True
         
         
