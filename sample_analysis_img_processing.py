@@ -27,6 +27,7 @@ file = 'raw_14_1'
 
 folder=main_folder+'20_02_25_P3/'
 file = 'raw_10_1'
+file = 'raw_11_1'
 
 video = Video(folder, file)
 video.loadData()
@@ -37,7 +38,9 @@ video.rng = [-0.01, 0.01]
 #video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]
 #video._video['raw']=video._video['raw'][70:220,490:660,:]
 #video._video['raw']=video._video['raw'][100:150,500:600,:200]
-video._video['raw']=video._video['raw'][100:150,300:400,100:300]
+video._video['raw']=video._video['raw'][100:300,300:500,:300]
+
+#video._video['raw']=video._video['raw'][100:150,300:400,100:300]
 #video._video['raw']=video._video['raw'][100:140,300:340,200:250]
 
 print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
@@ -65,8 +68,8 @@ print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 #c
 #is_np(video.video[:, 87, 737], show=True)
 
-video.img_process_alpha(3)
+video.img_process_alpha(3.5)
 
-
+video.show_pixels = False
 video.explore()
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))

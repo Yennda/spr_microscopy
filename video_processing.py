@@ -8,6 +8,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
 import image_processing as ip
 from multiprocessing import Pool
+import time as t
 
 from np_analysis import np_analysis, is_np
 import tools as tl
@@ -54,7 +55,8 @@ class Video(object):
         
         self.threshold = None 
         self.show_graphic = True
-        self.recognized = False
+        self.show_pixels = False
+        self.show_detected = False
 
     def __iter__(self):
         self.n = -1
@@ -157,7 +159,7 @@ class Video(object):
         
         i = 1
         imax = self.video.shape[2]*self.video.shape[1]
-        print('Computing the mask')
+        print('Computing the mask fro image')
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
                 for f in self.frames_binding[x][y]:
@@ -178,7 +180,7 @@ class Video(object):
         i = 0
         imax = self.video.shape[2]*self.video.shape[1]
         
-        print('Computing the mask')
+        print('Computing the y/n mask')
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
                 for f in self.frames_binding[x][y]:
@@ -283,7 +285,7 @@ class Video(object):
             if (f, y, x) in points_done:
                 continue
             
-            found_pxs = self.mask[f-1:f+2, y-1:y+2, x-1:x+2].nonzero()
+            found_pxs = self.mask[f-2:f+3, y-1:y+2, x-1:x+2].nonzero()
 
             for i in range(len(found_pxs[0])):
                 points_to_do.add((f+found_pxs[0][i]-1, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
@@ -306,28 +308,33 @@ class Video(object):
         
         print('Correlation')
         self.threshold = threshold
-        self.frames_binding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.frames_unbinding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.intensity_binding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.intensity_unbinding = [[None for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.intensity_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.intensity_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
 
         i = 0
+        time = t.time()
         whole = self.video.shape[1]*self.video.shape[2]   
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
-                out = ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold)
-                self.frames_binding[x][y] = out[0] 
-                self.frames_unbinding[x][y] = out[1]
-                self.intensity_binding[x][y] = out[2] 
-                self.intensity_unbinding[x][y] = out[3]           
                 
-                if len(out[0])!=0:
-                    for f in out[0]:
-                        self.candidate.add((f, y, x))
+                if np.abs(self.video[:, y, x]).max() > 0.001:
+                    out = ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold)
+                    self.frames_binding[x][y] = out[0] 
+                    self.frames_unbinding[x][y] = out[1]
+                    self.intensity_binding[x][y] = out[2] 
+                    self.intensity_unbinding[x][y] = out[3]           
+                    
+                    if len(out[0])!=0:
+                        for f in out[0]:
+                            self.candidate.add((f, y, x))
+                    
                 i+=1
-                print('\r{}/ {}'.format(i+1, whole), end="") 
+                print('\r{}/ {}, remains {:.2f} s'.format(i+1, whole, (t.time()-time)/i*(whole-i)), end="") 
         print(' DONE')
-        self.recognized = True
+        self.show_pixels = True
+        self.show_detected = True
         
         self.mask = self.process_mask()
         self.np_positions = [[[],[]] for i in range(self.video.shape[0])]
@@ -443,8 +450,9 @@ class Video(object):
         def next_slice(i):
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
-            if self.recognized:
+            if self.show_pixels:
                 mask.set_array(volume_mask[ax.index])  
+            if self.show_detected:
                 [p.remove() for p in reversed(ax.patches)]
 #                ax.scatter(self.np_positions[ax.index][0], self.np_positions[ax.index][1], s=80, facecolors='none', edgecolors='r')
                 for i in range(len(self.np_positions[ax.index][1])):
@@ -452,9 +460,8 @@ class Video(object):
                             (self.np_positions[ax.index][0][i], self.np_positions[ax.index][1][i]), 
                             5, 
                             color=red, 
-                            alpha=0.5, 
                             fill = False, 
-                            lw = 5)
+                            lw = 2)
                     ax.add_patch(p)
 
             ax.set_title(frame_info(ax.index))
@@ -549,10 +556,12 @@ class Video(object):
         else:
             img = ax.imshow(volume[ax.index], cmap='gray', vmin=self.rng[0], vmax=self.rng[1])
             
-        if self.recognized:
+        if self.show_pixels:
             volume_mask = self.process_mask_image()
             ax.volume_mask = volume_mask
             mask = ax.imshow(volume_mask[ax.index])
+            
+        if self.show_detected:
             ax.scatter(self.np_positions[0][0], self.np_positions[0][1])
             
             

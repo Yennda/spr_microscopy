@@ -18,3 +18,10 @@ MAKE TIME: 0.99 s
 Correlating all the pixels with triognal function, filtering the peaks.
 25501/ 25500              
 ELAPSED TIME: 892.52 s
+
+
+
+
+ELAPSED TIME: 78.07 s
+ELAPSED TIME: 7.21 s #condition for correlation
+ELAPSED TIME: 2.96 s #condition for peaks

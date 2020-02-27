@@ -53,9 +53,12 @@ def correlation_temporal(data, k_diff, step, threshold = 15, show = False):
     for i in range(k_diff, len(data)-k_diff):
 
         correlation.append(np.correlate(data[i-k_diff:i+k_diff], tri)[0]*1e5)
-        peaks_binding, _ = find_peaks(correlation, height=threshold)
-        peaks_unbinding, _ = find_peaks([-c for c in correlation], height=threshold)
-        
+        if np.abs(correlation).max() > threshold:
+            peaks_binding, _ = find_peaks(correlation, height=threshold)
+            peaks_unbinding, _ = find_peaks([-c for c in correlation], height=threshold)
+        else:
+            peaks_binding = []
+            peaks_unbinding = []
     if show:             
         fig, axes = plt.subplots()
         axes.plot(data, ls = '-', color = COLORS[3], label='signal')
