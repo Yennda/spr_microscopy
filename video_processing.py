@@ -13,7 +13,10 @@ from np_analysis import np_analysis, is_np
 import tools as tl
 
 FOLDER_NAME = '/exports'
-    
+yellow='#ffb200'
+red='#DD5544'
+blue='#0284C0'
+black='#000000'    
             
 class Video(object):
 
@@ -47,7 +50,7 @@ class Video(object):
         self.mask = None
         self.candidate = set()
         self.np_amount = 0
-        self.np_positions = []
+        self.np_positions = None
         
         self.threshold = None 
         self.show_graphic = True
@@ -287,10 +290,13 @@ class Video(object):
                 
             points_done.add((f, y, x))
             
-        npf=np.average([p[0] for p in points_done])
+        npf=int(round(np.average([p[0] for p in points_done])))
         npy=np.average([p[1] for p in points_done])
         npx=np.average([p[2] for p in points_done])
-            
+        
+        for i in range(-self.k_diff//2, self.k_diff//2):
+            self.np_positions[npf+i][0].append(npx)    
+            self.np_positions[npf+i][1].append(npy)          
         return points_done
         
     def img_process_alpha(self, threshold = 15):
@@ -324,14 +330,17 @@ class Video(object):
         self.recognized = True
         
         self.mask = self.process_mask()
+        self.np_positions = [[[],[]] for i in range(self.video.shape[0])]
         
+        print('Connecting detected pxs into patterns.', end="")
         while len(self.candidate) != 0:
-            print(self.candidate)
             out = self.detect_nps(self.candidate.pop())
-            print(out)
-            print('-'*10)
             self.candidate.difference_update(out)
             self.np_amount+=1
+            
+        print(' DONE')    
+        
+        print('Amount of detected binding events: {}'.format(self.np_amount))
         
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
         """ 
@@ -435,7 +444,19 @@ class Video(object):
             ax.index = (ax.index + i) % volume.shape[0]
             img.set_array(volume[ax.index])
             if self.recognized:
-                mask.set_array(volume_mask[ax.index])         
+                mask.set_array(volume_mask[ax.index])  
+                [p.remove() for p in reversed(ax.patches)]
+#                ax.scatter(self.np_positions[ax.index][0], self.np_positions[ax.index][1], s=80, facecolors='none', edgecolors='r')
+                for i in range(len(self.np_positions[ax.index][1])):
+                    p = mpatches.Circle(
+                            (self.np_positions[ax.index][0][i], self.np_positions[ax.index][1][i]), 
+                            5, 
+                            color=red, 
+                            alpha=0.5, 
+                            fill = False, 
+                            lw = 5)
+                    ax.add_patch(p)
+
             ax.set_title(frame_info(ax.index))
 
         def button_press(event):
@@ -532,6 +553,8 @@ class Video(object):
             volume_mask = self.process_mask_image()
             ax.volume_mask = volume_mask
             mask = ax.imshow(volume_mask[ax.index])
+            ax.scatter(self.np_positions[0][0], self.np_positions[0][1])
+            
             
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)

@@ -37,8 +37,8 @@ video.rng = [-0.01, 0.01]
 #video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]
 #video._video['raw']=video._video['raw'][70:220,490:660,:]
 #video._video['raw']=video._video['raw'][100:150,500:600,:200]
-#video._video['raw']=video._video['raw'][100:150,300:400,100:300]
-video._video['raw']=video._video['raw'][100:140,300:340,200:250]
+video._video['raw']=video._video['raw'][100:150,300:400,100:300]
+#video._video['raw']=video._video['raw'][100:140,300:340,200:250]
 
 print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
 #video.change_fps(10)
