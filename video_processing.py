@@ -53,7 +53,10 @@ class Video(object):
         self.np_amount = 0
         self.np_positions = None
         
-        self.threshold = None 
+        self.threshold = 4
+        self.dip = -0.003
+        self.noise_level = 0.001
+        
         self.show_graphic = True
         self.show_pixels = False
         self.show_detected = False
@@ -123,7 +126,7 @@ class Video(object):
         for i in range(2*k, sh[-1]):
             
             
-            print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
+            print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
             current = np.sum(self._video['raw'][:,:,i - k+1: i+1], axis=2)/k
             previous = np.sum(self._video['raw'][:,:,i - 2*k+1: i - k+1], axis=2)/k
 #            difference = current - previous
@@ -142,10 +145,10 @@ class Video(object):
         out[:, :, 0] = np.zeros(sh[0:2])
         reference = np.sum(self._video['raw'][:,:,self.ref_frame: self.ref_frame + k], axis=2)/k
         
-        print('Computing the integral imag')
+        print('Computing the integral img')
         
         for i in range(1, sh[-1]):
-            print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
+            print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
             out[:, :, i] = self._video['raw'][:, :, i] - reference
         self.k_int = k
             
@@ -159,7 +162,7 @@ class Video(object):
         
         i = 1
         imax = self.video.shape[2]*self.video.shape[1]
-        print('Computing the mask fro image')
+        print('Computing the px visualisation')
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
                 for f in self.frames_binding[x][y]:
@@ -170,7 +173,7 @@ class Video(object):
                     volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 0] = [1]*2*k_diff
                     volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
                 i += 1
-                print('\r{}/ {}'.format(i+1, imax), end="")
+                print('\r\t{}/ {}'.format(i+1, imax), end="")
         print(' DONE')
         return volume_mask
     
@@ -186,7 +189,7 @@ class Video(object):
                 for f in self.frames_binding[x][y]:
                     volume_mask[f, y, x] = 1
                 i += 1
-                print('\r{}/ {}'.format(i+1, imax), end="")
+                print('\r\t{}/ {}'.format(i+1, imax), end="")
         print(' DONE')
         return volume_mask
         
@@ -253,7 +256,7 @@ class Video(object):
             else:
                 self._video = out
 
-    def fouriere(self, show = False):
+    def fouriere(self, level = 30, show = False):
         print('Filtering fouriere frequencies')
         if type(self._img_type) == bool:
             img_type = ['int']
@@ -262,15 +265,16 @@ class Video(object):
         for it in img_type:
             for i in range(self._video[it].shape[2]):
 
-                print('\r{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
+                print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
                 f = np.fft.fft2(self._video[it][:, :, i])
                 
                 magnitude_spectrum = 20 * np.log(np.abs(f))
-                mask = np.real(magnitude_spectrum) > 30
+                mask = np.real(magnitude_spectrum) > level
                 f[mask] = 0
                   
                 img_back = np.fft.ifft2(f)
                 self._video[it][:, :, i] = np.real(img_back)
+        print(' DONE')
         if show:
             fig_four, axes_four = plt.subplots()
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
@@ -285,10 +289,10 @@ class Video(object):
             if (f, y, x) in points_done:
                 continue
             
-            found_pxs = self.mask[f-2:f+3, y-1:y+2, x-1:x+2].nonzero()
+            found_pxs = self.mask[f-3:f+4, y-1:y+2, x-1:x+2].nonzero()
 
             for i in range(len(found_pxs[0])):
-                points_to_do.add((f+found_pxs[0][i]-1, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
+                points_to_do.add((f+found_pxs[0][i]-3, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
                 
             points_done.add((f, y, x))
             
@@ -301,38 +305,54 @@ class Video(object):
             self.np_positions[npf+i][1].append(npy)          
         return points_done
         
-    def img_process_alpha(self, threshold = 15):
+    def img_process_alpha(self, threshold = 15, dip = -0.003, noise_level = 0.001):
         if self._img_type != 'diff':
             print('Processes only differential image. Use make_diff method first.')
             return
         
         print('Correlation')
         self.threshold = threshold
+        self.dip = dip
+        self.noise_level = noise_level
+        
         self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.intensity_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.intensity_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-
+#        self.intensity_binding = [[0 for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+#        self.intensity_unbinding = [[0 for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.intensity_binding = []
+        self.intensity_unbinding = []
+        
         i = 0
         time = t.time()
         whole = self.video.shape[1]*self.video.shape[2]   
+        
+        skipped_corr = 0
+        skipped_peak = 0
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
                 
-                if np.abs(self.video[:, y, x]).max() > 0.001:
-                    out = ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold)
+                if np.abs(self.video[:, y, x]).max() > noise_level:
+                    out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
                     self.frames_binding[x][y] = out[0] 
                     self.frames_unbinding[x][y] = out[1]
-                    self.intensity_binding[x][y] = out[2] 
-                    self.intensity_unbinding[x][y] = out[3]           
+         
                     
                     if len(out[0])!=0:
                         for f in out[0]:
                             self.candidate.add((f, y, x))
+                            self.intensity_binding.append(out[2]) 
+                            self.intensity_unbinding.append(out[3])  
+                    else:
+                        skipped_peak+=1
+                else:
+                    skipped_corr+=1
                     
                 i+=1
-                print('\r{}/ {}, remains {:.2f} s'.format(i+1, whole, (t.time()-time)/i*(whole-i)), end="") 
+                print('\r\t{}/ {}, remains {:.2f} s'.format(i+1, whole, (t.time()-time)/i*(whole-i)), end="") 
         print(' DONE')
+        print('#PXS excluded from correlation: {} / {}, {:.1f} %'.format(skipped_corr, whole, skipped_corr/whole*100))
+        print('#PXS excluded from peaks: {} / {}, {:.1f} %'.format(skipped_peak, whole-skipped_corr, skipped_peak/(whole-skipped_corr)*100))
+        
         self.show_pixels = True
         self.show_detected = True
         
@@ -445,7 +465,7 @@ class Video(object):
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
 #                is_np(self.video[:, y, x], show=True)
-                ip.correlation_temporal(self.video[:, y, x], 10, -0.003, threshold=self.threshold,  show=True)
+                ip.correlation_temporal(self.video[:, y, x], k_diff=self.k_diff, step=self.dip, threshold=self.threshold,  show=True)
 
         def next_slice(i):
             ax.index = (ax.index + i) % volume.shape[0]
@@ -584,27 +604,27 @@ class Video(object):
         plt.tight_layout()
         plt.show()
         print('='*50)
-        print('''
-BASIC SHORTCUTS
-
-"8"/"5" increases/decreases contrast
-Mouse scrolling moves the time 
-"1" and "3" jumps 1 frames in time
-"4" and "6" jumps 10 frames in time
-"7" and "9" jumps 100 frames in time
-"f" fulscreen
-"o" zooms chosen area.
-"a" saves the image
-"s" saves the the whole figure
-"m" disables the mask
-
-"Left mouse button double click" show the time/intensity point of the pixel with the correlation function.
-
-Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
-Buttons "j"/"m" serve to increasing/decreasing contrast 
-Button "s" saves the current image as tiff file
-Mouse scrolling moves to neighboring frames
-Official shortcuts here https://matplotlib.org/users/navigation_toolbar.html
-Right mouse button click selects and switches to analysis of chosen NP image
-Double click plots the intensity course of the pixel and decides if it includes NP
-              ''')
+#        print('''
+#BASIC SHORTCUTS
+#
+#"8"/"5" increases/decreases contrast
+#Mouse scrolling moves the time 
+#"1" and "3" jumps 1 frames in time
+#"4" and "6" jumps 10 frames in time
+#"7" and "9" jumps 100 frames in time
+#"f" fulscreen
+#"o" zooms chosen area.
+#"a" saves the image
+#"s" saves the the whole figure
+#"m" disables the mask
+#
+#"Left mouse button double click" show the time/intensity point of the pixel with the correlation function.
+#
+#Official MATPLOTLIB shortcuts at https://matplotlib.org/users/navigation_toolbar.html
+#Buttons "j"/"m" serve to increasing/decreasing contrast 
+#Button "s" saves the current image as tiff file
+#Mouse scrolling moves to neighboring frames
+#Official shortcuts here https://matplotlib.org/users/navigation_toolbar.html
+#Right mouse button click selects and switches to analysis of chosen NP image
+#Double click plots the intensity course of the pixel and decides if it includes NP
+#              ''')

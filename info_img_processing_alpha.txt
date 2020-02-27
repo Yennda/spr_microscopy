@@ -1,0 +1,70 @@
+PARAMETERS:
+    threshold
+    dip: stay fixed, it would only rescaled the correlation function
+    noise_level
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NOTES:
+
+
+
+folder=main_folder+'20_02_25_P3/'
+file = 'raw_10_1'
+video._video['raw']=video._video['raw'][100:300,300:500,:300]
+--------------------------------------------------------------
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+
+#PXS excluded from correlation: 31623 / 34600, 91.4 %
+#PXS excluded from peaks: 2853 / 2977, 95.8 %
+Amount of detected binding events: 80
+
+ELAPSED TIME: 25.85 s
+--------------------------------------------------------------
+video.img_process_alpha(3.5, dip = -0.0023, noise_level = 0.001)
+#PXS excluded from correlation: 31623 / 34600, 91.4 %
+#PXS excluded from peaks: 2919 / 2977, 98.1 %
+Amount of detected binding events: 58
+ELAPSED TIME: 24.52 s
+
+#correlation_temporal(video.video[:, 115, 116], k_diff=10, show=True)
+==============================================================================
+folder=main_folder+'20_02_25_P3/'
+file = 'raw_11_1'
+video._video['raw']=video._video['raw'][100:300,300:500,:300]
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+
+--------------------------------------------------------------
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+
+
+
+--------------------------------------------------------------
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+video.fouriere(level = 30)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

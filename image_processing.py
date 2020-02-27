@@ -34,7 +34,7 @@ def func_tri(x, x0, h, w):
 #stepo = -0.0055
 #tri = [func_tri(x, x0 = k_diffo, h = stepo, w = k_diffo*2) for x in range(0, 2*k_diffo)]
 
-def correlation_temporal(data, k_diff, step, threshold = 15, show = False):
+def correlation_temporal(data, k_diff, step=-0.003, threshold = 15, show = False):
     """
     Temporal correlation of data signal with the trigonal function of defined width (k_diff) and height (step). 
     The size of the step is defined according to the positive binding event.

@@ -20,6 +20,8 @@ folder = main_folder + '19_08_16_K4/'
 folder = main_folder + '20_01_24_third/'
 folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 
+folder=main_folder+'20_02_25_P3/'
+file = 'raw_11_1'
 
 #[200, 250, 300, 350, 400, 500, 600, 700, 800, 900, 1000]
 #[1, 2, 5, 10, 20, 30, 40, 50]
@@ -34,22 +36,22 @@ appendix = 'processing'
 # folder=main_folder+'19_07_18_C5/'
 # file='neref_02_1'
 #file = 'norm_05_1'
-file = 'raw_01_2'
+#file = 'raw_01_2'
 
 
-for fr in [1238]:
+for fr in [288]:
     
     frame = fr
     
     video = Video(folder, file)
     video.loadData()
-    video._video['raw'] = video._video['raw'][:,:,:frame+1]
-    video.ref_frame = 1159
-    video.make_int()
-    img = video._video['int'][:, :, frame]
+    video._video['raw']=video._video['raw'][100:300,300:500,:300]
+#    video.ref_frame = 1159
+    video.make_diff(10)
+    img = video._video['diff'][:, :, frame]
     img = img.T
         
-    for tr in [30]:
+    for tr in [5]:
         threshold = tr
         # img = cv2.imread('AR_images/stinkbug.png',0)
     
@@ -93,24 +95,24 @@ for fr in [1238]:
 #        name = '{} frame = {} size = {}'.format(appendix, frame, size)
         name = '{} frame = {} threshold = {}'.format(appendix, frame, threshold)
         
-        plt.suptitle(name)
-        plt.subplot(111),plt.imshow(img_back[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
-#        plt.title('Output image'), plt.xticks([]), plt.yticks([])
-        plt.savefig(folder + 'export_fouriere/output ' + name + '.png', dpi=600)
-        plt.show()
-        
-        plt.suptitle(name)
-
-        plt.subplot(111),plt.imshow(img[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
-#        plt.title('Output image'), plt.xticks([]), plt.yticks([])
-        plt.savefig(folder + 'export_fouriere/input ' + name + '.png', dpi=600)
-        plt.show()
+#        plt.suptitle(name)
+#        plt.subplot(111),plt.imshow(img_back[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
+##        plt.title('Output image'), plt.xticks([]), plt.yticks([])
+##        plt.savefig(folder + 'export_fouriere/output ' + name + '.png', dpi=600)
+#        plt.show()
+#        
+#        plt.suptitle(name)
+#
+#        plt.subplot(111),plt.imshow(img[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
+##        plt.title('Output image'), plt.xticks([]), plt.yticks([])
+##        plt.savefig(folder + 'export_fouriere/input ' + name + '.png', dpi=600)
+#        plt.show()
         
         #300:750, :
         
         plt.suptitle(name)
         
-        plt.subplot(221),plt.imshow(img[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
+        plt.subplot(221),plt.imshow(img, cmap = 'gray', vmin=-0.01, vmax=0.01)
         plt.title('Input image'), plt.xticks([]), plt.yticks([])
         
         plt.subplot(222),plt.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
@@ -119,11 +121,11 @@ for fr in [1238]:
         plt.subplot(223),plt.imshow(mask, cmap = 'gray')
         plt.title('Chosen frequencies'), plt.xticks([]), plt.yticks([])
         
-        plt.subplot(224),plt.imshow(img_back[:,300:750], cmap = 'gray', vmin=-0.01, vmax=0.01)
+        plt.subplot(224),plt.imshow(img_back, cmap = 'gray', vmin=-0.01, vmax=0.01)
         plt.title('Output image'), plt.xticks([]), plt.yticks([])
         plt.show()
         
         
-        plt.savefig(folder + 'export_fouriere/' + name + '.png', dpi=600)
+#        plt.savefig(folder + 'export_fouriere/' + name + '.png', dpi=600)
         
 print('{:.2f} s'.format(t.time()-time_start))
