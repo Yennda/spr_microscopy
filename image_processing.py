@@ -72,4 +72,4 @@ def correlation_temporal(data, k_diff, step, threshold = 15, show = False):
     
 #    print(peaks_binding)
 #    print(peaks_unbinding)
-    return (peaks_binding, peaks_unbinding)   
+    return (peaks_binding, peaks_unbinding, data[peaks_binding], data[peaks_unbinding])   
