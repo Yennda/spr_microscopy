@@ -45,15 +45,25 @@ file = 'raw_11_1'
 video._video['raw']=video._video['raw'][100:300,300:500,:300]
 video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 
---------------------------------------------------------------
-video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+
 
 
 
 --------------------------------------------------------------
 video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 video.fouriere(level = 30)
+#PXS excluded from correlation: 25528 / 34600, 73.8 %
+#PXS excluded from peaks: 8643 / 9072, 95.3 %
+Amount of detected binding events: 329
+ELAPSED TIME: 66.49 s
+--------------------------------------------------------------
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+video.fouriere(level = 1)
+#PXS excluded from correlation: 27781 / 34600, 80.3 %
+#PXS excluded from peaks: 6548 / 6819, 96.0 %
+Amount of detected binding events: 190
 
+ELAPSED TIME: 53.22 s
 
 
 

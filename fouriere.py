@@ -46,12 +46,12 @@ for fr in [288]:
     video = Video(folder, file)
     video.loadData()
     video._video['raw']=video._video['raw'][100:300,300:500,:300]
-#    video.ref_frame = 1159
+#    video.ref_frame = 1159U
     video.make_diff(10)
     img = video._video['diff'][:, :, frame]
     img = img.T
         
-    for tr in [5]:
+    for tr in [1]:
         threshold = tr
         # img = cv2.imread('AR_images/stinkbug.png',0)
     

@@ -8,7 +8,7 @@ from np_analysis import np_analysis, is_np
 from image_processing import correlation_temporal
 import time as t
 
-#plt.close("all")
+plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 
@@ -28,21 +28,21 @@ file = 'raw_14_1'
 folder=main_folder+'20_02_25_P3/'
 file = 'raw_10_1'
 #file = 'raw_11_1'
-
+#file = 'raw_05_1'
 #folder=main_folder+'20_02_26_Q3/'
 #file = 'raw_04_1'
-
+#folder=main_folder+'20_02_25_M5/'
+#file = 'raw_08_1'
 
 video = Video(folder, file)
 video.loadData()
 
 
-video.rng = [-0.01, 0.01]
-
 #video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]
 #video._video['raw']=video._video['raw'][70:220,490:660,:]
 #video._video['raw']=video._video['raw'][100:150,500:600,:200]
-#video._video['raw']=video._video['raw'][100:300,300:500,:300]
+
+video._video['raw']=video._video['raw'][100:300,300:500,:300]
 #video._video['raw']=video._video['raw'][140:170,60:95,200:250]
 
 
@@ -56,19 +56,20 @@ print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
 
 video.make_diff(k = 10)
 print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
-video.fouriere(level = 10)
+video.fouriere(level = 30)
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 
 # t, y, x
 #a
-#is_np(video.video[:, 799, 170], show=True)
 #correlation_temporal(video.video[:, 115, 116], k_diff=10, show=True)
 
 
 #plt.hist(np.matrix.flatten(video.video), 100)
 
-video.img_process_alpha(10, dip = -0.003, noise_level = 0.002)
 
-#video.show_pixels = True
+
+video.make_frame_stats()
+video.make_toggle(10, 10)
 
 video.explore()
 
