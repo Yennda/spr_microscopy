@@ -65,7 +65,8 @@ class Video(object):
         self.show_detected = False
         self.show_detected_all = False
         self.show_stats = False
-        self.show_mask = False
+        self.show_mask = True
+        
     def __iter__(self):
         self.n = -1
         self.MAX = self.video.shape[2] - 1

@@ -26,9 +26,9 @@ folder=main_folder+'20_02_18_P3/'
 file = 'raw_14_1'
 
 folder=main_folder+'20_02_25_P3/'
-file = 'raw_10_1'
+#file = 'raw_10_1'
 #file = 'raw_11_1'
-#file = 'raw_05_1'
+file = 'raw_05_1'
 #folder=main_folder+'20_02_26_Q3/'
 #file = 'raw_04_1'
 #folder=main_folder+'20_02_25_M5/'
@@ -57,7 +57,7 @@ print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
 video.make_diff(k = 10)
 print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 video.fouriere(level = 30)
-video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
+video.img_process_alpha(4, dip = -0.003, noise_level = 0.0017)
 
 # t, y, x
 #a
