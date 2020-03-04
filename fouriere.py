@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from video_processing import Video
 import copy
 import time as t
+from skimage.feature import peak_local_max
 
 time_start = t.time()
 
@@ -67,7 +68,7 @@ for fr in [288]:
         
         k = [m.sin(theta)/Lm*img.shape[0], m.cos(theta)/Lm*img.shape[1]]
         
-
+        coordinates = peak_local_max(magnitude_spectrum, min_distance=20, threshold_abs= 10)
         
         coor = []
         coor.append([int(img.shape[i]/2+k[i]) for i in range(2)])
@@ -80,7 +81,7 @@ for fr in [288]:
             mask[c[0]-size:c[0]+size, c[1]-size:c[1]+size] = True
         
         
-        mask = np.real(magnitude_spectrum) > threshold
+        mask = np.real(magnitude_spectrum) < threshold
 
         fshift[mask] = 0
         
@@ -115,7 +116,9 @@ for fr in [288]:
         plt.subplot(221),plt.imshow(img, cmap = 'gray', vmin=-0.01, vmax=0.01)
         plt.title('Input image'), plt.xticks([]), plt.yticks([])
         
-        plt.subplot(222),plt.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
+        plt.subplot(222)
+        plt.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
+        plt.plot(coordinates[:, 1], coordinates[:, 0], 'r.')
         plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
         
         plt.subplot(223),plt.imshow(mask, cmap = 'gray')

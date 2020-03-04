@@ -1,4 +1,5 @@
 import numpy as np
+import math as m
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
@@ -10,6 +11,7 @@ import matplotlib.font_manager as fm
 import image_processing as ip
 from multiprocessing import Pool
 import time as tt
+from skimage.feature import peak_local_max
 
 from np_analysis import np_analysis, is_np
 import tools as tl
@@ -231,7 +233,7 @@ class Video(object):
         if self._video['int'] is None and (self.k_int ==ki or self.k_int is None):    
             self._video['int'] = self.process_int(ki)
             
-        self._img_type = True
+        self._img_type = False
         self.rng = [-0.01, 0.01]
         
     def change_fps(self, n):
@@ -300,8 +302,9 @@ class Video(object):
 
                 print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
                 f = np.fft.fft2(self._video[it][:, :, i])
-                
+
                 magnitude_spectrum = 20 * np.log(np.abs(f))
+ 
                 mask = np.real(magnitude_spectrum) > level
                 f[mask] = 0
                   
@@ -309,8 +312,22 @@ class Video(object):
                 self._video[it][:, :, i] = np.real(img_back)
         print(' DONE')
         if show:
+
             fig_four, axes_four = plt.subplots()
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
+            
+            coordinates = peak_local_max(magnitude_spectrum, min_distance=20, threshold_abs= 10)
+            print('-'*30)
+            print(coordinates.shape[0])
+            if coordinates.shape[0]==0:
+                return 0
+            
+            print(np.max([magnitude_spectrum[coordinates[i][0], coordinates[i][1]] for i in range(coordinates.shape[0])]))
+            
+            
+            return sum(magnitude_spectrum[mask])
+            return np.max([magnitude_spectrum[coordinates[i][0], coordinates[i][1]] for i in range(coordinates.shape[0])])
+            return np.average([magnitude_spectrum[coordinates[i][0], coordinates[i][1]] for i in range(coordinates.shape[0])])
         
     def detect_nps(self, px):
         points_to_do = set()
@@ -336,7 +353,8 @@ class Video(object):
         self.np_positions[npf][0].append(npx)    
         self.np_positions[npf][1].append(npy) 
         
-        for i in range(-self.k_diff//2, self.k_diff//2):
+#        for i in range(-self.k_diff//2, self.k_diff//2):
+        for i in range(1):
             self.np_marks_positions[npf+i][0].append(npx)    
             self.np_marks_positions[npf+i][1].append(npy)          
         return points_done
@@ -562,7 +580,39 @@ class Video(object):
                 location.xy=[ax.index, -1]
                 fig_stat.canvas.draw()            
             ax.set_title(frame_info(ax.index))
+            
+        def save_frame():
+             # checks and eventually creates the folder 'export_image' in the folder of data
+            if not os.path.isdir(self.folder + FOLDER_NAME):
+                os.mkdir(self.folder + FOLDER_NAME)
 
+            # creates the name, appends the rigth numeb at the end
+
+            name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+                                                                  self.time_info[ax.index][0],
+                                                                  self.time_info[ax.index][1] * 100)
+
+            i = 1
+            while os.path.isfile(name + '_{:02d}.png'.format(i)):
+                i += 1
+            name += '_{:02d}'.format(i)
+
+            # saves the png file of the view
+
+            fig.savefig(name + '.png', dpi=300)
+            fig_stat.savefig(name + '_int.png', dpi=300)
+
+            xlim = [int(i) for i in ax.get_xlim()]
+            ylim = [int(i) for i in ax.get_ylim()]
+
+#            saves the exact nad precise tiff file
+            pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
+            pilimage.save(name + '.tiff')
+            print('File SAVED @{}'.format(name))
+
+            img.set_array(ax.volume[ax.index])
+            fig.canvas.draw_idle()
+            
         def button_press(event):
             fig = event.canvas.figure
             ax = fig.axes[0]
@@ -657,13 +707,14 @@ class Video(object):
                 # saves the png file of the view
 
                 fig.savefig(name + '.png', dpi=300)
+                fig_stat.savefig(name + '_int.png', dpi=300)
 
                 xlim = [int(i) for i in ax.get_xlim()]
                 ylim = [int(i) for i in ax.get_ylim()]
 
                 # saves the exact nad precise tiff file
-                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-                pilimage.save(name + '.tiff')
+#                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
+#                pilimage.save(name + '.tiff')
                 print('File SAVED @{}'.format(name))
 
             img.set_array(ax.volume[ax.index])
@@ -717,6 +768,7 @@ class Video(object):
             self.make_frame_stats()
             stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
             stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=blue, label='average', ls=':')  
+            stat_plot.set_ylim((0, 0.003))
             
             if self.np_amount > 0:
                 data_frame = []
@@ -738,7 +790,9 @@ class Video(object):
 #        cb = fig.colorbar(img, ax=ax)
         plt.tight_layout()
         plt.show()
-        print('='*50)
+        next_slice(198)
+        save_frame()
+#        print('='*50)
 #        print('''
 #BASIC SHORTCUTS
 #

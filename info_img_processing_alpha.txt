@@ -64,10 +64,25 @@ video.fouriere(level = 1)
 Amount of detected binding events: 190
 
 ELAPSED TIME: 53.22 s
+---------------------------------------------------------------
+video._video['raw']=video._video['raw'][100:300,300:500,:300]
+video._video['raw']=video._video['raw'][:,:,220:]
+video.fouriere(level = 30)
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 
+#PXS excluded from correlation: 27675 / 34600, 80.0 %
+#PXS excluded from peaks: 6644 / 6925, 95.9 %
+Connecting detected pxs into patterns. DONE
+Amount of detected binding events: 235
 
+ELAPSED TIME: 13.29 s
+---------------------------------------------------------------
+video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.0014)
+#PXS excluded from correlation: 32939 / 34600, 95.2 %
+#PXS excluded from peaks: 1380 / 1661, 83.1 %
+Amount of detected binding events: 235
 
-
+ELAPSED TIME: 8.47 s
 
 
 
