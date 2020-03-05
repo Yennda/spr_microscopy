@@ -290,7 +290,17 @@ class Video(object):
                 self._video_new = out
             else:
                 self._video = out
-
+    def characterize(self, it = 'int', level = 20):
+        f = np.fft.fft2(self._video[it][:, :, -1])
+        magnitude_spectrum = 20 * np.log(np.abs(f))
+        mask = np.real(magnitude_spectrum) > level     
+        
+        std = np.std(self.video[-20:-1,:,:])
+        four_ampli = sum(magnitude_spectrum[mask])
+               
+        return four_ampli
+        
+        
     def fouriere(self, level = 30, show = False):
         print('Filtering fouriere frequencies')
         if type(self._img_type) == bool:
@@ -311,23 +321,11 @@ class Video(object):
                 img_back = np.fft.ifft2(f)
                 self._video[it][:, :, i] = np.real(img_back)
         print(' DONE')
+        
         if show:
-
             fig_four, axes_four = plt.subplots()
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
             
-            coordinates = peak_local_max(magnitude_spectrum, min_distance=20, threshold_abs= 10)
-            print('-'*30)
-            print(coordinates.shape[0])
-            if coordinates.shape[0]==0:
-                return 0
-            
-            print(np.max([magnitude_spectrum[coordinates[i][0], coordinates[i][1]] for i in range(coordinates.shape[0])]))
-            
-            
-            return sum(magnitude_spectrum[mask])
-            return np.max([magnitude_spectrum[coordinates[i][0], coordinates[i][1]] for i in range(coordinates.shape[0])])
-            return np.average([magnitude_spectrum[coordinates[i][0], coordinates[i][1]] for i in range(coordinates.shape[0])])
         
     def detect_nps(self, px):
         points_to_do = set()
@@ -423,6 +421,10 @@ class Video(object):
         print(' DONE')    
         
         print('Amount of detected binding events: {}'.format(self.np_amount))
+        
+    def characterize_nps(self):
+        for i in range(len(self.np_positions)):
+            f = self.np_positions[i]
         
     def plot_np_amount(self):
         data_frame = []
@@ -790,8 +792,7 @@ class Video(object):
 #        cb = fig.colorbar(img, ax=ax)
         plt.tight_layout()
         plt.show()
-        next_slice(198)
-        save_frame()
+
 #        print('='*50)
 #        print('''
 #BASIC SHORTCUTS

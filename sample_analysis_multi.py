@@ -40,7 +40,7 @@ for i in range(1, 17):
     
     
     video.make_int(10)
-    amplitude.append(video.fouriere(20, show=True))
+    amplitude.append(video.characterize())
     
     #video.make_toggle(10, 10)
 #    stds.append(np.std(video.video[-20:-1,:,:]))

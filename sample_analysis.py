@@ -18,7 +18,7 @@ folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 folder=main_folder+'19_08_29_L3/'
 folder=main_folder+'20_02_25_P3/'
 #folder=main_folder+'20_02_25_M5/'
-#folder=main_folder+'20_02_26_L3/'
+folder=main_folder+'20_02_26_L3/'
 #folder=main_folder+'20_02_26_Q3/'
 
 
@@ -35,8 +35,8 @@ video._video['raw']=video._video['raw'][:,400:800,:200]
 video.refresh()
 
 
-video.make_int(10)
-video.fouriere(2000, show=True)
+video.make_diff(10)
+video.fouriere(30)
 
 #video.make_toggle(10, 10)
 #    stds.append(np.std(video.video[-20:-1,:,:]))
