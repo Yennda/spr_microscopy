@@ -14,6 +14,57 @@ from scipy.signal import argrelextrema
 SCALE = 2.93  # mu/px
 SHAPE = 50  # dimension of the image in px
 
+def measure_new(raw, mask_np, sizes):
+    print('='*20)
+    
+    mask_background = mask_np == False
+    
+    std = np.std(raw[mask_background])
+    
+    int_np = sum(abs(raw[mask_np]))
+    int_bg_px = sum(abs(raw[mask_background])) / len(raw[mask_background])
+    
+    int_np_norm = int_np - int_bg_px * len(raw[mask_np])
+    int_np_norm_px = int_np_norm / len(raw[mask_np])
+
+    
+
+    contrast = int_np_norm_px / int_bg_px
+
+    sizes = [s*SCALE for s in sizes]
+    print(contrast)
+    
+#    fig, ax = plt.subplots()
+#    ax.imshow(raw)
+#    ax.imshow(mask_np, alpha = 0.5)    
+    
+    
+    return sizes + [contrast, int_np_norm, int_np_norm_px, int_bg_px, std]
+#    return sizes + [contrast, std, intensity, max_int, rel_background]
+
+def visualize_and_save(raw, measures, folder, file):
+#    fig, ax = plt.subplots()
+#    img = ax.imshow(raw)
+#    img.set_cmap('Greys')
+#    
+#
+#    info = 'x ={:.01f}$\mu m$\ny ={:.01f}$\mu m$\nC={:.01f}\n$I_n$ np={:.04f}, \n$I_n$/px={:.04f}\n$I_b$/px={:.04f}\nstd={:.04f}'.format(*measures)
+#
+#    
+#    ax.text(0, 12, info, fontsize=10, bbox={'facecolor': 'white', 'alpha': 1, 'pad': 1})
+#    ax.index = 0
+
+    tools.new_export(folder, '/export_np')
+
+    name = '{}/export_np/{}'.format(folder, file)
+    i = 1
+    while os.path.isfile(name + '_{:02d}.png'.format(i)):
+        i += 1
+    name += '_{:02d}'.format(i)
+    
+    with open(name[:-2] + 'info.txt', "a+", encoding="utf-8") as f:
+        f.write('{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\t{}\n'.format(*measures))
+
 
 def stats(raw, p=False):
     avg = np.average(raw)
@@ -90,7 +141,6 @@ def measure(raw, coor):
     ]
     print(contrast)
     return sizes + [contrast, std, intensity, max_int, rel_background]
-
 
 def np_analysis(raw, folder='images', file='image_np'):
     def mouse_click(event):

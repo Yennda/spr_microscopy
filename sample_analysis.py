@@ -18,12 +18,12 @@ folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 folder=main_folder+'19_08_29_L3/'
 folder=main_folder+'20_02_25_P3/'
 #folder=main_folder+'20_02_25_M5/'
-folder=main_folder+'20_02_26_L3/'
+#folder=main_folder+'20_02_26_L3/'
 #folder=main_folder+'20_02_26_Q3/'
 
 
     
-file = 'raw_09_1'
+file = 'raw_10_1'
 
 
 
@@ -32,19 +32,23 @@ video.loadData()
 
 
 video._video['raw']=video._video['raw'][:,400:800,:200]
+#video._video['raw']=video._video['raw'][140:200,190:250,80:150]
 video.refresh()
 
 
 video.make_diff(10)
 video.fouriere(30)
+video.img_process_alpha(threshold = 3.5, noise_level = 0.0012)
+video.characterize_nps()
 
-#video.make_toggle(10, 10)
-#    stds.append(np.std(video.video[-20:-1,:,:]))
+
+video.make_toggle(10, 10)
+
 
 video.show_stats = True
 
 video.explore()
-#    plt.hist(np.matrix.flatten(video.video[-2, :, :]), 100)
+#plt.hist(np.matrix.flatten(video.video[-2, :, :]), 100)
     
   
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))

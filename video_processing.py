@@ -13,7 +13,7 @@ from multiprocessing import Pool
 import time as tt
 from skimage.feature import peak_local_max
 
-from np_analysis import np_analysis, is_np
+from np_analysis import np_analysis, is_np, measure_new, visualize_and_save
 import tools as tl
 
 FOLDER_NAME = '/exports'
@@ -56,6 +56,8 @@ class Video(object):
         self.np_amount = 0
         self.np_marks_positions = None
         self.np_positions = []
+        #[set of pxs, (npf, npy, npx), peak value, correlation]
+        self.np_detected_info = []
         self.stats_std = []
         
         self.threshold = 4
@@ -354,7 +356,9 @@ class Video(object):
 #        for i in range(-self.k_diff//2, self.k_diff//2):
         for i in range(1):
             self.np_marks_positions[npf+i][0].append(npx)    
-            self.np_marks_positions[npf+i][1].append(npy)          
+            self.np_marks_positions[npf+i][1].append(npy)
+            
+        self.np_detected_info.append([points_done, (int(round(npf)), int(round(npy)), int(round(npx)))])
         return points_done
         
     def img_process_alpha(self, threshold = 15, dip = -0.003, noise_level = 0.001):
@@ -384,16 +388,16 @@ class Video(object):
             for y in range(self.video.shape[1]):
                 
                 if np.abs(self.video[:, y, x]).max() > noise_level:
-                    out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
-                    self.frames_binding[x][y] = out[0] 
-                    self.frames_unbinding[x][y] = out[1]
+                    corr_out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
+                    self.frames_binding[x][y] = corr_out['bind'][0] 
+                    self.frames_unbinding[x][y] = corr_out['unbind'][0]
          
                     
-                    if len(out[0])!=0:
-                        for f in out[0]:
+                    if len(corr_out['bind'][0])!=0:
+                        for f in corr_out['bind'][0]:
                             self.candidate.add((f, y, x))
-                            self.intensity_binding.append(out[2]) 
-                            self.intensity_unbinding.append(out[3])  
+                            self.intensity_binding.append(corr_out['bind'][1]) 
+                            self.intensity_unbinding.append(corr_out['unbind'][1])  
                     else:
                         skipped_peak+=1
                 else:
@@ -415,6 +419,7 @@ class Video(object):
         print('Connecting detected pxs into patterns.', end="")
         while len(self.candidate) != 0:
             out = self.detect_nps(self.candidate.pop())
+            
             self.candidate.difference_update(out)
             self.np_amount+=1
             
@@ -423,8 +428,46 @@ class Video(object):
         print('Amount of detected binding events: {}'.format(self.np_amount))
         
     def characterize_nps(self):
-        for i in range(len(self.np_positions)):
-            f = self.np_positions[i]
+        for npl in self.np_detected_info:
+             f, y, x = npl[1]   
+             
+             print(y, x)
+             ry = int(np.heaviside(y - 25, 1)*(y - 25))
+             rx = int(np.heaviside(x - 25, 1)*(x - 25))
+             print(ry, rx)
+             raw = self.video[f, ry:y + 25, rx: x + 25]
+             mask = np.full((raw.shape), False, dtype=bool)
+             
+
+             px_y = [y]*2
+             px_x = [x]*2
+             extreme_pxs = [px_y, px_x]
+             
+             for px in npl[0]:
+                 i = 1
+                 for epx in extreme_pxs:
+                     if epx[0] <= px[i] <= epx[1]:
+                         pass
+                     else:
+                         if  px[i] < epx[0]:
+                             epx[0] = px[i]
+                         elif  px[i] > epx[1]:
+                             epx[1] = px[i]
+                     i += 1
+        
+                 my = px[1]  - ry
+                 mx = px[2]  - rx
+#                 my = px[1] - y + ry
+#                 mx = px[2] - x + rx
+                 mask[my, mx] = True
+                 
+             dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
+             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
+                         
+             measures = measure_new(raw, mask, [dx, dy])
+             visualize_and_save(raw, measures, self.folder, self.file)
+             
+            
         
     def plot_np_amount(self):
         data_frame = []
