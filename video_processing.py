@@ -292,7 +292,8 @@ class Video(object):
                 self._video_new = out
             else:
                 self._video = out
-    def characterize(self, it = 'int', level = 20):
+                
+    def image_properties(self, it = 'int', level = 20):
         f = np.fft.fft2(self._video[it][:, :, -1])
         magnitude_spectrum = 20 * np.log(np.abs(f))
         mask = np.real(magnitude_spectrum) > level     
@@ -431,10 +432,9 @@ class Video(object):
         for npl in self.np_detected_info:
              f, y, x = npl[1]   
              
-             print(y, x)
              ry = int(np.heaviside(y - 25, 1)*(y - 25))
              rx = int(np.heaviside(x - 25, 1)*(x - 25))
-             print(ry, rx)
+
              raw = self.video[f, ry:y + 25, rx: x + 25]
              mask = np.full((raw.shape), False, dtype=bool)
              
@@ -466,9 +466,7 @@ class Video(object):
                          
              measures = measure_new(raw, mask, [dx, dy])
              visualize_and_save(raw, measures, self.folder, self.file)
-             
-            
-        
+                   
     def plot_np_amount(self):
         data_frame = []
         for npp in self.np_positions:

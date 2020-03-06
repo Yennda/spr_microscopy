@@ -18,7 +18,8 @@ def new_export(folder, name):
     try:
         os.mkdir(path)
     except OSError:
-        print("Creation of the directory %s failed" % path)
+#        print("Creation of the directory %s failed" % path)
+        pass
     else:
         print("Successfully created the directory %s " % path)
 

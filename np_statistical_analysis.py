@@ -31,13 +31,10 @@ folder=main_folder+'20_02_25_P3/'
 
 
 if __name__ == "__main__":
-    files=[folder + 'export_np/' + 'raw_{:02.0f}_1'.format(f) for f in   [10]]
-#    files=[folder+'meas_raw_{:02.0f}_1'.format(f) for f in   [4]]
+    files=[folder + 'export_np/' + 'raw_{:02.0f}_1'.format(f) for f in   [9, 10, 11]]
 
-
-#sizes + [contrast, int_np_norm, int_np_norm_px, int_bg_px, std]
-#    print('no\tx\ty\tcx\tcy\tC\tstd\tint\tmaxint\trelBg')
-    print('x \ty \tcon \tI_n \tI_n px \tI_b px \tstd')
+    print('\tx \ty \tcon \tI_n \tI_n px \tI_b px \tstd')
+    
     for file in files:
        info=readinfo(file)
        info_stat=statistics(info)

@@ -23,7 +23,7 @@ folder=main_folder+'20_02_25_P3/'
 
 
     
-file = 'raw_10_1'
+file = 'raw_08_1'
 
 
 
@@ -38,8 +38,8 @@ video.refresh()
 
 video.make_diff(10)
 video.fouriere(30)
-video.img_process_alpha(threshold = 3.5, noise_level = 0.0012)
-video.characterize_nps()
+video.img_process_alpha(threshold = 3.5, noise_level = 0.001)
+#video.characterize_nps()
 
 
 video.make_toggle(10, 10)
@@ -48,7 +48,7 @@ video.make_toggle(10, 10)
 video.show_stats = True
 
 video.explore()
+
 #plt.hist(np.matrix.flatten(video.video[-2, :, :]), 100)
-    
-  
+     
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))

@@ -15,8 +15,7 @@ SCALE = 2.93  # mu/px
 SHAPE = 50  # dimension of the image in px
 
 def measure_new(raw, mask_np, sizes):
-    print('='*20)
-    
+  
     mask_background = mask_np == False
     
     std = np.std(raw[mask_background])
@@ -32,14 +31,14 @@ def measure_new(raw, mask_np, sizes):
     contrast = int_np_norm_px / int_bg_px
 
     sizes = [s*SCALE for s in sizes]
-    print(contrast)
+
     
 #    fig, ax = plt.subplots()
 #    ax.imshow(raw)
 #    ax.imshow(mask_np, alpha = 0.5)    
     
     
-    return sizes + [contrast, int_np_norm, int_np_norm_px, int_bg_px, std]
+    return sizes + [contrast, int_np_norm*1e3, int_np_norm_px*1e3, int_bg_px*1e3, std*1e3]
 #    return sizes + [contrast, std, intensity, max_int, rel_background]
 
 def visualize_and_save(raw, measures, folder, file):
