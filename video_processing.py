@@ -1,5 +1,6 @@
 import numpy as np
 import math as m
+import scipy as sc
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
@@ -29,6 +30,7 @@ class Video(object):
         self.file = file
         self.file_name = folder + file
         self.video_stats = None
+        self.length = None
         
         self._video = {
                 'raw': None,
@@ -63,6 +65,7 @@ class Video(object):
         self.threshold = 4
         self.dip = -0.003
         self.noise_level = 0.001
+        self.idea3d = None
         
         self.show_graphic = True
         self.show_pixels = False
@@ -96,6 +99,7 @@ class Video(object):
 
     def loadData(self):
         self.video_stats = self.loadBinVideoStats()
+        self.length = self.video_stats[1][2]
         self._video['raw'] = self.loadBinVideo()
 
     def loadBinVideoStats(self):
@@ -176,12 +180,20 @@ class Video(object):
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
                 for f in self.frames_binding[x][y]:
-                    volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 1] = [1]*2*k_diff
-                    volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
+                    if f+k_diff > self.video.shape[0]:
+                        end = self.video.shape[0]
+                    else:
+                        end = f+k_diff
+                    volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
+                    volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
                     
                 for f in self.frames_unbinding[x][y]:
-                    volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 0] = [1]*2*k_diff
-                    volume_mask[f-k_diff:(f+k_diff)%self.video.shape[0], y, x, 3] = tri
+                    if f+k_diff > self.video.shape[0]:
+                        end = self.video.shape[0]
+                    else:
+                        end = f+k_diff
+                    volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
+                    volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
                 i += 1
                 print('\r\t{}/ {}'.format(i+1, imax), end="")
         print(' DONE')
@@ -276,6 +288,7 @@ class Video(object):
         
     def refresh(self):
         self.video_stats[1] = [self._video['raw'].shape[1], self._video['raw'].shape[0], self._video['raw'].shape[2]]
+        self.length = self.video_stats[1][2]
 
     def time_fouriere(self):
         middle = int(self._video.shape[2] / 2)
@@ -332,12 +345,12 @@ class Video(object):
         
     def detect_nps(self, px):
         points_to_do = set()
-        points_done = set()
+        particle = set()
         points_to_do.add(px)
 
         while len(points_to_do) != 0:
             f, y, x = points_to_do.pop()
-            if (f, y, x) in points_done:
+            if (f, y, x) in particle:
                 continue
             
             found_pxs = self.mask[f-3:f+4, y-1:y+2, x-1:x+2].nonzero()
@@ -345,11 +358,11 @@ class Video(object):
             for i in range(len(found_pxs[0])):
                 points_to_do.add((f+found_pxs[0][i]-3, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
                 
-            points_done.add((f, y, x))
+            particle.add((f, y, x))
             
-        npf=int(round(np.average([p[0] for p in points_done])))
-        npy=np.average([p[1] for p in points_done])
-        npx=np.average([p[2] for p in points_done])
+        npf=int(round(np.average([p[0] for p in particle])))
+        npy=np.average([p[1] for p in particle])
+        npx=np.average([p[2] for p in particle])
         
         self.np_positions[npf][0].append(npx)    
         self.np_positions[npf][1].append(npy) 
@@ -359,12 +372,12 @@ class Video(object):
             self.np_marks_positions[npf+i][0].append(npx)    
             self.np_marks_positions[npf+i][1].append(npy)
             
-        self.np_detected_info.append([points_done, (int(round(npf)), int(round(npy)), int(round(npx)))])
-        return points_done
+        self.np_detected_info.append([particle, (int(round(npf)), int(round(npy)), int(round(npx)))])
+        return particle
         
     def img_process_alpha(self, threshold = 15, dip = -0.003, noise_level = 0.001):
         if self._img_type != 'diff':
-            print('Processes only differential image. Use make_diff method first.')
+            print('Processes only the differential image. Use make_diff method first.')
             return
         
         print('Correlation')
@@ -374,27 +387,30 @@ class Video(object):
         
         self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-#        self.intensity_binding = [[0 for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-#        self.intensity_unbinding = [[0 for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+
         self.intensity_binding = []
         self.intensity_unbinding = []
         
+        self.np_marks_positions = [[[],[]] for i in range(self.length)]
+        self.np_positions = [[[],[]] for i in range(self.length)]
+        
         i = 0
         time = tt.time()
-        whole = self.video.shape[1]*self.video.shape[2]   
+        all_processes = self.video.shape[1]*self.video.shape[2]   
         
         skipped_corr = 0
         skipped_peak = 0
+        
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
                 
                 if np.abs(self.video[:, y, x]).max() > noise_level:
                     corr_out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
+                    
                     self.frames_binding[x][y] = corr_out['bind'][0] 
                     self.frames_unbinding[x][y] = corr_out['unbind'][0]
-         
                     
-                    if len(corr_out['bind'][0])!=0:
+                    if len(corr_out['bind'][0]) != 0:
                         for f in corr_out['bind'][0]:
                             self.candidate.add((f, y, x))
                             self.intensity_binding.append(corr_out['bind'][1]) 
@@ -405,28 +421,90 @@ class Video(object):
                     skipped_corr+=1
                     
                 i+=1
-                print('\r\t{}/ {}, remains {:.2f} s'.format(i+1, whole, (tt.time()-time)/i*(whole-i)), end="") 
+                print('\r\t{}/ {}, remains {:.2f} s'.format(i+1, all_processes, (tt.time()-time)/i*(all_processes-i)), end="") 
+                
         print(' DONE')
-        print('#PXS excluded from correlation: {} / {}, {:.1f} %'.format(skipped_corr, whole, skipped_corr/whole*100))
-        print('#PXS excluded from peaks: {} / {}, {:.1f} %'.format(skipped_peak, whole-skipped_corr, skipped_peak/(whole-skipped_corr)*100))
+        print('#PXS excluded from correlation: {} / {}, {:.1f} %'.format(skipped_corr, all_processes, skipped_corr/all_processes*100))
+        print('#PXS excluded from peaks: {} / {}, {:.1f} %'.format(skipped_peak, all_processes-skipped_corr, skipped_peak/(all_processes-skipped_corr)*100))
         
         self.show_pixels = True
         self.show_detected = True
         
         self.mask = self.process_mask()
-        self.np_marks_positions = [[[],[]] for i in range(self.video.shape[0])]
-        self.np_positions = [[[],[]] for i in range(self.video.shape[0])]
-        
-        print('Connecting detected pxs into patterns.', end="")
+
+        print('Connecting the detected pxs into patterns.', end="")
         while len(self.candidate) != 0:
-            out = self.detect_nps(self.candidate.pop())
+            particle = self.detect_nps(self.candidate.pop())
             
-            self.candidate.difference_update(out)
+            self.candidate.difference_update(particle)
             self.np_amount+=1
             
         print(' DONE')    
-        
         print('Amount of detected binding events: {}'.format(self.np_amount))
+        
+    def beta_peaks_processing(self, px):
+        points_to_do = set()
+        particle = set()
+        points_to_do.add(px)
+
+        while len(points_to_do) != 0:
+            f, y, x = points_to_do.pop()
+            if (f, y, x) in particle:
+                continue
+            dy, dx, df = self.idea3d.shape
+            
+            found_pxs = self.mask[f-df:f+df, y-dy:y+dy, x-dx:x+dx].nonzero()
+
+            for i in range(len(found_pxs[0])):
+                
+                delta = found_pxs - np.array([f, y, x])
+                if delta[0] == 0:
+                    if delta[1] < dy:
+                        pass
+                
+                points_to_do.add((f+found_pxs[0][i]-3, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
+                
+            particle.add((f, y, x))
+       
+        self.np_detected_info.append([particle, (int(round(npf)), int(round(npy)), int(round(npx)))])
+        return particle
+        
+    def image_process_beta(self, threshold = 100):
+        self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750
+#        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
+
+        self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d)*1e5
+        self._img_type = 'corr'
+        self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
+
+        self.np_marks_positions = [[[],[]] for i in range(self.length)]
+        self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        
+        for f in range(self.length):
+
+            coordinates = peak_local_max(self._video['corr'][:, :, f], threshold_abs = threshold)
+            for c in coordinates:
+                y, x = c
+                self.frames_binding[x][y].append(f)
+                self.frames_unbinding[x][y].append(f)
+                self.candidate.add((f, y, x))
+            
+            
+            self.np_marks_positions[f][0]+=[c[1] for c in coordinates]   
+            self.np_marks_positions[f][1]+=[c[0] for c in coordinates]  
+            
+        self.mask = self.process_mask()  
+        
+#        while len(self.candidate) != 0:
+#            particle = self.beta_peaks_processing(self.candidate.pop())
+#            self.candidate.difference_update(particle)
+        
+        self.show_mask = True
+        self.show_pixels = True
+        self.show_detected = True
+
+
         
     def characterize_nps(self):
         for npl in self.np_detected_info:
@@ -599,7 +677,7 @@ class Video(object):
                 
             if self.show_detected:
                 [p.remove() for p in reversed(ax.patches)]
-                if self._img_type == 'diff' or self._img_type == True:
+                if self._img_type == 'diff' or self._img_type == True or self._img_type == 'corr':
                     for i in range(len(self.np_marks_positions[ax.index][1])):
                         p = mpatches.Circle(
                                 (self.np_marks_positions[ax.index][0][i], self.np_marks_positions[ax.index][1][i]), 
@@ -621,7 +699,10 @@ class Video(object):
                     
             if self.show_stats:
                 location.xy=[ax.index, -1]
-                fig_stat.canvas.draw()            
+                fig_stat.canvas.draw()
+                
+#            lim = (np.min(ax.volume[ax.index]), np.max(ax.volume[ax.index]))
+#            img.set_clim(lim)
             ax.set_title(frame_info(ax.index))
             
         def save_frame():
@@ -772,6 +853,8 @@ class Video(object):
 
         if self._img_type == 'raw':
             img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0)
+        elif self._img_type == 'corr':
+            img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=np.min(self.video), vmax=np.max(self.video)) 
         else:
             img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=self.rng[0], vmax=self.rng[1])
             
