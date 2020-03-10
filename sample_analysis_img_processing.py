@@ -56,7 +56,7 @@ video._video['raw']=video._video['raw'][100:300,300:500,:300]
 #video._video['raw']=video._video['raw'][100:140,300:340,200:250]
 
 print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
-#video.change_fps(10)
+#video.change_fps(10)+
 video.refresh()
 
 

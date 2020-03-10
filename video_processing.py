@@ -443,26 +443,31 @@ class Video(object):
         print('Amount of detected binding events: {}'.format(self.np_amount))
         
     def beta_peaks_processing(self, px):
-        points_to_do = set()
+#        points_to_do = set()
         points_in_np = set()
         points_excluded = set()
-        points_to_do.add(px)
-
+#        points_to_do.add(px)
 
         f, y, x = px
         
-        dist = self.idea3d.shape
+        dist = [0] + list(self.idea3d.shape[:2])
         df, dy, dx = dist
 
-        neighbors_indeces = self.mask[f, y-dy:y+dy, x-dx:x+dx].nonzero()    
+        neighbors_indeces = self.mask[f, y-dy:y+dy, x-dx:x+dx].nonzero()
         if len(neighbors_indeces[0]) != 0:
             neighbors = [np.array([f, y , x]) - dist + np.array(
                     [0, neighbors_indeces[0][i], neighbors_indeces[1][i]]
                     ) for i in range(len(neighbors_indeces[0]))]
+#            print(f, y, x)
+#            print(np.array([f, y , x]) - dist + np.array([0, 0, 0]))
+            
             
             neighbors_values = [self.video[tuple(n)] for n in neighbors]
             central_point = neighbors[np.argmax(neighbors_values)]
+            points_excluded.add((f, y, x))
             points_in_np.add(tuple(central_point))
+#            print('---')
+#            print(central_point)
             for n in neighbors:
                 points_excluded.add(tuple(n))
 
@@ -477,8 +482,9 @@ class Video(object):
                     ) for j in range(len(neighbors_indeces[0]))]
                 norms = [np.linalg.norm(central_point - n) for n in neighbors]
                 closest_point = neighbors[np.argmin(norms)]
-                central_point = closest_point
+                central_point = closest_point      
                 points_in_np.add(tuple(closest_point))
+#                print(closest_point)
                 for n in neighbors:
                     points_excluded.add(tuple(n))
             else:
@@ -487,7 +493,7 @@ class Video(object):
             i += 1    
             if f+i >= self.length:
                 go = False
-            
+        points_excluded.difference_update(points_in_np)
         return list(points_in_np), points_excluded
         
     def image_process_beta(self, threshold = 100):
@@ -518,15 +524,20 @@ class Video(object):
         
         while len(candidate_np) != 0:
             points_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop())
-            print('np')
-            print(points_in_np)
-            print('excluded')
-            print(points_excluded)
+#            print('np')
+#            print(points_in_np[:2])
+#            print('excluded')
+#            print(points_excluded)
+        
             candidate_np.difference_update(points_excluded)
-
+            candidate_np.difference_update(set(points_in_np))
+#             print(len(candidate_np))
             for p in points_in_np:
-                self.np_marks_positions[p[0]][0]+=[p[2]]   
-                self.np_marks_positions[p[0]][1]+=[p[1]] 
+                if p[2] in self.np_marks_positions[p[0]][0] and p[1] in self.np_marks_positions[p[0]][1]:
+                    print('err')
+                else:
+                    self.np_marks_positions[p[0]][0].append(p[2])  
+                    self.np_marks_positions[p[0]][1].append(p[1])
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
