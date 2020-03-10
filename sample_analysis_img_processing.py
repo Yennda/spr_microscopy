@@ -32,7 +32,8 @@ file = 'raw_10_1'
 
 #file = 'raw_05_1'
 folder=main_folder+'20_02_26_Q3/'
-file = 'raw_05_1'
+file = 'raw_04_1'
+#file = 'raw_27_1'◘
 #folder=main_folder+'20_02_25_M5/'
 #file = 'raw_08_1'
 
@@ -71,7 +72,7 @@ print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 #video.img_process_alpha(6, dip = -0.003, noise_level = 0.003)
 
 time_beta = t.time()
-#video.image_process_beta(threshold = 100)    #750    
+video.image_process_beta(threshold = 100)    #750    
 #video.image_process_beta(threshold = 5)     #600
 print('CORRELATION TIME: {:.2f} s'.format(t.time()-time_beta))
 

@@ -444,33 +444,56 @@ class Video(object):
         
     def beta_peaks_processing(self, px):
         points_to_do = set()
-        particle = set()
+        points_in_np = set()
+        points_excluded = set()
         points_to_do.add(px)
 
-        while len(points_to_do) != 0:
-            f, y, x = points_to_do.pop()
-            if (f, y, x) in particle:
-                continue
-            dy, dx, df = self.idea3d.shape
-            
-            found_pxs = self.mask[f-df:f+df, y-dy:y+dy, x-dx:x+dx].nonzero()
 
-            for i in range(len(found_pxs[0])):
+        f, y, x = px
+        
+        dist = self.idea3d.shape
+        df, dy, dx = dist
+
+        neighbors_indeces = self.mask[f, y-dy:y+dy, x-dx:x+dx].nonzero()    
+        if len(neighbors_indeces[0]) != 0:
+            neighbors = [np.array([f, y , x]) - dist + np.array(
+                    [0, neighbors_indeces[0][i], neighbors_indeces[1][i]]
+                    ) for i in range(len(neighbors_indeces[0]))]
+            
+            neighbors_values = [self.video[tuple(n)] for n in neighbors]
+            central_point = neighbors[np.argmax(neighbors_values)]
+            points_in_np.add(tuple(central_point))
+            for n in neighbors:
+                points_excluded.add(tuple(n))
+
+        i = 1         
+        go = f + 1 < self.length
+        while go:
+            neighbors_indeces = self.mask[f + i, y-dy:y+dy, x-dx:x+dx].nonzero() 
+
+            if len(neighbors_indeces[0]) != 0:   
+                neighbors = [np.array([f + i, y , x]) - dist + np.array(
+                    [0, neighbors_indeces[0][j], neighbors_indeces[1][j]]
+                    ) for j in range(len(neighbors_indeces[0]))]
+                norms = [np.linalg.norm(central_point - n) for n in neighbors]
+                closest_point = neighbors[np.argmin(norms)]
+                central_point = closest_point
+                points_in_np.add(tuple(closest_point))
+                for n in neighbors:
+                    points_excluded.add(tuple(n))
+            else:
+                go = False
                 
-                delta = found_pxs - np.array([f, y, x])
-                if delta[0] == 0:
-                    if delta[1] < dy:
-                        pass
-                
-                points_to_do.add((f+found_pxs[0][i]-3, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
-                
-            particle.add((f, y, x))
-       
-        self.np_detected_info.append([particle, (int(round(npf)), int(round(npy)), int(round(npx)))])
-        return particle
+            i += 1    
+            if f+i >= self.length:
+                go = False
+            
+        return list(points_in_np), points_excluded
         
     def image_process_beta(self, threshold = 100):
-        self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750
+        self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
+#        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
+#        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_07
 #        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
 
         self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d)*1e5
@@ -480,6 +503,7 @@ class Video(object):
         self.np_marks_positions = [[[],[]] for i in range(self.length)]
         self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
+        candidate_np = set()
         
         for f in range(self.length):
 
@@ -488,23 +512,24 @@ class Video(object):
                 y, x = c
                 self.frames_binding[x][y].append(f)
                 self.frames_unbinding[x][y].append(f)
-                self.candidate.add((f, y, x))
-            
-            
-            self.np_marks_positions[f][0]+=[c[1] for c in coordinates]   
-            self.np_marks_positions[f][1]+=[c[0] for c in coordinates]  
-            
+                candidate_np.add((f, y, x))
+
         self.mask = self.process_mask()  
         
-#        while len(self.candidate) != 0:
-#            particle = self.beta_peaks_processing(self.candidate.pop())
-#            self.candidate.difference_update(particle)
-        
+        while len(candidate_np) != 0:
+            points_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop())
+            print('np')
+            print(points_in_np)
+            print('excluded')
+            print(points_excluded)
+            candidate_np.difference_update(points_excluded)
+
+            for p in points_in_np:
+                self.np_marks_positions[p[0]][0]+=[p[2]]   
+                self.np_marks_positions[p[0]][1]+=[p[1]] 
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
-
-
         
     def characterize_nps(self):
         for npl in self.np_detected_info:
@@ -678,12 +703,14 @@ class Video(object):
             if self.show_detected:
                 [p.remove() for p in reversed(ax.patches)]
                 if self._img_type == 'diff' or self._img_type == True or self._img_type == 'corr':
+                    print(len(self.np_marks_positions[ax.index][1]))
                     for i in range(len(self.np_marks_positions[ax.index][1])):
                         p = mpatches.Circle(
                                 (self.np_marks_positions[ax.index][0][i], self.np_marks_positions[ax.index][1][i]), 
                                 5, 
                                 color=red, 
-                                fill = False, 
+                                fill = False,
+                                alpha = 0.5,
                                 lw = 2)
                         ax.add_patch(p)
                 elif self._img_type == 'int' or self._img_type == False:
@@ -894,7 +921,7 @@ class Video(object):
             self.make_frame_stats()
             stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
             stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=blue, label='average', ls=':')  
-            stat_plot.set_ylim((0, 0.003))
+#            stat_plot.set_ylim((0, 0.003))
             
             if self.np_amount > 0:
                 data_frame = []
