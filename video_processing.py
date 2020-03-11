@@ -449,6 +449,7 @@ class Video(object):
         f, y, x = px
         
         dist = [0] + list(self.idea3d.shape[:2])
+        dist = [d//2 for d in dist]
         df, dy, dx = dist
 
         neighbors_indeces = self.mask[f, y-dy:y+dy, x-dx:x+dx].nonzero()
