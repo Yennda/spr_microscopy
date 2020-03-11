@@ -81,7 +81,7 @@ print('CORRELATION TIME: {:.2f} s'.format(t.time()-time_beta))
 video.make_frame_stats()
 #video.ref_frame = 20
 #video.make_toggle(10, 10)
-
+video.show_stats = True
 video.explore()
 
 #plt.hist(np.matrix.flatten(video.video), 100)

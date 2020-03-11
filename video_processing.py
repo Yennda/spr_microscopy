@@ -10,7 +10,7 @@ import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
 import image_processing as ip
-from multiprocessing import Pool
+import copy
 import time as tt
 from skimage.feature import peak_local_max
 
@@ -443,10 +443,8 @@ class Video(object):
         print('Amount of detected binding events: {}'.format(self.np_amount))
         
     def beta_peaks_processing(self, px):
-#        points_to_do = set()
-        points_in_np = set()
+        points_in_np = []
         points_excluded = set()
-#        points_to_do.add(px)
 
         f, y, x = px
         
@@ -454,25 +452,23 @@ class Video(object):
         df, dy, dx = dist
 
         neighbors_indeces = self.mask[f, y-dy:y+dy, x-dx:x+dx].nonzero()
-        if len(neighbors_indeces[0]) != 0:
-            neighbors = [np.array([f, y , x]) - dist + np.array(
-                    [0, neighbors_indeces[0][i], neighbors_indeces[1][i]]
-                    ) for i in range(len(neighbors_indeces[0]))]
-#            print(f, y, x)
-#            print(np.array([f, y , x]) - dist + np.array([0, 0, 0]))
-            
-            
-            neighbors_values = [self.video[tuple(n)] for n in neighbors]
-            central_point = neighbors[np.argmax(neighbors_values)]
-            points_excluded.add((f, y, x))
-            points_in_np.add(tuple(central_point))
-#            print('---')
-#            print(central_point)
-            for n in neighbors:
-                points_excluded.add(tuple(n))
+        if len(neighbors_indeces[0]) == 0:
+            print(f, y, x)
+            print('nic')
+            return points_in_np, points_excluded
+        neighbors = [np.array([f, y , x]) - dist + np.array(
+                [0, neighbors_indeces[0][i], neighbors_indeces[1][i]]
+                ) for i in range(len(neighbors_indeces[0]))]
+
+        neighbors_values = [self.video[tuple(n)] for n in neighbors]
+        central_point = neighbors[np.argmax(neighbors_values)]
+        points_in_np.append(tuple(central_point))
+        for n in neighbors:
+            points_excluded.add(tuple(n))
 
         i = 1         
         go = f + 1 < self.length
+        last_point = copy.deepcopy(central_point)
         while go:
             neighbors_indeces = self.mask[f + i, y-dy:y+dy, x-dx:x+dx].nonzero() 
 
@@ -480,11 +476,11 @@ class Video(object):
                 neighbors = [np.array([f + i, y , x]) - dist + np.array(
                     [0, neighbors_indeces[0][j], neighbors_indeces[1][j]]
                     ) for j in range(len(neighbors_indeces[0]))]
-                norms = [np.linalg.norm(central_point - n) for n in neighbors]
+    
+                norms = [np.linalg.norm(last_point - n) for n in neighbors]
                 closest_point = neighbors[np.argmin(norms)]
-                central_point = closest_point      
-                points_in_np.add(tuple(closest_point))
-#                print(closest_point)
+                last_point = copy.deepcopy(closest_point)    
+                points_in_np.append(tuple(closest_point))
                 for n in neighbors:
                     points_excluded.add(tuple(n))
             else:
@@ -493,11 +489,14 @@ class Video(object):
             i += 1    
             if f+i >= self.length:
                 go = False
-        points_excluded.difference_update(points_in_np)
-        return list(points_in_np), points_excluded
+                
+#        if (f, y, x) in points_excluded:
+#            points_excluded.remove((f, y, x))
+        return points_in_np, points_excluded
         
     def image_process_beta(self, threshold = 100):
         self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
+#        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
 #        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_07
 #        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
@@ -509,7 +508,9 @@ class Video(object):
         self.np_marks_positions = [[[],[]] for i in range(self.length)]
         self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        candidate_np = set()
+        self.np_positions = [[[],[]] for i in range(self.length)]
+        
+        candidate_np = []
         
         for f in range(self.length):
 
@@ -518,26 +519,33 @@ class Video(object):
                 y, x = c
                 self.frames_binding[x][y].append(f)
                 self.frames_unbinding[x][y].append(f)
-                candidate_np.add((f, y, x))
+                candidate_np.append((f, y, x))
 
         self.mask = self.process_mask()  
         
         while len(candidate_np) != 0:
-            points_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop())
-#            print('np')
-#            print(points_in_np[:2])
-#            print('excluded')
-#            print(points_excluded)
+            points_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop(0))
+            
+            for pe in points_excluded:
+                self.mask[pe] = 0
+                if pe in candidate_np:
+                    candidate_np.remove(pe)
+                    
         
-            candidate_np.difference_update(points_excluded)
-            candidate_np.difference_update(set(points_in_np))
-#             print(len(candidate_np))
             for p in points_in_np:
+                self.mask[p] = 0
                 if p[2] in self.np_marks_positions[p[0]][0] and p[1] in self.np_marks_positions[p[0]][1]:
                     print('err')
                 else:
                     self.np_marks_positions[p[0]][0].append(p[2])  
                     self.np_marks_positions[p[0]][1].append(p[1])
+                    
+
+            if len(points_in_np) != 0:
+                self.np_positions[points_in_np[0][0]][0].append(points_in_np[0][1])    
+                self.np_positions[points_in_np[0][0]][1].append(points_in_np[0][2]) 
+                self.np_amount += 1
+                    
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
@@ -944,9 +952,10 @@ class Video(object):
                
                 np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
                 np_plot.plot(data_frame, linewidth=1, color=black, label='integral count', ls=':')  
-                np_plot.plot(data_integral, linewidth=1, color=black, label='count in frame')          
-            
-            location = mpatches.Rectangle((ax.index, -1), 1/60, 5, color=red)                
+                np_plot.plot(data_integral, linewidth=1, color=black, label='count in frame')     
+                
+            rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
+            location = mpatches.Rectangle((ax.index, -1), 1/60, rectangle_height, color=red)                
             stat_plot.add_patch(location)
             fig_stat.legend(loc=3)
                         
