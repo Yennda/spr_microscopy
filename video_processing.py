@@ -51,15 +51,12 @@ class Video(object):
         self.k_diff = None
         self.k_int = None
         
-        self.frames_binding = None
-        self.frames_unbinding = None
-        self.intensity_binding = None
-        self.intensity_unbinding = None
         self.mask = None
         self.np_marks_positions = None
 
         self.stats_std = []
         #beta
+        self.candidates = None
         self.np_database = []
         self.frame_np_ids = []
         
@@ -176,45 +173,29 @@ class Video(object):
         k_diff = self.k_diff
         tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
         
-        i = 1
-        imax = self.video.shape[2]*self.video.shape[1]
-        print('Computing the px visualisation')
-        for x in range(self.video.shape[2]):
-            for y in range(self.video.shape[1]):
-                for f in self.frames_binding[x][y]:
-                    if f+k_diff > self.video.shape[0]:
-                        end = self.video.shape[0]
-                    else:
-                        end = f+k_diff
-                    volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
-                    volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-                    
-                for f in self.frames_unbinding[x][y]:
-                    if f+k_diff > self.video.shape[0]:
-                        end = self.video.shape[0]
-                    else:
-                        end = f+k_diff
-                    volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
-                    volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-                i += 1
-                print('\r\t{}/ {}'.format(i+1, imax), end="")
-        print(' DONE')
+        for c in self.candidates:
+            f, y, x = c
+            if f+k_diff > self.video.shape[0]:
+                end = self.video.shape[0]
+            else:
+                end = f+k_diff
+            volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
+            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
+            if f+k_diff > self.video.shape[0]:
+                end = self.video.shape[0]
+            else:
+                end = f+k_diff
+            volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
+            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
+            
         return volume_mask
     
     def process_mask(self):
         volume_mask = np.zeros(self.video.shape)
 
-        i = 0
-        imax = self.video.shape[2]*self.video.shape[1]
-        
-        print('Computing the y/n mask')
-        for x in range(self.video.shape[2]):
-            for y in range(self.video.shape[1]):
-                for f in self.frames_binding[x][y]:
-                    volume_mask[f, y, x] = 1
-                i += 1
-                print('\r\t{}/ {}'.format(i+1, imax), end="")
-        print(' DONE')
+        for c in self.candidates:
+            volume_mask[c] = 1
+
         return volume_mask
     
     def process_frame_stat(self):      
@@ -382,9 +363,6 @@ class Video(object):
         self.threshold = threshold
         self.dip = dip
         self.noise_level = noise_level
-        
-        self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
 
         self.intensity_binding = []
         self.intensity_unbinding = []
@@ -399,8 +377,7 @@ class Video(object):
         
         skipped_corr = 0
         skipped_peak = 0
-        
-        candidate = set()
+        self.candidates = set()
         
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
@@ -408,14 +385,9 @@ class Video(object):
                 if np.abs(self.video[:, y, x]).max() > noise_level:
                     corr_out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
                     
-                    self.frames_binding[x][y] = corr_out['bind'][0] 
-                    self.frames_unbinding[x][y] = corr_out['unbind'][0]
-                    
                     if len(corr_out['bind'][0]) != 0:
                         for f in corr_out['bind'][0]:
-                            candidate.add((f, y, x))
-                            self.intensity_binding.append(corr_out['bind'][1]) 
-                            self.intensity_unbinding.append(corr_out['unbind'][1])  
+                            self.candidates.add((f, y, x))
                     else:
                         skipped_peak+=1
                 else:
@@ -428,13 +400,13 @@ class Video(object):
         print('#PXS excluded from correlation: {} / {}, {:.1f} %'.format(skipped_corr, all_processes, skipped_corr/all_processes*100))
         print('#PXS excluded from peaks: {} / {}, {:.1f} %'.format(skipped_peak, all_processes-skipped_corr, skipped_peak/(all_processes-skipped_corr)*100))
         
-        self.mask = self.process_mask()
+        self.mask = self.process_mask(self.candidates)
 
         print('Connecting the detected pxs into patterns.', end="")
         
         np_id = 0
-        while len(candidate) != 0:
-            pixels_in_np, position = self.alpha_detect_nps(candidate.pop())
+        while len(self.candidates) != 0:
+            pixels_in_np, position = self.alpha_detect_nps(self.candidates.pop())
             
             nanoparticle = NanoParticle(np_id, position, pixels_in_np, method = 'alpha')
             self.np_database.append(nanoparticle)
@@ -442,7 +414,7 @@ class Video(object):
             for f in range(-self.k_diff//2, self.k_diff//2):
                 self.frame_np_ids[position[0]+f].append(np_id)
             
-            candidate.difference_update(pixels_in_np)
+            self.candidates.difference_update(pixels_in_np)
             np_id += 1
 
             
@@ -518,32 +490,27 @@ class Video(object):
         self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
 
         self.np_marks_positions = [[[],[]] for i in range(self.length)]
-        self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         
         self.frame_np_ids = [[] for i in range(self.length)]
-        
-        candidate_np = []
-        
+        self.candidates = list()
+
         for f in range(self.length):
 
             coordinates = peak_local_max(self._video['corr'][:, :, f], threshold_abs = threshold)
             for c in coordinates:
                 y, x = c
-                self.frames_binding[x][y].append(f)
-                self.frames_unbinding[x][y].append(f)
-                candidate_np.append((f, y, x))
+                self.candidates.append((f, y, x))
 
         self.mask = self.process_mask()  
         
         np_id = 0
-        while len(candidate_np) != 0:
-            positions_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop(0))
+        while len(self.candidates) != 0:
+            positions_in_np, points_excluded = self.beta_peaks_processing(self.candidates.pop(0))
             
             for pe in points_excluded:
                 self.mask[pe] = 0
-                if pe in candidate_np:
-                    candidate_np.remove(pe)
+                if pe in self.candidates:
+                    self.candidates.remove(pe)
                     
             for p in positions_in_np:
                 self.mask[p] = 0
@@ -727,7 +694,6 @@ class Video(object):
                 print('------------')
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
-#                is_np(self.video[:, y, x], show=True)
                 ip.correlation_temporal(ax.volume[:, y, x], k_diff=self.k_diff, step=self.dip, threshold=self.threshold,  show=True)
 
         def next_slice(i):
@@ -739,7 +705,7 @@ class Video(object):
                 
             if self.show_detected:
                 [p.remove() for p in reversed(ax.patches)]
-                if self._img_type == 'diff' or self._img_type == True or self._img_type == 'corr':
+                if self._img_type == 'diff' or self._img_type or self._img_type == 'corr':
                     for np_id in self.frame_np_ids[ax.index]:
                         p = mpatches.Circle(
                                 self.np_database[np_id].position_yx(ax.index), 
@@ -749,18 +715,20 @@ class Video(object):
                                 alpha = 0.5,
                                 lw = 2)
                         ax.add_patch(p)
+                    self.show_detected_all = False
                     
-                elif self._img_type == 'int' or self._img_type == False:
-                    for npp in self.np_marks_positions[:ax.index]:
-                        for i in range(len(npp[1])):
+                elif self._img_type == 'int' or not self._img_type:
+                    for frame in self.frame_np_ids[:ax.index+1]:
+                        for np_id in frame:
                             p = mpatches.Circle(
-                                    (npp[0][i], npp[1][i]), 
+                                    self.np_database[np_id].last_position_yx(), 
                                     5, 
-                                    color=red, 
-                                    fill = False, 
-                                    lw = 1)
+                                    color=self.np_database[np_id].color, 
+                                    fill = False,
+                                    alpha = 0.5,
+                                    lw = 2)
                             ax.add_patch(p)
-                    
+                            
             if self.show_stats:
                 location.xy=[ax.index, -1]
                 fig_stat.canvas.draw()
@@ -844,13 +812,14 @@ class Video(object):
                 fig.canvas.draw()
             elif event.key == 'b':
                 if self.show_detected_all == False:
-                    for npp in self.np_marks_positions[:ax.index]:
-                        for i in range(len(npp[1])):
+                    for frame in self.frame_np_ids[:ax.index+1]:
+                        for np_id in frame:
                             p = mpatches.Circle(
-                                    (npp[0][i], npp[1][i]), 
+                                    self.np_database[np_id].last_position_yx(), 
                                     5, 
-                                    color=red, 
-                                    fill = False, 
+                                    color=self.np_database[np_id].color, 
+                                    fill = False,
+                                    alpha = 0.5,
                                     lw = 2)
                             ax.add_patch(p)
                     self.show_detected_all = True

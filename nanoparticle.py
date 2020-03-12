@@ -22,4 +22,7 @@ class NanoParticle():
         if frame > self.last_frame:
             raise Exception('The nanoparticle does not occur in this frame.')
         return self.positions[frame-self.first_frame][:-3:-1]
+    
+    def last_position_yx(self):
+        return self.position_yx(self.last_frame)
         
