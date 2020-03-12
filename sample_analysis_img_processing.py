@@ -69,7 +69,7 @@ video.make_diff(k = 10)
 print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 #video.fouriere(level = 30)
 
-#video.img_process_alpha(6, dip = -0.003, noise_level = 0.003)
+#video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 
 time_beta = t.time()
 video.image_process_beta(threshold = 100)    #750    
@@ -81,7 +81,7 @@ print('CORRELATION TIME: {:.2f} s'.format(t.time()-time_beta))
 video.make_frame_stats()
 #video.ref_frame = 20
 #video.make_toggle(10, 10)
-video.show_stats = True
+video.recognition_statistics()
 video.explore()
 
 #plt.hist(np.matrix.flatten(video.video), 100)

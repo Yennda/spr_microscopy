@@ -9,13 +9,15 @@ import cv2
 import os
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
-import image_processing as ip
+
 import copy
 import time as tt
 from skimage.feature import peak_local_max
 
 from np_analysis import np_analysis, is_np, measure_new, visualize_and_save
+import image_processing as ip
 import tools as tl
+from nanoparticle import NanoParticle
 
 FOLDER_NAME = '/exports'
 yellow='#ffb200'
@@ -54,13 +56,13 @@ class Video(object):
         self.intensity_binding = None
         self.intensity_unbinding = None
         self.mask = None
-        self.candidate = set()
-        self.np_amount = 0
         self.np_marks_positions = None
-        self.np_positions = []
-        #[set of pxs, (npf, npy, npx), peak value, correlation]
-        self.np_detected_info = []
+
         self.stats_std = []
+        #beta
+        self.np_database = []
+        self.frame_np_ids = []
+        
         
         self.threshold = 4
         self.dip = -0.003
@@ -201,7 +203,7 @@ class Video(object):
     
     def process_mask(self):
         volume_mask = np.zeros(self.video.shape)
-        
+
         i = 0
         imax = self.video.shape[2]*self.video.shape[1]
         
@@ -343,14 +345,14 @@ class Video(object):
             axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
             
         
-    def detect_nps(self, px):
+    def alpha_detect_nps(self, px):
         points_to_do = set()
-        particle = set()
+        pixels_in_np = set()
         points_to_do.add(px)
 
         while len(points_to_do) != 0:
             f, y, x = points_to_do.pop()
-            if (f, y, x) in particle:
+            if (f, y, x) in pixels_in_np:
                 continue
             
             found_pxs = self.mask[f-3:f+4, y-1:y+2, x-1:x+2].nonzero()
@@ -358,22 +360,18 @@ class Video(object):
             for i in range(len(found_pxs[0])):
                 points_to_do.add((f+found_pxs[0][i]-3, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
                 
-            particle.add((f, y, x))
+            pixels_in_np.add((f, y, x))
             
-        npf=int(round(np.average([p[0] for p in particle])))
-        npy=np.average([p[1] for p in particle])
-        npx=np.average([p[2] for p in particle])
-        
-        self.np_positions[npf][0].append(npx)    
-        self.np_positions[npf][1].append(npy) 
+        npf=int(round(np.average([p[0] for p in pixels_in_np])))
+        npy=np.average([p[1] for p in pixels_in_np])
+        npx=np.average([p[2] for p in pixels_in_np])
         
 #        for i in range(-self.k_diff//2, self.k_diff//2):
         for i in range(1):
             self.np_marks_positions[npf+i][0].append(npx)    
             self.np_marks_positions[npf+i][1].append(npy)
             
-        self.np_detected_info.append([particle, (int(round(npf)), int(round(npy)), int(round(npx)))])
-        return particle
+        return pixels_in_np, (npf, npy, npx)
         
     def img_process_alpha(self, threshold = 15, dip = -0.003, noise_level = 0.001):
         if self._img_type != 'diff':
@@ -392,7 +390,8 @@ class Video(object):
         self.intensity_unbinding = []
         
         self.np_marks_positions = [[[],[]] for i in range(self.length)]
-        self.np_positions = [[[],[]] for i in range(self.length)]
+        
+        self.frame_np_ids = [[] for i in range(self.length)]
         
         i = 0
         time = tt.time()
@@ -400,6 +399,8 @@ class Video(object):
         
         skipped_corr = 0
         skipped_peak = 0
+        
+        candidate = set()
         
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
@@ -412,7 +413,7 @@ class Video(object):
                     
                     if len(corr_out['bind'][0]) != 0:
                         for f in corr_out['bind'][0]:
-                            self.candidate.add((f, y, x))
+                            candidate.add((f, y, x))
                             self.intensity_binding.append(corr_out['bind'][1]) 
                             self.intensity_unbinding.append(corr_out['unbind'][1])  
                     else:
@@ -427,23 +428,32 @@ class Video(object):
         print('#PXS excluded from correlation: {} / {}, {:.1f} %'.format(skipped_corr, all_processes, skipped_corr/all_processes*100))
         print('#PXS excluded from peaks: {} / {}, {:.1f} %'.format(skipped_peak, all_processes-skipped_corr, skipped_peak/(all_processes-skipped_corr)*100))
         
-        self.show_pixels = True
-        self.show_detected = True
-        
         self.mask = self.process_mask()
 
         print('Connecting the detected pxs into patterns.', end="")
-        while len(self.candidate) != 0:
-            particle = self.detect_nps(self.candidate.pop())
+        
+        np_id = 0
+        while len(candidate) != 0:
+            pixels_in_np, position = self.alpha_detect_nps(candidate.pop())
             
-            self.candidate.difference_update(particle)
-            self.np_amount+=1
+            nanoparticle = NanoParticle(np_id, position, pixels_in_np, method = 'alpha')
+            self.np_database.append(nanoparticle)
+            
+            for f in range(-self.k_diff//2, self.k_diff//2):
+                self.frame_np_ids[position[0]+f].append(np_id)
+            
+            candidate.difference_update(pixels_in_np)
+            np_id += 1
+
             
         print(' DONE')    
-        print('Amount of detected binding events: {}'.format(self.np_amount))
+        
+        self.show_mask = True
+        self.show_pixels = True
+        self.show_detected = True
         
     def beta_peaks_processing(self, px):
-        points_in_np = []
+        positions_in_np = []
         points_excluded = set()
 
         f, y, x = px
@@ -466,7 +476,7 @@ class Video(object):
 
         neighbors_values = [self.video[tuple(n)] for n in neighbors]
         central_point = neighbors[np.argmax(neighbors_values)]
-        points_in_np.append(tuple(central_point))
+        positions_in_np.append(tuple(central_point))
         for n in neighbors:
             points_excluded.add(tuple(n))
 
@@ -484,7 +494,7 @@ class Video(object):
                 norms = [np.linalg.norm(last_point - n) for n in neighbors]
                 closest_point = neighbors[np.argmin(norms)]
                 last_point = copy.deepcopy(closest_point)    
-                points_in_np.append(tuple(closest_point))
+                positions_in_np.append(tuple(closest_point))
                 for n in neighbors:
                     points_excluded.add(tuple(n))
             else:
@@ -494,7 +504,7 @@ class Video(object):
             if f+i >= self.length:
                 go = False
                 
-        return points_in_np, points_excluded
+        return positions_in_np, points_excluded
         
     def image_process_beta(self, threshold = 100):
         self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
@@ -510,7 +520,8 @@ class Video(object):
         self.np_marks_positions = [[[],[]] for i in range(self.length)]
         self.frames_binding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
         self.frames_unbinding = [[[] for y in range(self.video.shape[1])] for x in range(self.video.shape[2])]
-        self.np_positions = [[[],[]] for i in range(self.length)]
+        
+        self.frame_np_ids = [[] for i in range(self.length)]
         
         candidate_np = []
         
@@ -525,26 +536,37 @@ class Video(object):
 
         self.mask = self.process_mask()  
         
+        np_id = 0
         while len(candidate_np) != 0:
-            points_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop(0))
+            positions_in_np, points_excluded = self.beta_peaks_processing(candidate_np.pop(0))
             
             for pe in points_excluded:
                 self.mask[pe] = 0
                 if pe in candidate_np:
                     candidate_np.remove(pe)
                     
-            for p in points_in_np:
+            for p in positions_in_np:
                 self.mask[p] = 0
                 self.np_marks_positions[p[0]][0].append(p[2])  
-                self.np_marks_positions[p[0]][1].append(p[1])       
-
-            self.np_positions[points_in_np[0][0]][0].append(points_in_np[0][1])    
-            self.np_positions[points_in_np[0][0]][1].append(points_in_np[0][2]) 
-            self.np_amount += 1
-                    
+                self.np_marks_positions[p[0]][1].append(p[1])
+                
+            nanoparticle = NanoParticle(np_id, positions_in_np)    
+            self.np_database.append(nanoparticle)
+            
+            for f in range(positions_in_np[0][0], positions_in_np[-1][0]+1):
+                self.frame_np_ids[f].append(np_id)
+            
+            np_id += 1
+         
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
+        
+    def recognition_statistics(self):
+        self.make_frame_stats()
+        self.show_stats = True
+        
+        
         
     def characterize_nps(self):
         for npl in self.np_detected_info:
@@ -585,28 +607,28 @@ class Video(object):
              measures = measure_new(raw, mask, [dx, dy])
              visualize_and_save(raw, measures, self.folder, self.file)
                    
-    def plot_np_amount(self):
-        data_frame = []
-        for npp in self.np_positions:
-            data_frame.append(len(npp[1]))
-        
-        data_integral = [sum(data_frame[:i+1]) for i in range(len(data_frame))]
-        
-        fig_np, np_plot = plt.subplots()
-        np_plot.grid(linestyle='--')
-        np_plot.set_title('Count of binding events')
-        np_plot.set_xlabel('time [min]')
-        np_plot.set_ylabel('NP count [a. u.]')
-        np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
-        np_integral_plot = np_plot.twinx()
-        
-        self.make_frame_stats()
-        np_plot.plot(data_integral, linewidth=1, color=blue, label='count in frame')
-        
-        np_integral_plot.plot(data_frame, linewidth=1, color=red, label='integral count', zorder = -1)
-
-        fig_np.legend(loc=3)
-        return fig_np, np_plot
+#    def plot_np_amount(self):
+#        data_frame = []
+#        for npp in self.np_positions:
+#            data_frame.append(len(npp[1]))
+#        
+#        data_integral = [sum(data_frame[:i+1]) for i in range(len(data_frame))]
+#        
+#        fig_np, np_plot = plt.subplots()
+#        np_plot.grid(linestyle='--')
+#        np_plot.set_title('Count of binding events')
+#        np_plot.set_xlabel('time [min]')
+#        np_plot.set_ylabel('NP count [a. u.]')
+#        np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
+#        np_integral_plot = np_plot.twinx()
+#        
+#        self.make_frame_stats()
+#        np_plot.plot(data_integral, linewidth=1, color=blue, label='count in frame')
+#        
+#        np_integral_plot.plot(data_frame, linewidth=1, color=red, label='integral count', zorder = -1)
+#
+#        fig_np.legend(loc=3)
+#        return fig_np, np_plot
         
     def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
         """ 
@@ -718,16 +740,16 @@ class Video(object):
             if self.show_detected:
                 [p.remove() for p in reversed(ax.patches)]
                 if self._img_type == 'diff' or self._img_type == True or self._img_type == 'corr':
-#                    print(len(self.np_marks_positions[ax.index][1]))
-                    for i in range(len(self.np_marks_positions[ax.index][1])):
+                    for np_id in self.frame_np_ids[ax.index]:
                         p = mpatches.Circle(
-                                (self.np_marks_positions[ax.index][0][i], self.np_marks_positions[ax.index][1][i]), 
+                                self.np_database[np_id].position_yx(ax.index), 
                                 5, 
-                                color=red, 
+                                color=self.np_database[np_id].color, 
                                 fill = False,
                                 alpha = 0.5,
                                 lw = 2)
                         ax.add_patch(p)
+                    
                 elif self._img_type == 'int' or self._img_type == False:
                     for npp in self.np_marks_positions[:ax.index]:
                         for i in range(len(npp[1])):
@@ -926,26 +948,26 @@ class Video(object):
             
             fig_stat, stat_plot = plt.subplots()
             stat_plot.grid(linestyle='--')
-            stat_plot.set_title('STD of each frame')
+            stat_plot.set_title('info')
             stat_plot.set_xlabel('time [min]')
-            stat_plot.set_ylabel('intensity [a. u.]')
+            stat_plot.set_ylabel('std of intensity [a. u.]')
             
-            if self.np_amount > 0:
+            if len(self.np_database) > 0:
                 np_plot = stat_plot.twinx()
-            
-            self.make_frame_stats()
+                np_plot.set_ylabel('Number of NPs')
+
             stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
-            stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=blue, label='average', ls=':')  
+            stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=blue, label='average stdev', ls=':')  
 #            stat_plot.set_ylim((0, 0.003))
             
-            if self.np_amount > 0:
-                data_frame = []
-                for npp in self.np_positions:
-                    data_frame.append(len(npp[1]))
-            
+            if len(self.np_database) > 0:
+                data_frame = [0 for i in range(self.length)]
+                
+                for nanoparticle in self.np_database:
+                    data_frame[nanoparticle.first_frame]+=1
+                    
                 data_integral = [sum(data_frame[:i+1]) for i in range(len(data_frame))]
-            
-               
+              
                 np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
                 np_plot.plot(data_frame, linewidth=1, color=black, label='integral count', ls=':')  
                 np_plot.plot(data_integral, linewidth=1, color=black, label='count in frame')     
@@ -953,7 +975,7 @@ class Video(object):
             rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
             location = mpatches.Rectangle((ax.index, -1), 1/60, rectangle_height, color=red)                
             stat_plot.add_patch(location)
-            fig_stat.legend(loc=3)
+            fig_stat.legend(loc=2)
                         
                         
 #        cb = fig.colorbar(img, ax=ax)

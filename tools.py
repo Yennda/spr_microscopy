@@ -1,12 +1,14 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import random as rn
 
 yellow='#ffb200'
 red='#DD5544'
 blue='#0284C0'
 black='#000000'
 green='#008000'
+
 
 COLORS = [yellow, blue, red, black, green]
 SIDES = ['left', 'right', 'bottom', 'top']
@@ -68,21 +70,8 @@ def closest(lst, K):
       
     return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))] 
 
-def FindMaxima(numbers):
-    maxima = []
-    length = len(numbers)
- 
-#    for i in range(1, length-1):     
-    i = 0
-    while i<(length-1):
-        if numbers[i] > numbers[i-1] and numbers[i] > numbers[i+1]:
-            maxima.append(numbers[i])
-            i+=10
-        else:
-            i+=1
-    
-#    if numbers[length-1] > numbers[length-2]:    
-#        maxima.append(numbers[length-1])        
-    return maxima
+def random_color():
+    return (rn.random(), rn.random(), rn.random())
+
 
 
