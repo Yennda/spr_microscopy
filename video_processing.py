@@ -178,7 +178,14 @@ class Video(object):
     def process_mask_image(self):
         volume_mask = np.zeros(list(self.video.shape) + [4])
         k_diff = self.k_diff
+#        k_diff = 1
         tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
+        for c in self.candidates:
+            f, y, x = c
+            volume_mask[f, y, x, 1] = 1
+            volume_mask[f, y, x, 3] = 1
+        return volume_mask
+        
         
         for c in self.candidates:
             f, y, x = c
@@ -517,6 +524,56 @@ class Video(object):
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
+        
+    def image_process_gamma(self, threshold = 100):
+        self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
+#        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
+#        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
+#        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
+#        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
+#        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
+
+        self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d)*1e5
+        self._img_type = 'corr'
+        self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
+
+        self.frame_np_ids = [[] for i in range(self.length)]
+        self.candidates = list()
+
+        self.mask = (self._video['corr'] > threshold)*1
+        
+        candidates_pre = self.mask.nonzero()
+        
+        for i in range(len(candidates_pre[0])):
+            self.candidates.append((
+                    candidates_pre[2][i],
+                    candidates_pre[0][i],
+                    candidates_pre[1][i]))
+            
+        gray = self.mask[:, :, 215].astype(np.uint8)    
+        th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+        cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
+        s1 = 2
+        s2 = 100
+        xcnts = []
+        control_mask = np.zeros(self.mask[:, :, 215].shape)
+        for cnt in cnts:
+            if s1 < cv2.contourArea(cnt) < s2:
+                print(cnt)
+                for c in cnt:
+                    control_mask[c[0][1], c[0][0]] = 1
+                xcnts.append(cnt)
+
+        print("Dots number: {}".format(len(xcnts)))
+        video_dark = np.abs((self.video[215, :, :]+100)/5)
+        video_rgb = cv2.cvtColor(video_dark.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+        video_rgb[:, :, 0] += control_mask.astype(np.uint8) * 100
+        
+        plt.imshow(video_rgb)
+        
+        self.show_mask = True
+        self.show_pixels = True
+#        self.show_detected = True
         
     def recognition_statistics(self):
         self.make_frame_stats()
