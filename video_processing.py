@@ -451,12 +451,15 @@ class Video(object):
         dist = [0] + list(self.idea3d.shape[:2])
         dist = [d//2 for d in dist]
         df, dy, dx = dist
+        dys = dy
+        dxs = dx
 
-        neighbors_indeces = self.mask[f, y-dy:y+dy, x-dx:x+dx].nonzero()
-        if len(neighbors_indeces[0]) == 0:
-            print(f, y, x)
-            print('nic')
-            return points_in_np, points_excluded
+        if y < dy:
+            dys = 0
+        if x < dx:
+            dxs = 0
+
+        neighbors_indeces = self.mask[f, y-dys:y+dy, x-dxs:x+dx].nonzero()
         neighbors = [np.array([f, y , x]) - dist + np.array(
                 [0, neighbors_indeces[0][i], neighbors_indeces[1][i]]
                 ) for i in range(len(neighbors_indeces[0]))]
@@ -471,7 +474,7 @@ class Video(object):
         go = f + 1 < self.length
         last_point = copy.deepcopy(central_point)
         while go:
-            neighbors_indeces = self.mask[f + i, y-dy:y+dy, x-dx:x+dx].nonzero() 
+            neighbors_indeces = self.mask[f + i, y-dys:y+dys, x-dx:x+dx].nonzero() 
 
             if len(neighbors_indeces[0]) != 0:   
                 neighbors = [np.array([f + i, y , x]) - dist + np.array(
@@ -491,8 +494,6 @@ class Video(object):
             if f+i >= self.length:
                 go = False
                 
-#        if (f, y, x) in points_excluded:
-#            points_excluded.remove((f, y, x))
         return points_in_np, points_excluded
         
     def image_process_beta(self, threshold = 100):
@@ -532,20 +533,14 @@ class Video(object):
                 if pe in candidate_np:
                     candidate_np.remove(pe)
                     
-        
             for p in points_in_np:
                 self.mask[p] = 0
-                if p[2] in self.np_marks_positions[p[0]][0] and p[1] in self.np_marks_positions[p[0]][1]:
-                    print('err')
-                else:
-                    self.np_marks_positions[p[0]][0].append(p[2])  
-                    self.np_marks_positions[p[0]][1].append(p[1])
-                    
+                self.np_marks_positions[p[0]][0].append(p[2])  
+                self.np_marks_positions[p[0]][1].append(p[1])       
 
-            if len(points_in_np) != 0:
-                self.np_positions[points_in_np[0][0]][0].append(points_in_np[0][1])    
-                self.np_positions[points_in_np[0][0]][1].append(points_in_np[0][2]) 
-                self.np_amount += 1
+            self.np_positions[points_in_np[0][0]][0].append(points_in_np[0][1])    
+            self.np_positions[points_in_np[0][0]][1].append(points_in_np[0][2]) 
+            self.np_amount += 1
                     
         self.show_mask = True
         self.show_pixels = True
@@ -723,7 +718,7 @@ class Video(object):
             if self.show_detected:
                 [p.remove() for p in reversed(ax.patches)]
                 if self._img_type == 'diff' or self._img_type == True or self._img_type == 'corr':
-                    print(len(self.np_marks_positions[ax.index][1]))
+#                    print(len(self.np_marks_positions[ax.index][1]))
                     for i in range(len(self.np_marks_positions[ax.index][1])):
                         p = mpatches.Circle(
                                 (self.np_marks_positions[ax.index][0][i], self.np_marks_positions[ax.index][1][i]), 
