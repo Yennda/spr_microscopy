@@ -24,6 +24,7 @@ yellow='#ffb200'
 red='#DD5544'
 blue='#0284C0'
 black='#000000'    
+SIDES = ['left', 'right', 'bottom', 'top']
             
 class Video(object):
 
@@ -51,21 +52,27 @@ class Video(object):
         self.k_diff = None
         self.k_int = None
         
-        self.mask = None
-        self.np_marks_positions = None
-
-        self.stats_std = []
-        #beta
+        self.mask = None        
         self.candidates = None
         self.np_database = []
         self.frame_np_ids = []
         
+        #statistics
+        self.stats_std = None
+        self.np_count_first_occurance = None
+        self.np_count_present = None
+        self.np_count_integral = None
+        self.validity = None
+        self.valid = None
         
+        #settings
         self.threshold = 4
         self.dip = -0.003
         self.noise_level = 0.001
         self.idea3d = None
         
+        
+        #show
         self.show_graphic = True
         self.show_pixels = False
         self.show_detected = False
@@ -207,7 +214,7 @@ class Video(object):
             i += 1
             print('\r\t{}/ {}'.format(i+1, len(self.video[:, 1, 1])), end="")
         print(' DONE')
-        return out
+        return np.array(out)
     
     def make_frame_stats(self):
         self.stats_std = self.process_frame_stat()
@@ -346,11 +353,6 @@ class Video(object):
         npf=int(round(np.average([p[0] for p in pixels_in_np])))
         npy=np.average([p[1] for p in pixels_in_np])
         npx=np.average([p[2] for p in pixels_in_np])
-        
-#        for i in range(-self.k_diff//2, self.k_diff//2):
-        for i in range(1):
-            self.np_marks_positions[npf+i][0].append(npx)    
-            self.np_marks_positions[npf+i][1].append(npy)
             
         return pixels_in_np, (npf, npy, npx)
         
@@ -359,25 +361,18 @@ class Video(object):
             print('Processes only the differential image. Use make_diff method first.')
             return
         
-        print('Correlation')
         self.threshold = threshold
         self.dip = dip
         self.noise_level = noise_level
-
-        self.intensity_binding = []
-        self.intensity_unbinding = []
-        
-        self.np_marks_positions = [[[],[]] for i in range(self.length)]
-        
+              
         self.frame_np_ids = [[] for i in range(self.length)]
+        self.candidates = set()
         
         i = 0
         time = tt.time()
         all_processes = self.video.shape[1]*self.video.shape[2]   
-        
         skipped_corr = 0
         skipped_peak = 0
-        self.candidates = set()
         
         for x in range(self.video.shape[2]):
             for y in range(self.video.shape[1]):
@@ -403,7 +398,6 @@ class Video(object):
         self.mask = self.process_mask(self.candidates)
 
         print('Connecting the detected pxs into patterns.', end="")
-        
         np_id = 0
         while len(self.candidates) != 0:
             pixels_in_np, position = self.alpha_detect_nps(self.candidates.pop())
@@ -417,7 +411,6 @@ class Video(object):
             self.candidates.difference_update(pixels_in_np)
             np_id += 1
 
-            
         print(' DONE')    
         
         self.show_mask = True
@@ -482,20 +475,18 @@ class Video(object):
         self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
-#        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_07
+#        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
+#        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
 #        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
 
         self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d)*1e5
         self._img_type = 'corr'
         self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
 
-        self.np_marks_positions = [[[],[]] for i in range(self.length)]
-        
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = list()
 
         for f in range(self.length):
-
             coordinates = peak_local_max(self._video['corr'][:, :, f], threshold_abs = threshold)
             for c in coordinates:
                 y, x = c
@@ -514,8 +505,6 @@ class Video(object):
                     
             for p in positions_in_np:
                 self.mask[p] = 0
-                self.np_marks_positions[p[0]][0].append(p[2])  
-                self.np_marks_positions[p[0]][1].append(p[1])
                 
             nanoparticle = NanoParticle(np_id, positions_in_np)    
             self.np_database.append(nanoparticle)
@@ -533,7 +522,34 @@ class Video(object):
         self.make_frame_stats()
         self.show_stats = True
         
+        if len(self.np_database) != 0:
         
+            self.np_count_present = [0 for i in range(self.length)]
+            self.np_count_first_occurance = [0 for i in range(self.length)]
+            
+            for f in range(self.length):
+                self.np_count_present[f] = len(self.frame_np_ids[f])
+                
+            for nanoparticle in self.np_database:
+                self.np_count_first_occurance[nanoparticle.first_frame]+=1
+                
+            self.np_count_integral = [sum(self.np_count_first_occurance[:i+1]) for i in range(len(self.np_count_first_occurance))]
+                
+            np_count = self.np_count_present
+    
+            cut_std = self.stats_std[self.k_diff*3:]
+            cut_np_count = np_count[self.k_diff*3:]  
+            
+            norm_std = (cut_std-min(cut_std))/max(cut_std)
+            norm_np_count = (np.array(cut_np_count)-min(cut_np_count))/max(cut_np_count)
+            
+    #        difference = norm_std - norm_np_count
+            self.validity = np.concatenate((np.array([0]*self.k_diff*3), np.multiply(norm_np_count, norm_std)))
+            
+            self.valid = self.validity < 2*np.average(self.validity)
+            
+        else:
+            self.valid = [True]*self.length
         
     def characterize_nps(self):
         for npl in self.np_detected_info:
@@ -573,84 +589,23 @@ class Video(object):
                          
              measures = measure_new(raw, mask, [dx, dy])
              visualize_and_save(raw, measures, self.folder, self.file)
-                   
-#    def plot_np_amount(self):
-#        data_frame = []
-#        for npp in self.np_positions:
-#            data_frame.append(len(npp[1]))
-#        
-#        data_integral = [sum(data_frame[:i+1]) for i in range(len(data_frame))]
-#        
-#        fig_np, np_plot = plt.subplots()
-#        np_plot.grid(linestyle='--')
-#        np_plot.set_title('Count of binding events')
-#        np_plot.set_xlabel('time [min]')
-#        np_plot.set_ylabel('NP count [a. u.]')
-#        np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
-#        np_integral_plot = np_plot.twinx()
-#        
-#        self.make_frame_stats()
-#        np_plot.plot(data_integral, linewidth=1, color=blue, label='count in frame')
-#        
-#        np_integral_plot.plot(data_frame, linewidth=1, color=red, label='integral count', zorder = -1)
-#
-#        fig_np.legend(loc=3)
-#        return fig_np, np_plot
         
-    def np_pixels(self, inten_a=1e-04, inten_b=5e-4):
-        """ 
-        Need to rewrite for changed self.video handling
-        """
-
-        mask = np.zeros(self._video.shape[:2])
-        for i in range(self._video.shape[0]):
-            print('done {}/{}'.format(i, self._video.shape[0]))
-            for j in range(self._video.shape[1]):
-                try:
-                    mask[i, j] = tl.t2i(is_np(self._video[i, j, :], inten_a, inten_b))
-                except:
-                    mask[i, j] = 0
-                    print('no fit')
-        return mask
-
-    def np_count(self, mask, s1=2, s2=25, show=False):
-        """ 
-        Need to rewrite for changed self.video handling
-        """
-        
-        gray = mask.astype(np.uint8)
-        th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-        cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
-        s1 = 2
-        s2 = 25
-        xcnts = []
-        control_mask = np.zeros(mask.shape)
-        for cnt in cnts:
-            if s1 < cv2.contourArea(cnt) < s2:
-
-                for c in cnt:
-                    control_mask[c[0][1], c[0][0]] = 1
-                xcnts.append(cnt)
-        if show:
-            print("Dots number: {}".format(len(xcnts)))
-            video_dark = (self.video[:, :, -1] + 1e-02) * 1e04
-            video_rgb = cv2.cvtColor(video_dark.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-            video_rgb[:, :, 0] += control_mask.astype(np.uint8) * 100
-            plt.imshow(video_rgb)
-
-        return len(xcnts)
-
-    def np_AR(self):
-        """ 
-        Need to rewrite for changed self.video handling
-        """
-        
-        self.np_count(self.np_pixels(), show=True)
-
     def explore(self, source='vid'):
         
 
         def frame_info(i):
+            if len(self.np_database) !=0:
+                if len(self.frame_np_ids[ax.index]) != 0:
+                    return '{}/{}  t= {} s dt= {:.2f} s\nNPs; now: {}, integral: {}'.format(
+                        i,
+                        ax.volume.shape[0],
+                        tl.SecToMin(self.time_info[i][0]),
+                        self.time_info[i][1],
+                        len(self.frame_np_ids[ax.index]),
+                        self.frame_np_ids[ax.index][-1],
+                    )
+
+            
             return '{}/{}  t= {} s dt= {:.2f} s'.format(
                 i,
                 ax.volume.shape[0],
@@ -695,7 +650,7 @@ class Video(object):
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
                 ip.correlation_temporal(ax.volume[:, y, x], k_diff=self.k_diff, step=self.dip, threshold=self.threshold,  show=True)
-
+                
         def next_slice(i):
             ax.index = (ax.index + i) % ax.volume.shape[0]
             img.set_array(ax.volume[ax.index])
@@ -732,9 +687,15 @@ class Video(object):
             if self.show_stats:
                 location.xy=[ax.index, -1]
                 fig_stat.canvas.draw()
-                
-#            lim = (np.min(ax.volume[ax.index]), np.max(ax.volume[ax.index]))
-#            img.set_clim(lim)
+            
+            if not self.valid[ax.index]:
+                for s in SIDES:
+                    ax.spines[s].set_color(red)
+                    ax.spines[s].set_linewidth(4)
+            else:
+                for s in SIDES:
+                    ax.spines[s].set_color(black)
+                    ax.spines[s].set_linewidth(1)   
             ax.set_title(frame_info(ax.index))
             
         def save_frame():
@@ -923,23 +884,25 @@ class Video(object):
             
             if len(self.np_database) > 0:
                 np_plot = stat_plot.twinx()
+                validity_plot = stat_plot.twinx()
+                
                 np_plot.set_ylabel('Number of NPs')
+                validity_plot.set_ylabel('Validity [Au]')
+                validity_plot.spines['right'].set_color(red)
+                validity_plot.yaxis.label.set_color(red)
+                validity_plot.tick_params(axis='y', colors=red)
 
             stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
-            stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=blue, label='average stdev', ls=':')  
+            stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=yellow, label='average stdev', ls=':')  
 #            stat_plot.set_ylim((0, 0.003))
             
-            if len(self.np_database) > 0:
-                data_frame = [0 for i in range(self.length)]
-                
-                for nanoparticle in self.np_database:
-                    data_frame[nanoparticle.first_frame]+=1
-                    
-                data_integral = [sum(data_frame[:i+1]) for i in range(len(data_frame))]
-              
+            if len(self.np_database) > 0:              
                 np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
-                np_plot.plot(data_frame, linewidth=1, color=black, label='integral count', ls=':')  
-                np_plot.plot(data_integral, linewidth=1, color=black, label='count in frame')     
+                np_plot.plot(self.np_count_present, linewidth=1, color=black, label='integral count', ls=':')  
+                np_plot.plot(self.np_count_integral, linewidth=1, color=black, label='count in frame')
+
+                validity_plot.plot(self.validity, color = red, label = 'validity')
+                validity_plot.plot([np.average(self.validity)*2 for i in range(self.length)], color = red, label = 'validity, 2stdev', ls=':')
                 
             rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
             location = mpatches.Rectangle((ax.index, -1), 1/60, rectangle_height, color=red)                
@@ -948,6 +911,9 @@ class Video(object):
                         
                         
 #        cb = fig.colorbar(img, ax=ax)
+            
+#        info = 'ej\nneki tekst\n i još nešta'
+#        ax.text(0, self.video.size+20, info, fontsize=10, bbox={'facecolor': 'white', 'alpha': 1, 'pad': 1})
         plt.tight_layout()
         plt.show()
 
