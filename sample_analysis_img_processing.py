@@ -41,9 +41,9 @@ video = Video(folder, file)
 video.loadData()
 
 
-#video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]
+#video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]☻
 #video._video['raw']=video._video['raw'][70:220,490:660,:]
-#video._video['raw']=video._video['raw'][100:150,500:600,:200]
+#video._video['raw']=video._video['raw'][100:150,500:600,:200]$
 
 video._video['raw']=video._video['raw'][100:300,300:500,:300]
 #video._video['raw']=video._video['raw'][109, 84:90, 154:166]            #idea 1
@@ -56,7 +56,7 @@ video._video['raw']=video._video['raw'][100:300,300:500,:300]
 #video._video['raw']=video._video['raw'][100:140,300:340,200:250]
 
 print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
-#video.change_fps(10)+
+#video.change_fps(10)
 video.refresh()
 
 
@@ -72,10 +72,10 @@ print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 
 time_beta = t.time()
-#video.image_process_beta(threshold = 60)    #750    
+#video.image_process_beta(threshold = 100)    #750    
 #video.image_process_beta(threshold = 5)     #600
 
-video.image_process_gamma(threshold = 75)    #750    
+video.image_process_gamma(threshold = 80)    #750    
 print('CORRELATION TIME: {:.2f} s'.format(t.time()-time_beta))
 
 
@@ -84,7 +84,7 @@ print('CORRELATION TIME: {:.2f} s'.format(t.time()-time_beta))
 #video.ref_frame = 20
 #video.make_toggle(10, 10)
 video.recognition_statistics()
-#video.explore()
+video.explore()
 
 #plt.hist(np.matrix.flatten(video.video), 100)
 

@@ -540,40 +540,64 @@ class Video(object):
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = list()
 
-        self.mask = (self._video['corr'] > threshold)*1
+        self.mask = (np.abs(self._video['corr']) > threshold)*1  
+        minimal_area = 10
         
-        candidates_pre = self.mask.nonzero()
+        number = 0
+        fit_failed = 0
+        omitted = 0
         
-        for i in range(len(candidates_pre[0])):
-            self.candidates.append((
-                    candidates_pre[2][i],
-                    candidates_pre[0][i],
-                    candidates_pre[1][i]))
-            
-        gray = self.mask[:, :, 215].astype(np.uint8)    
-        th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-        cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
-        s1 = 2
-        s2 = 100
-        xcnts = []
-        control_mask = np.zeros(self.mask[:, :, 215].shape)
-        for cnt in cnts:
-            if s1 < cv2.contourArea(cnt) < s2:
-                print(cnt)
-                for c in cnt:
-                    control_mask[c[0][1], c[0][0]] = 1
-                xcnts.append(cnt)
+        for f in range(self.length):
+            gray = self.mask[:, :, f].astype(np.uint8)    
+            th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+            cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)[-2][:-1]      
+        
+            for cnt in cnts:
+                if minimal_area < cv2.contourArea(cnt):
+                    try:
+                        ellipse = cv2.fitEllipse(cnt)
+                    except:
+                        fit_failed += 1
+                        continue
+                    
+                    loc, size, angle = ellipse
+                    if 80 < angle < 100 and size[1] > size[0]:
+                        self.candidates.append((f, int(round(loc[1])), int(round(loc[0]))))
+#                        for c in cnt:
+#                            self.candidates.append((f, c[0][1], c[0][0]))
+                    else:
+                        omitted += 1
+                    number += 1
+                
+        print("Dots number: {}".format(number))
+        print("Fit fails: {}".format(fit_failed))
+        print("Omitted: {}".format(omitted))
 
-        print("Dots number: {}".format(len(xcnts)))
-        video_dark = np.abs((self.video[215, :, :]+100)/5)
-        video_rgb = cv2.cvtColor(video_dark.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-        video_rgb[:, :, 0] += control_mask.astype(np.uint8) * 100
+        self.mask = self.process_mask()  
         
-        plt.imshow(video_rgb)
-        
+        np_id = 0
+        while len(self.candidates) != 0:
+            positions_in_np, points_excluded = self.beta_peaks_processing(self.candidates.pop(0))
+            
+            for pe in points_excluded:
+                self.mask[pe] = 0
+                if pe in self.candidates:
+                    self.candidates.remove(pe)
+                    
+            for p in positions_in_np:
+                self.mask[p] = 0
+                
+            nanoparticle = NanoParticle(np_id, positions_in_np)    
+            self.np_database.append(nanoparticle)
+            
+            for f in range(positions_in_np[0][0], positions_in_np[-1][0]+1):
+                self.frame_np_ids[f].append(np_id)
+            
+            np_id += 1
+         
         self.show_mask = True
         self.show_pixels = True
-#        self.show_detected = True
+        self.show_detected = True
         
     def recognition_statistics(self):
         self.make_frame_stats()
