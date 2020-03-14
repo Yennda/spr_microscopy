@@ -14,12 +14,15 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 time_start=t.time()
 
 #folder=main_folder+'20_01_24_third/'
-folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
-file = 'raw_01_2'
-
-folder=main_folder+'20_02_18_P3/'
+#folder=main_folder+'20_02_18_P3/'
 #folder=main_folder+'20_02_06_Tomas_magnetic_nps/'
-file = 'raw_18_1'
+#folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
+folder=main_folder+'20_02_25_M5/'
+folder=main_folder+'20_02_25_P3/'
+#file = 'raw_01_2'
+
+
+file = 'raw_05_1'
 
 
 

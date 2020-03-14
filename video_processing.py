@@ -66,8 +66,11 @@ class Video(object):
 
     def loadBinVideoStats(self):
         suffix = '.tsv'
-        with open(self.file_name + suffix, mode='r') as fid:
-            file_content = fid.readlines()
+#        with open(self.file_name + suffix, mode='r') as fid:
+#            file_content = fid.readlines()
+        fid = open(self.file_name + suffix, mode='r')
+        file_content = fid.readlines()
+        fid.close()
 
         self.time_info = tl.frame_times(file_content)
         stats = file_content[1].split()

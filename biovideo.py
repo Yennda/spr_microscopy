@@ -417,6 +417,7 @@ class BioVideo():
             spr_plot.set_ylabel('intensity [a. u.]')
             if self.spr_std:
                 spr_plot_std = spr_plot.twinx()
+                spr_plot_std.set_ylabel('std [a. u.]')
             
             if self._img_type=='both':
                 channels = [i for i in range(len(self._channels)//2)]
@@ -429,7 +430,13 @@ class BioVideo():
                 
 
                 end = self.syn_index + len(axes[0].volume)
-                spr_plot.plot(self.spr_time[self.syn_index:end], self.spr_signals[c][self.syn_index:end], linewidth=1, color=COLORS[c], label='ch. {}'.format(c+1))
+                spr_plot.plot(
+                        self.spr_time[self.syn_index:end], 
+                        self.spr_signals[c][self.syn_index:end], 
+                        linewidth=1, 
+                        color=COLORS[c], 
+                        label='ch. {} spr'.format(c+1)
+                        )
                 
                 stdev = []
                 if self.spr_std:
@@ -442,17 +449,26 @@ class BioVideo():
                         
                     print(' DONE')
                     channel_mem.append([self.spr_time[self.syn_index:end], stdev])
-                    spr_plot_std.plot(self.spr_time[self.syn_index:end], stdev, linewidth=1, color=COLORS[c], label='ch. {} std'.format(c+1), ls=':')
+                    spr_plot_std.plot(
+                            self.spr_time[self.syn_index:end], 
+                            stdev, 
+                            linewidth=1, 
+                            color=COLORS[c], 
+                            label='ch. {} std'.format(c+1), 
+#                            ls=':'
+                            )
            
             self.memory.append(channel_mem)    
-            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60, 5, color=red)                
+            location = mpatches.Rectangle((self.spr_time[self.syn_index], -1), 1/60/10, 10, color=red)                
             spr_plot.add_patch(location)
             fig_spr.legend(loc=3)
+            spr_plot_std.set_ylim([0, 0.005])
             
             fig_spr.suptitle(frame_info(c, axes[c].index))
             fig_spr.canvas.mpl_connect('button_press_event', mouse_click_spr)
             
-#        cb = fig.colorbar(img[0], ax=axes)        
+#        cb = fig.colorbar(img[0], ax=axes)   
+
         plt.tight_layout()
         plt.show()
         
