@@ -71,17 +71,22 @@ print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 
-time_beta = t.time()
+
 #video.image_process_beta(threshold = 100)    #750    
 #video.image_process_beta(threshold = 5)     #600
 
 video.image_process_gamma(threshold = 80)    #750    
-print('CORRELATION TIME: {:.2f} s'.format(t.time()-time_beta))
 
 
+
+time_beta = t.time()
+video.gamma_time_conection()
+
+print('TIME CONNECTION TIME: {:.2f} s'.format(t.time()-time_beta))
 
 #video.make_frame_stats()
 #video.ref_frame = 20
+#video.make_diff(10)
 #video.make_toggle(10, 10)
 video.recognition_statistics()
 video.explore()

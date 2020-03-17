@@ -54,6 +54,9 @@ class Video(object):
         
         self.mask = None        
         self.candidates = None
+        self.px_for_image_mask = None
+
+        self.set_of_patterns = None
         self.np_database = []
         self.frame_np_ids = []
         
@@ -178,17 +181,17 @@ class Video(object):
     def process_mask_image(self):
         volume_mask = np.zeros(list(self.video.shape) + [4])
         k_diff = self.k_diff
-#        k_diff = 1
+        k_diff = 1
         tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
-        for c in self.candidates:
-            f, y, x = c
+        for pm in self.px_for_image_mask:
+            f, y, x = pm
             volume_mask[f, y, x, 1] = 1
             volume_mask[f, y, x, 3] = 1
         return volume_mask
         
         
-        for c in self.candidates:
-            f, y, x = c
+        for pm in self.px_for_image_mask:
+            f, y, x = pm
             if f+k_diff > self.video.shape[0]:
                 end = self.video.shape[0]
             else:
@@ -440,6 +443,7 @@ class Video(object):
             dys = 0
         if x < dx:
             dxs = 0
+        dist = (df, dys, dxs)
 
         neighbors_indeces = self.mask[f, y-dys:y+dy, x-dxs:x+dx].nonzero()
         neighbors = [np.array([f, y , x]) - dist + np.array(
@@ -475,8 +479,10 @@ class Video(object):
             i += 1    
             if f+i >= self.length:
                 go = False
+                           
+        nanoparticle = NanoParticle(0, positions_in_np)  
                 
-        return positions_in_np, points_excluded
+        return nanoparticle, points_excluded
         
     def image_process_beta(self, threshold = 100):
         self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
@@ -498,25 +504,23 @@ class Video(object):
             for c in coordinates:
                 y, x = c
                 self.candidates.append((f, y, x))
-
+                
+        self.px_for_image_mask = copy.deepcopy(self.candidates)           
         self.mask = self.process_mask()  
         
         np_id = 0
         while len(self.candidates) != 0:
-            positions_in_np, points_excluded = self.beta_peaks_processing(self.candidates.pop(0))
+            nanoparticle, points_excluded = self.beta_peaks_processing(self.candidates.pop(0))
+            nanoparticle.id = np_id
             
             for pe in points_excluded:
                 self.mask[pe] = 0
                 if pe in self.candidates:
                     self.candidates.remove(pe)
                     
-            for p in positions_in_np:
-                self.mask[p] = 0
-                
-            nanoparticle = NanoParticle(np_id, positions_in_np)    
             self.np_database.append(nanoparticle)
             
-            for f in range(positions_in_np[0][0], positions_in_np[-1][0]+1):
+            for f in range(nanoparticle.positions[0][0], nanoparticle.positions[-1][0]+1):
                 self.frame_np_ids[f].append(np_id)
             
             np_id += 1
@@ -525,6 +529,57 @@ class Video(object):
         self.show_pixels = True
         self.show_detected = True
         
+    def gamma_peaks_processing(self, px):
+        positions_in_np = []
+        points_excluded = set()
+
+        f, y, x = px
+        positions_in_np.append(px)
+        points_excluded.add(px)
+        
+        dist = [0] + list(self.idea3d.shape[:2])
+        dist = [d//2 for d in dist]
+        df, dy, dx = dist
+        dys = dy
+        dxs = dx
+
+        if y < dy:
+            dys = y
+        if x < dx:
+            dxs = x
+        dist = (df, dys, dxs)
+
+        i = 1         
+        go = f + 1 < self.length
+        last_point = px
+        while go:
+            neighbors_indeces = self.mask[f + i, y-dys:y+dy, x-dxs:x+dx].nonzero() 
+
+            if len(neighbors_indeces[0]) != 0:   
+                neighbors = [np.array([f + i, y , x]) - dist + np.array(
+                    [0, neighbors_indeces[0][j], neighbors_indeces[1][j]]
+                    ) for j in range(len(neighbors_indeces[0]))]
+    
+                norms = [np.linalg.norm(last_point - n) for n in neighbors]
+                closest_point = neighbors[np.argmin(norms)]
+                last_point = copy.deepcopy(closest_point)    
+                positions_in_np.append(tuple(closest_point))
+                points_excluded.add(tuple(closest_point))
+            else:
+                go = False
+                
+            i += 1    
+            if f+i >= self.length:
+                go = False
+                
+        np_masks = []        
+        for position in positions_in_np:
+            np_masks.append(self.set_of_patterns[position])
+            
+        nanoparticle = NanoParticle(0, positions_in_np, masks = np_masks)  
+                
+        return nanoparticle, points_excluded
+      
     def image_process_gamma(self, threshold = 100):
         self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
@@ -538,8 +593,9 @@ class Video(object):
         self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
 
         self.frame_np_ids = [[] for i in range(self.length)]
-        self.candidates = list()
-
+        self.candidates = []
+        self.set_of_patterns = dict()
+        
         self.mask = (np.abs(self._video['corr']) > threshold)*1  
         minimal_area = 10
         
@@ -550,47 +606,48 @@ class Video(object):
         for f in range(self.length):
             gray = self.mask[:, :, f].astype(np.uint8)    
             th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-            cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)[-2][:-1]      
+            patterns = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)[-2][:-1]      
         
-            for cnt in cnts:
-                if minimal_area < cv2.contourArea(cnt):
+            for pattern in patterns:
+                if minimal_area < cv2.contourArea(pattern):
                     try:
-                        ellipse = cv2.fitEllipse(cnt)
+                        ellipse = cv2.fitEllipse(pattern)
                     except:
                         fit_failed += 1
                         continue
                     
                     loc, size, angle = ellipse
                     if 80 < angle < 100 and size[1] > size[0]:
-                        self.candidates.append((f, int(round(loc[1])), int(round(loc[0]))))
-#                        for c in cnt:
-#                            self.candidates.append((f, c[0][1], c[0][0]))
+                        candidate = (f, int(round(loc[1])), int(round(loc[0])))
+                        self.candidates.append(candidate)
+                        self.set_of_patterns[candidate] = pattern
                     else:
                         omitted += 1
                     number += 1
-                
+                    
+        self.px_for_image_mask = copy.deepcopy(self.candidates)           
+
         print("Dots number: {}".format(number))
         print("Fit fails: {}".format(fit_failed))
         print("Omitted: {}".format(omitted))
 
         self.mask = self.process_mask()  
         
+        #and continues in the same way as beta
+        
         np_id = 0
         while len(self.candidates) != 0:
-            positions_in_np, points_excluded = self.beta_peaks_processing(self.candidates.pop(0))
+            nanoparticle, points_excluded = self.gamma_peaks_processing(self.candidates.pop(0))
+            nanoparticle.id = np_id
             
             for pe in points_excluded:
                 self.mask[pe] = 0
                 if pe in self.candidates:
                     self.candidates.remove(pe)
                     
-            for p in positions_in_np:
-                self.mask[p] = 0
-                
-            nanoparticle = NanoParticle(np_id, positions_in_np)    
             self.np_database.append(nanoparticle)
             
-            for f in range(positions_in_np[0][0], positions_in_np[-1][0]+1):
+            for f in range(nanoparticle.positions[0][0], nanoparticle.positions[-1][0]+1):
                 self.frame_np_ids[f].append(np_id)
             
             np_id += 1
@@ -598,6 +655,52 @@ class Video(object):
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
+        
+    def gamma_time_conection(self):
+        dist = [d//2 for d in self.idea3d.shape[:2]]
+        last_np_id = len(self.np_database)
+        
+        for f in range(self.length - 2):
+            ending_nps = [
+                    self.np_database[np_id] 
+                    for np_id in self.frame_np_ids[f] 
+                    if self.np_database[np_id].last_frame == f
+                    ]
+            beginning_nps = [
+                    self.np_database[np_id] 
+                    for np_id in self.frame_np_ids[f+2] 
+                    if self.np_database[np_id].first_frame == f+2]
+
+            for enp in ending_nps:
+                for bnp in beginning_nps:
+                    if np.max(
+                            np.abs(
+                                    np.array(enp.last_position_yx()) - 
+                                    np.array(bnp.first_position_yx()))
+                            - np.array(dist)
+                            ) < 0:
+                        
+                        gap_position = [tuple(
+                                (np.array(enp.positions[-1]) + np.array(bnp.positions[0]))//2
+                                )]
+                        gap_mask = [enp.masks[-1]]
+                        
+                        nanoparticle = NanoParticle(
+                                last_np_id, 
+                                enp.positions + gap_position + bnp.positions, 
+                                masks = enp.masks + gap_mask + bnp.masks
+                                )
+                        
+                        for f in range(nanoparticle.first_frame, nanoparticle.last_frame+1):
+                            if f <= enp.last_frame:
+                                self.frame_np_ids[f].remove(enp.id)
+                            if f >= bnp.first_frame:
+                                self.frame_np_ids[f].remove(bnp.id)
+                            self.frame_np_ids[f].append(last_np_id)
+                            
+                        self.np_database.append(nanoparticle)
+                        last_np_id += 1
+
         
     def recognition_statistics(self):
         self.make_frame_stats()
@@ -983,7 +1086,7 @@ class Video(object):
                 np_plot.plot(self.np_count_integral, linewidth=1, color=black, label='count in frame')
 
                 validity_plot.plot(self.validity, color = red, label = 'validity')
-                validity_plot.plot([np.average(self.validity)*2 for i in range(self.length)], color = red, label = 'validity, 2stdev', ls=':')
+                validity_plot.plot([np.average(self.validity)*2 for i in range(self.length)], color = red, label = 'validity, 2avg', ls=':')
                 
             rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
             location = mpatches.Rectangle((ax.index, -1), 1/60, rectangle_height, color=red)                

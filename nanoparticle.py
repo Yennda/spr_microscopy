@@ -25,4 +25,7 @@ class NanoParticle():
     
     def last_position_yx(self):
         return self.position_yx(self.last_frame)
+    
+    def first_position_yx(self):
+        return self.position_yx(self.first_frame)
         
