@@ -56,7 +56,7 @@ class Video(object):
         self.candidates = None
         self.px_for_image_mask = None
 
-        self.set_of_patterns = None
+        self._dict_of_patterns = None
         self.np_database = []
         self.frame_np_ids = []
         
@@ -574,9 +574,9 @@ class Video(object):
                 
         np_masks = []        
         for position in positions_in_np:
-            np_masks.append(self.set_of_patterns[position])
-            
-        nanoparticle = NanoParticle(0, positions_in_np, masks = np_masks)  
+            np_masks.append(self._dict_of_patterns[position])
+        peak = np.argmax([self.video[position] for position in positions_in_np])
+        nanoparticle = NanoParticle(0, positions_in_np, peak = positions_in_np[0][0] + peak, masks = np_masks)  
                 
         return nanoparticle, points_excluded
       
@@ -594,7 +594,7 @@ class Video(object):
 
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = []
-        self.set_of_patterns = dict()
+        self._dict_of_patterns = dict()
         
         self.mask = (np.abs(self._video['corr']) > threshold)*1  
         minimal_area = 10
@@ -620,7 +620,7 @@ class Video(object):
                     if 80 < angle < 100 and size[1] > size[0]:
                         candidate = (f, int(round(loc[1])), int(round(loc[0])))
                         self.candidates.append(candidate)
-                        self.set_of_patterns[candidate] = pattern
+                        self._dict_of_patterns[candidate] = pattern
                     else:
                         omitted += 1
                     number += 1
@@ -651,10 +651,12 @@ class Video(object):
                 self.frame_np_ids[f].append(np_id)
             
             np_id += 1
+            
+        self.gamma_time_conection()
          
         self.show_mask = True
         self.show_pixels = True
-        self.show_detected = True
+        self.show_detected = True 
         
     def gamma_time_conection(self):
         dist = [d//2 for d in self.idea3d.shape[:2]]
@@ -701,7 +703,6 @@ class Video(object):
                         self.np_database.append(nanoparticle)
                         last_np_id += 1
 
-        
     def recognition_statistics(self):
         self.make_frame_stats()
         self.show_stats = True
@@ -736,43 +737,45 @@ class Video(object):
             self.valid = [True]*self.length
         
     def characterize_nps(self):
-        for npl in self.np_detected_info:
-             f, y, x = npl[1]   
-             
-             ry = int(np.heaviside(y - 25, 1)*(y - 25))
-             rx = int(np.heaviside(x - 25, 1)*(x - 25))
-
-             raw = self.video[f, ry:y + 25, rx: x + 25]
-             mask = np.full((raw.shape), False, dtype=bool)
-             
-
-             px_y = [y]*2
-             px_x = [x]*2
-             extreme_pxs = [px_y, px_x]
-             
-             for px in npl[0]:
-                 i = 1
-                 for epx in extreme_pxs:
-                     if epx[0] <= px[i] <= epx[1]:
-                         pass
-                     else:
-                         if  px[i] < epx[0]:
-                             epx[0] = px[i]
-                         elif  px[i] > epx[1]:
-                             epx[1] = px[i]
-                     i += 1
         
-                 my = px[1]  - ry
-                 mx = px[2]  - rx
-#                 my = px[1] - y + ry
-#                 mx = px[2] - x + rx
-                 mask[my, mx] = True
-                 
-             dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
-             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
-                         
-             measures = measure_new(raw, mask, [dx, dy])
-             visualize_and_save(raw, measures, self.folder, self.file)
+        for nanoparticle in self.np_database:
+            f = nanoparticle.peak
+            y, x = nanoparticle.position_yx(f)
+#        for npl in self.np_detected_info:
+#            f, y, x = npl[1]   
+            
+            ry = int(np.heaviside(y - 25, 1)*(y - 25))
+            rx = int(np.heaviside(x - 25, 1)*(x - 25))
+            raw = self.video[f, ry:y + 25, rx: x + 25]
+            mask = np.full((raw.shape), False, dtype=bool)
+            
+            px_y = [y]*2
+            px_x = [x]*2
+            extreme_pxs = [px_y, px_x]
+            
+            for px in nanoparticle.mask_for_characterization:
+                i = 1
+                for epx in extreme_pxs:
+                    if epx[0] <= px[i] <= epx[1]:
+                        pass
+                    else:
+                        if  px[i] < epx[0]:
+                            epx[0] = px[i]
+                        elif  px[i] > epx[1]:
+                            epx[1] = px[i]
+                    i += 1
+    
+                my = px[1]  - ry
+                mx = px[2]  - rx
+#                my = px[1] - y + ry
+#                mx = px[2] - x + rx
+                mask[my, mx] = True
+                
+            dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
+            dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
+                        
+            measures = measure_new(raw, mask, [dx, dy])
+            visualize_and_save(raw, measures, self.folder, self.file)
         
     def explore(self, source='vid'):
         

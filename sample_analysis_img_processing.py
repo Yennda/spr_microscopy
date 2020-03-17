@@ -56,39 +56,29 @@ video._video['raw']=video._video['raw'][100:300,300:500,:300]
 #video._video['raw']=video._video['raw'][100:140,300:340,200:250]
 
 print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
-#video.change_fps(10)
+
 video.refresh()
 
 
 video.make_diff(k = 10)
 
-# t, y, x
-#a
-#correlation_temporal(video.video[:, 115, 116], k_diff=10, show=True)
 
 print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 #video.fouriere(level = 20)
 
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
-
-
 #video.image_process_beta(threshold = 100)    #750    
 #video.image_process_beta(threshold = 5)     #600
-
 video.image_process_gamma(threshold = 80)    #750    
 
+video.recognition_statistics()
+video.characterize_nps()
 
 
-time_beta = t.time()
-video.gamma_time_conection()
-
-print('TIME CONNECTION TIME: {:.2f} s'.format(t.time()-time_beta))
-
-#video.make_frame_stats()
-#video.ref_frame = 20
 #video.make_diff(10)
 #video.make_toggle(10, 10)
-video.recognition_statistics()
+
+
 video.explore()
 
 #plt.hist(np.matrix.flatten(video.video), 100)
