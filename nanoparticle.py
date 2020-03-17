@@ -1,5 +1,5 @@
 import tools as tl
-
+import numpy as np
 
 class NanoParticle():
     def __init__(self, np_id, positions, peak = None, masks = None, k_diff = 10, method = 'beta'):
@@ -33,5 +33,9 @@ class NanoParticle():
     
     @property
     def mask_for_characterization(self):
-        return self.masks[self.peak-self.first_frame]
+        mask = np.squeeze(self.masks[self.peak-self.first_frame])
+        time = np.full((len(mask), 1), self.peak, dtype=int)
+        print(len(mask))
+        print(len(time))
+        return np.concatenate((time, mask))
         

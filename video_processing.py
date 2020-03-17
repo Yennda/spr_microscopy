@@ -754,6 +754,7 @@ class Video(object):
             extreme_pxs = [px_y, px_x]
             
             for px in nanoparticle.mask_for_characterization:
+                print(px)
                 i = 1
                 for epx in extreme_pxs:
                     if epx[0] <= px[i] <= epx[1]:
