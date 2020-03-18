@@ -620,7 +620,7 @@ class Video(object):
                     if 80 < angle < 100 and size[1] > size[0]:
                         candidate = (f, int(round(loc[1])), int(round(loc[0])))
                         self.candidates.append(candidate)
-                        self._dict_of_patterns[candidate] = pattern
+                        self._dict_of_patterns[candidate] = [p[::-1] for p in pattern]
                     else:
                         omitted += 1
                     number += 1
@@ -677,8 +677,8 @@ class Video(object):
                 for bnp in beginning_nps:
                     if np.max(
                             np.abs(
-                                    np.array(enp.last_position_yx()) - 
-                                    np.array(bnp.first_position_yx()))
+                                    np.array(enp.last_position_xy()) - 
+                                    np.array(bnp.first_position_xy()))
                             - np.array(dist)
                             ) < 0:
                         
@@ -737,24 +737,41 @@ class Video(object):
             self.valid = [True]*self.length
         
     def characterize_nps(self):
-        
         for nanoparticle in self.np_database:
+            size = 25
             f = nanoparticle.peak
             y, x = nanoparticle.position_yx(f)
-#        for npl in self.np_detected_info:
-#            f, y, x = npl[1]   
+            print('---')
+            print(f, y, x)
+            ly = int(np.heaviside(y - size, 1)*(y - size))
+            lx = int(np.heaviside(x - size, 1)*(x - size))
+            print(ly, lx)
             
-            ry = int(np.heaviside(y - 25, 1)*(y - 25))
-            rx = int(np.heaviside(x - 25, 1)*(x - 25))
-            raw = self.video[f, ry:y + 25, rx: x + 25]
-            mask = np.full((raw.shape), False, dtype=bool)
             
+            if y + size > self.video.shape[1]:
+                ry = self.video.shape[1]
+            else:
+                ry = y + size
+                
+            if x + size > self.video.shape[2]:
+                rx = self.video.shape[2]
+            else:
+                rx = x + size
+                
+            print(ry, rx)
+            
+            raw = self.video[f, ly:ry, lx: rx]
+            mask = np.full(raw.shape, False, dtype=bool)
+            
+            print(mask.shape)
             px_y = [y]*2
             px_x = [x]*2
             extreme_pxs = [px_y, px_x]
             
-            for px in nanoparticle.mask_for_characterization:
-                print(px)
+            print(nanoparticle.id)
+            
+            for space_px in nanoparticle.mask_for_characterization:
+                px = tuple([nanoparticle.peak] + list(space_px))
                 i = 1
                 for epx in extreme_pxs:
                     if epx[0] <= px[i] <= epx[1]:
@@ -765,9 +782,10 @@ class Video(object):
                         elif  px[i] > epx[1]:
                             epx[1] = px[i]
                     i += 1
+                print(px)
     
-                my = px[1]  - ry
-                mx = px[2]  - rx
+                my = px[1]  - ly
+                mx = px[2]  - lx
 #                my = px[1] - y + ry
 #                mx = px[2] - x + rx
                 mask[my, mx] = True
@@ -851,7 +869,7 @@ class Video(object):
                 if self._img_type == 'diff' or self._img_type or self._img_type == 'corr':
                     for np_id in self.frame_np_ids[ax.index]:
                         p = mpatches.Circle(
-                                self.np_database[np_id].position_yx(ax.index), 
+                                self.np_database[np_id].position_xy(ax.index), 
                                 5, 
                                 color=self.np_database[np_id].color, 
                                 fill = False,
@@ -864,7 +882,7 @@ class Video(object):
                     for frame in self.frame_np_ids[:ax.index+1]:
                         for np_id in frame:
                             p = mpatches.Circle(
-                                    self.np_database[np_id].last_position_yx(), 
+                                    self.np_database[np_id].last_position_xy(), 
                                     5, 
                                     color=self.np_database[np_id].color, 
                                     fill = False,
@@ -964,7 +982,7 @@ class Video(object):
                     for frame in self.frame_np_ids[:ax.index+1]:
                         for np_id in frame:
                             p = mpatches.Circle(
-                                    self.np_database[np_id].last_position_yx(), 
+                                    self.np_database[np_id].last_position_xy(), 
                                     5, 
                                     color=self.np_database[np_id].color, 
                                     fill = False,
