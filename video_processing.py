@@ -581,16 +581,20 @@ class Video(object):
         return nanoparticle, points_excluded
       
     def image_process_gamma(self, threshold = 100):
-        self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
+        self.idea3d = self._video['diff'][125: 132, 100: 110, 103: 143] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
 #        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
 #        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
 #        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
 
-        self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d)*1e5
+        self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d, mode = 'same')*1e5
         self._img_type = 'corr'
-        self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
+        
+        ddim = [s for s in self.idea3d.shape]
+        self._video['corr'] = self._video['corr'][:, :, :-ddim[2]//3]
+        self._video['diff']  = self._video['diff'][:, :, ddim[2]//3:]
+        self.length -= ddim[2]//3+1
 
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = []
@@ -620,7 +624,7 @@ class Video(object):
                     if 80 < angle < 100 and size[1] > size[0]:
                         candidate = (f, int(round(loc[1])), int(round(loc[0])))
                         self.candidates.append(candidate)
-                        self._dict_of_patterns[candidate] = [p[::-1] for p in pattern]
+                        self._dict_of_patterns[candidate] =  pattern
                     else:
                         omitted += 1
                     number += 1
@@ -689,7 +693,8 @@ class Video(object):
                         
                         nanoparticle = NanoParticle(
                                 last_np_id, 
-                                enp.positions + gap_position + bnp.positions, 
+                                enp.positions + gap_position + bnp.positions,
+                                peak = enp.peak,
                                 masks = enp.masks + gap_mask + bnp.masks
                                 )
                         
@@ -741,12 +746,9 @@ class Video(object):
             size = 25
             f = nanoparticle.peak
             y, x = nanoparticle.position_yx(f)
-            print('---')
-            print(f, y, x)
+
             ly = int(np.heaviside(y - size, 1)*(y - size))
-            lx = int(np.heaviside(x - size, 1)*(x - size))
-            print(ly, lx)
-            
+            lx = int(np.heaviside(x - size, 1)*(x - size))     
             
             if y + size > self.video.shape[1]:
                 ry = self.video.shape[1]
@@ -757,21 +759,15 @@ class Video(object):
                 rx = self.video.shape[2]
             else:
                 rx = x + size
-                
-            print(ry, rx)
-            
+                          
             raw = self.video[f, ly:ry, lx: rx]
             mask = np.full(raw.shape, False, dtype=bool)
             
-            print(mask.shape)
             px_y = [y]*2
             px_x = [x]*2
             extreme_pxs = [px_y, px_x]
-            
-            print(nanoparticle.id)
-            
             for space_px in nanoparticle.mask_for_characterization:
-                px = tuple([nanoparticle.peak] + list(space_px))
+                px = tuple([nanoparticle.peak] + list(space_px)[::-1])
                 i = 1
                 for epx in extreme_pxs:
                     if epx[0] <= px[i] <= epx[1]:
@@ -782,13 +778,7 @@ class Video(object):
                         elif  px[i] > epx[1]:
                             epx[1] = px[i]
                     i += 1
-                print(px)
-    
-                my = px[1]  - ly
-                mx = px[2]  - lx
-#                my = px[1] - y + ry
-#                mx = px[2] - x + rx
-                mask[my, mx] = True
+                mask[px[1]  - ly, px[2]  - lx] = True
                 
             dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1

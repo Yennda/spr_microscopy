@@ -26,12 +26,12 @@ plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder=main_folder+'20_02_25_P3/'
-
+folder=main_folder+'20_02_26_q3/'
 
 
 
 if __name__ == "__main__":
-    files=[folder + 'export_np/' + 'raw_{:02.0f}_1'.format(f) for f in   [9, 10, 11]]
+    files=[folder + 'export_np /' + 'raw_{:02.0f}_1'.format(f) for f in   [4]]
 
     print('\tx \ty \tcon \tI_n \tI_n px \tI_b px \tstd')
     

@@ -72,10 +72,10 @@ print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
 video.image_process_gamma(threshold = 80)    #750    
 
 video.recognition_statistics()
-video.characterize_nps()
+#video.characterize_nps()
 
 
-#video.make_diff(10)
+video._img_type = 'diff'
 #video.make_toggle(10, 10)
 
 
