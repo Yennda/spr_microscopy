@@ -485,7 +485,7 @@ class Video(object):
         return nanoparticle, points_excluded
         
     def image_process_beta(self, threshold = 100):
-        self.idea3d = self._video['diff'][125: 131, 100: 110, 103: 143] #750    proc pres 20 framu???
+        self.idea3d = self._video['diff'][125: 131, 100: 110, 123: 143] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
 #        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
@@ -581,7 +581,7 @@ class Video(object):
         return nanoparticle, points_excluded
       
     def image_process_gamma(self, threshold = 100):
-        self.idea3d = self._video['diff'][125: 132, 100: 110, 103: 143] #750    proc pres 20 framu???
+        self.idea3d = self._video['diff'][125: 132, 100: 110, 123: 144] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
 #        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
@@ -591,11 +591,6 @@ class Video(object):
         self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d, mode = 'same')*1e5
         self._img_type = 'corr'
         
-        ddim = [s for s in self.idea3d.shape]
-        self._video['corr'] = self._video['corr'][:, :, :-ddim[2]//3]
-        self._video['diff']  = self._video['diff'][:, :, ddim[2]//3:]
-        self.length -= ddim[2]//3+1
-
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = []
         self._dict_of_patterns = dict()
@@ -742,7 +737,7 @@ class Video(object):
             self.valid = [True]*self.length
         
     def characterize_nps(self):
-        for nanoparticle in self.np_database:
+        for nanoparticle in self.np_database[60:65]:
             size = 25
             f = nanoparticle.peak
             y, x = nanoparticle.position_yx(f)
@@ -761,7 +756,12 @@ class Video(object):
                 rx = x + size
                           
             raw = self.video[f, ly:ry, lx: rx]
-            mask = np.full(raw.shape, False, dtype=bool)
+            
+            img = np.zeros(raw.shape)
+            contour = nanoparticle.mask_for_characterization - np.array([[lx, ly] for i in range(nanoparticle.mask_for_characterization.shape[0])])
+            
+            cv2.fillPoly(img, [contour], color = 1)
+            
             
             px_y = [y]*2
             px_x = [x]*2
@@ -778,8 +778,11 @@ class Video(object):
                         elif  px[i] > epx[1]:
                             epx[1] = px[i]
                     i += 1
-                mask[px[1]  - ly, px[2]  - lx] = True
+                img[space_px[0]  - lx, space_px[1] - ly] = 0
                 
+            mask = img == 1
+            
+            
             dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
                         
@@ -884,14 +887,15 @@ class Video(object):
                 location.xy=[ax.index, -1]
                 fig_stat.canvas.draw()
             
-            if not self.valid[ax.index]:
-                for s in SIDES:
-                    ax.spines[s].set_color(red)
-                    ax.spines[s].set_linewidth(4)
-            else:
-                for s in SIDES:
-                    ax.spines[s].set_color(black)
-                    ax.spines[s].set_linewidth(1)   
+            if self.valid is not None:
+                if not self.valid[ax.index]:
+                    for s in SIDES:
+                        ax.spines[s].set_color(red)
+                        ax.spines[s].set_linewidth(4)
+                else:
+                    for s in SIDES:
+                        ax.spines[s].set_color(black)
+                        ax.spines[s].set_linewidth(1)   
             ax.set_title(frame_info(ax.index))
             
         def save_frame():
@@ -1100,6 +1104,11 @@ class Video(object):
                 validity_plot.plot(self.validity, color = red, label = 'validity')
                 validity_plot.plot([np.average(self.validity)*2 for i in range(self.length)], color = red, label = 'validity, 2avg', ls=':')
                 
+                for tick in validity_plot.get_yticklines():
+                    tick.set_visible(False)
+                for tick in validity_plot.get_yticklabels():
+                    tick.set_visible(False)
+                    
             rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
             location = mpatches.Rectangle((ax.index, -1), 1/60, rectangle_height, color=red)                
             stat_plot.add_patch(location)

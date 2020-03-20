@@ -33,9 +33,9 @@ def measure_new(raw, mask_np, sizes):
     sizes = [s*SCALE for s in sizes]
 
     
-#    fig, ax = plt.subplots()
-#    ax.imshow(raw)
-#    ax.imshow(mask_np, alpha = 0.5)    
+    fig, ax = plt.subplots()
+    ax.imshow(raw)
+    ax.imshow(mask_np, alpha = 0.5)    
     
     
     return sizes + [contrast, int_np_norm*1e3, int_np_norm_px*1e3, int_bg_px*1e3, std*1e3]
