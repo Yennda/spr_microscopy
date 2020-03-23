@@ -41,7 +41,7 @@ def measure_new(raw, mask_np, sizes):
     return sizes + [contrast, int_np_norm*1e3, int_np_norm_px*1e3, int_bg_px*1e3, std*1e3]
 #    return sizes + [contrast, std, intensity, max_int, rel_background]
 
-def visualize_and_save(raw, measures, folder, file):
+def visualize_and_save(raw, measures, name):
 #    fig, ax = plt.subplots()
 #    img = ax.imshow(raw)
 #    img.set_cmap('Greys')
@@ -53,16 +53,9 @@ def visualize_and_save(raw, measures, folder, file):
 #    ax.text(0, 12, info, fontsize=10, bbox={'facecolor': 'white', 'alpha': 1, 'pad': 1})
 #    ax.index = 0
 
-    tools.new_export(folder, '/export_np')
-
-    name = '{}/export_np/{}'.format(folder, file)
-    i = 1
-    while os.path.isfile(name + '_{:02d}.png'.format(i)):
-        i += 1
-    name += '_{:02d}'.format(i)
-    
-    with open(name[:-2] + 'info.txt', "a+", encoding="utf-8") as f:
+    with open(name, "a+", encoding="utf-8") as f:
         f.write('{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\t{}\n'.format(*measures))
+
 
 
 def stats(raw, p=False):

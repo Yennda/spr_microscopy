@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import random as rn
+from tkinter import messagebox
 
 yellow='#ffb200'
 red='#DD5544'
@@ -13,7 +14,6 @@ green='#008000'
 COLORS = [yellow, blue, red, black, green]
 SIDES = ['left', 'right', 'bottom', 'top']
 
-
 def new_export(folder, name):
     path = folder + name
 
@@ -23,8 +23,18 @@ def new_export(folder, name):
 #        print("Creation of the directory %s failed" % path)
         pass
     else:
-        print("Successfully created the directory %s " % path)
+        print("Directory %s was successfully created." % path)
 
+def before_save_file(path):
+    if os.path.isfile(path):
+        print('='*80)
+        print('Old data in {} will be overwriten. Type "y" as yes or "n" as no bellow in the command line.'.format(path))
+        print('='*80)
+        result = input()
+        if result == 'y':
+            return True
+        return False
+    return True
 
 def all_bin_files(folder):
     out = list()

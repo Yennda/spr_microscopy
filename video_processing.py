@@ -19,7 +19,10 @@ import image_processing as ip
 import tools as tl
 from nanoparticle import NanoParticle
 
-FOLDER_NAME = '/exports'
+FOLDER_EXPORTS = 'exports'
+FOLDER_IDEAS = 'ideas'
+
+
 yellow='#ffb200'
 red='#DD5544'
 blue='#0284C0'
@@ -581,7 +584,7 @@ class Video(object):
         return nanoparticle, points_excluded
       
     def image_process_gamma(self, threshold = 100):
-        self.idea3d = self._video['diff'][125: 132, 100: 110, 123: 144] #750    proc pres 20 framu???
+#        self.idea3d = self._video['diff'][125: 132, 100: 110, 123: 144] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
 #        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
@@ -737,6 +740,7 @@ class Video(object):
             self.valid = [True]*self.length
         
     def characterize_nps(self):
+        save_all = False
         for nanoparticle in self.np_database:
             size = 25
             f = nanoparticle.peak
@@ -785,8 +789,33 @@ class Video(object):
             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
                         
             measures = measure_new(raw, mask, [dx, dy])
-            visualize_and_save(raw, measures, self.folder, self.file)
+            name = '{}{}_np/{}_info.txt'.format(self.folder, FOLDER_EXPORTS, self.file)  
+            
+            
+            if not save_all:
+                save_all = tl.before_save_file(name)
+                
+                
+            if save_all:
+                visualize_and_save(raw, measures, name)
+            else:
+                break
+            
+    def save_idea(self, name):
+        if not os.path.isdir(self.folder + FOLDER_IDEAS):
+            os.mkdir(self.folder + FOLDER_IDEAS)
+            
+        file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
+        if tl.before_save_file(file_name):
+            np.save(file_name, self.idea3d)
+            print('File saved')
+        else:
+            print('Could not save the file.')
         
+    def load_idea(self, name):
+        file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
+        self.idea3d = np.load(file_name)
+                
     def explore(self, source='vid'):
         
 
@@ -898,12 +927,12 @@ class Video(object):
             
         def save_frame():
              # checks and eventually creates the folder 'export_image' in the folder of data
-            if not os.path.isdir(self.folder + FOLDER_NAME):
-                os.mkdir(self.folder + FOLDER_NAME)
+            if not os.path.isdir(self.folder + FOLDER_EXPORTS):
+                os.mkdir(self.folder + FOLDER_EXPORTS)
 
             # creates the name, appends the rigth numeb at the end
 
-            name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+            name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_EXPORTS, self.file,
                                                                   self.time_info[ax.index][0],
                                                                   self.time_info[ax.index][1] * 100)
 
@@ -1006,12 +1035,12 @@ class Video(object):
                 self.np_number=0
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
-                if not os.path.isdir(self.folder + FOLDER_NAME):
-                    os.mkdir(self.folder + FOLDER_NAME)
+                if not os.path.isdir(self.folder + FOLDER_EXPORTS):
+                    os.mkdir(self.folder + FOLDER_EXPORTS)
 
                 # creates the name, appends the rigth numeb at the end
 
-                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_EXPORTS, self.file,
                                                                       self.time_info[ax.index][0],
                                                                       self.time_info[ax.index][1] * 100)
 
@@ -1029,8 +1058,16 @@ class Video(object):
                 ylim = [int(i) for i in ax.get_ylim()]
 
                 # saves the exact nad precise tiff file
-#                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-#                pilimage.save(name + '.tiff')
+                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
+                pilimage.save(name + '.tiff')
+                
+                image = Image.open(name + '.tiff')
+                imarray = np.array(image)
+                plt.close("all")
+#                image.show()
+                plt.imshow(imarray)
+                plt.show()
+                
                 print('File SAVED @{}'.format(name))
 
             img.set_array(ax.volume[ax.index])
