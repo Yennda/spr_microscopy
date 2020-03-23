@@ -33,7 +33,7 @@ folder=main_folder+'20_02_26_Q3/'
 if __name__ == "__main__":
     files=[folder + 'export_np/' + 'raw_{:02.0f}_1'.format(f) for f in   [4]]
 
-    print('\tx \ty \tcon \tI_n \tI_n px \tI_b px \tstd')
+    print('\tx \ty \tcon \tI_np \tI_np px\tI_bg px\tstd')
     
     for file in files:
        info=readinfo(file)

@@ -737,7 +737,7 @@ class Video(object):
             self.valid = [True]*self.length
         
     def characterize_nps(self):
-        for nanoparticle in self.np_database[60:65]:
+        for nanoparticle in self.np_database:
             size = 25
             f = nanoparticle.peak
             y, x = nanoparticle.position_yx(f)
@@ -761,11 +761,13 @@ class Video(object):
             contour = nanoparticle.mask_for_characterization - np.array([[lx, ly] for i in range(nanoparticle.mask_for_characterization.shape[0])])
             
             cv2.fillPoly(img, [contour], color = 1)
-            
+            cv2.drawContours(img, [contour], 0, 0, 1)
+            mask = img == 1
             
             px_y = [y]*2
             px_x = [x]*2
             extreme_pxs = [px_y, px_x]
+            
             for space_px in nanoparticle.mask_for_characterization:
                 px = tuple([nanoparticle.peak] + list(space_px)[::-1])
                 i = 1
@@ -778,10 +780,6 @@ class Video(object):
                         elif  px[i] > epx[1]:
                             epx[1] = px[i]
                     i += 1
-                img[space_px[0]  - lx, space_px[1] - ly] = 0
-                
-            mask = img == 1
-            
             
             dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
