@@ -23,16 +23,6 @@ from global_var import *
 from nanoparticle import NanoParticle
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
-
-#FOLDER_EXPORTS = 'exports'
-#FOLDER_IDEAS = 'ideas'
-#
-#
-#yellow='#ffb200'
-#red='#DD5544'
-#blue='#0284C0'
-#black='#000000'    
-#SIDES = ['left', 'right', 'bottom', 'top']
             
 class Video(object):
 
@@ -40,7 +30,7 @@ class Video(object):
         self.folder = folder
         self.file = file
         self.file_name = folder + file
-        self.video_stats = None
+        self.__video_stats = None
         
         self._video = {
                 'raw': None,
@@ -50,7 +40,6 @@ class Video(object):
                 }
         self.__toggle = False
         self._img_type = 'raw'
-        
         self.rng = [-1, 1]
         self.time_info = None
 
@@ -102,16 +91,6 @@ class Video(object):
         else:
             raise StopIteration
 
-#    @property
-#    def video(self):
-#        if self._img_type == True:
-#            self._img_type = False
-#            return np.swapaxes(np.swapaxes(self._video['int'], 0, 2), 1, 2)
-#        elif self._img_type == False:
-#            self._img_type = True
-#            return np.swapaxes(np.swapaxes(self._video['diff'], 0, 2), 1, 2)
-#        else:
-#            return np.swapaxes(np.swapaxes(self._video[self._img_type], 0, 2), 1, 2)
     @property
     def video(self):
         if len(self._img_type) == 1:
@@ -151,7 +130,7 @@ class Video(object):
             return self.__toggle
         
     def loadData(self):
-        self.video_stats = self.loadBinVideoStats()
+        self.__video_stats = self.loadBinVideoStats()
         self._video['raw'] = self.loadBinVideo()
 
     def loadBinVideoStats(self):
@@ -174,31 +153,25 @@ class Video(object):
             video = np.fromfile(fid, dtype=code_format)
             fid.close()
             
-        video = np.reshape(video, (self.video_stats[1][0],
-                                   self.video_stats[1][1],
-                                   self.video_stats[1][2]), order='F')
+        video = np.reshape(video, (self.__video_stats[1][0],
+                                   self.__video_stats[1][1],
+                                   self.__video_stats[1][2]), order='F')
 
         return np.swapaxes(video, 0, 1)
 
     def process_diff(self, k = 1):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
-        
-#        print((sh[0], sh[1], k))
         out[:, :, :2*k] = np.zeros((sh[0], sh[1], 2*k))
-        print('Computing the differential image')
         
-        for i in range(2*k, sh[-1]):
-            
-            
-            print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
+        print('Computing the differential image') 
+        
+        for i in range(2*k, sh[-1]):   
+            print('\r\t{}/ {}'.format(i+1, self.length), end="")
             current = np.sum(self._video['raw'][:,:,i - k+1: i+1], axis=2)/k
             previous = np.sum(self._video['raw'][:,:,i - 2*k+1: i - k+1], axis=2)/k
-#            difference = current - previous
-#            average = np.average(difference)
-#            print(average)
-#            out[:, :, i] = difference - np.full(difference.shape, average)
             out[:, :, i] = current - previous
+            
         self.k_diff = k
         
         print(' DONE')
@@ -213,7 +186,7 @@ class Video(object):
         print('Computing the integral img')
         
         for i in range(1, sh[-1]):
-            print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")
+            print('\r\t{}/ {}'.format(i+1, self.length), end="")
             out[:, :, i] = self._video['raw'][:, :, i] - reference
         self.k_int = k
             
@@ -232,14 +205,15 @@ class Video(object):
         volume_mask = np.zeros(list(self.shape) + [4])
         k_diff = self.k_diff
         k_diff = 1
-        tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
+        
         
         for pm in self.px_for_image_mask:
             f, y, x = pm
             volume_mask[f, y, x, 1] = 1
             volume_mask[f, y, x, 3] = 0.5
         return volume_mask     
-        
+    
+#        tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
 #        for pm in self.px_for_image_mask:
 #            f, y, x = pm
 #            if f+k_diff > self.shape[0]:
@@ -306,7 +280,6 @@ class Video(object):
     def make_corr(self):
         self._video['corr']= self.process_corr()
         self._img_type = ['corr']
-#        self.rng = [np.min(self._video['corr']), np.max(self._video['corr'])]
         
     def make_toggle(self, img_type, k):
         """
@@ -344,33 +317,22 @@ class Video(object):
             no return
             
         """
-
         out=np.ndarray(list(self._video['raw'].shape[0:2])+[self._video['raw'].shape[2]//n-1])
         t_out=[]
-#        self.make_diff()
         for i in range(n,self._video['raw'].shape[-1]//n*n,n):
-#            out[:,:,i//n-1]=np.sum(self._video['raw'][:,:,i-n: i], axis=2)/n
-            
-#            weights_std = [np.std(self._video['diff'][:,:,i - n + j]) for j in range(n)]
-#            weights_std = [w/sum(weights_std) for w in weights_std]
-#            print(weights_std)
-            
-#            out[:,:,i//n-1]=np.average(self._video['raw'][:,:,i-n: i], axis = 2, weights = weights_std)
-            out[:,:,i//n-1]=np.average(self._video['raw'][:,:,i-n: i], axis = 2)
-#            out[:,:,i//n-1]=np.median(self._video['raw'][:,:,i-n: i], axis=2)
+            out[:,:,i//n-1] = np.average(self._video['raw'][:,:,i-n: i], axis = 2)
             t_time=self.time_info[i][0]
-            t_period=0
+            t_period = 0
+            
             for t in self.time_info[i-n: i]:
-                t_period+=t[1]
+                t_period += t[1]
+                
             t_time+=t_period
             t_out.append([t_time, t_period])
+            
         self._video['raw'] = out
         self.time_info=t_out
         self.refresh()
-        
-    def refresh(self):
-        self.video_stats[1] = [self._video['raw'].shape[1], self._video['raw'].shape[0], self._video['raw'].shape[2]]
-
 
     def time_fouriere(self):
         middle = int(self._video.shape[2] / 2)
