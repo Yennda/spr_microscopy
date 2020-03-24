@@ -1140,8 +1140,6 @@ class Video(object):
         ax.volume = self.video
         ax.index = 0
         ax.set_title(frame_info(ax.index))
-#        ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, ax.volume.shape[0], self.time_info[ax.index][0],
-#                                                              self.time_info[ax.index][1]))
 
         if self._img_type[not self._toggle] == 'raw':
             img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0)
