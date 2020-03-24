@@ -622,6 +622,7 @@ class Video(object):
         return nanoparticle, points_excluded
           
     def image_process_gamma(self, threshold = 100):
+        self.threshold = threshold
         self.make_corr()
         
         self.frame_np_ids = [[] for i in range(self.length)]
@@ -805,6 +806,7 @@ class Video(object):
         height = ax.get_ylim()[1]
         sigma2 = mpatches.Rectangle((sigma*2, 0), 1, height, color=red) 
         sigma3 = mpatches.Rectangle((sigma*3, 0), 1, height, color=red)  
+        sigma3 = mpatches.Rectangle((self.threshold, 0), 1, height, color=black) 
               
         ax.add_patch(sigma2)
         ax.add_patch(sigma3)
@@ -884,13 +886,14 @@ sigma = {:.02f}
                 else:
                     break
                          
-    def exclude_nps(self):
+    def exclude_nps(self, contrast):
         excluded = set()
         for f in range(self.length):
-            for np_id in self.frame_np_ids[f]:
-                if self.np_database[np_id].contrast < 1.5:
-#                    self.frame_np_ids[f].remove(np_id)
-                    self.np_database[np_id].color = tl.hex_to_list(green)
+            ids = copy.deepcopy(self.frame_np_ids[f])
+            for np_id in ids:
+                if self.np_database[np_id].contrast < contrast:
+                    self.frame_np_ids[f].remove(np_id)
+#                    self.np_database[np_id].color = tl.hex_to_list(green)
                     excluded.add(np_id)
                     
         print('Number of excluded nps: {}'.format(len(excluded)))
