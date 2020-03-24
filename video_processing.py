@@ -804,12 +804,14 @@ class Video(object):
         ax.plot(x, gauss(x, *coeff), color = red, ls = '--')
                     
         height = ax.get_ylim()[1]
-        sigma2 = mpatches.Rectangle((sigma*2, 0), 1, height, color=red) 
-        sigma3 = mpatches.Rectangle((sigma*3, 0), 1, height, color=red)  
-        sigma3 = mpatches.Rectangle((self.threshold, 0), 1, height, color=black) 
+        sigma2 = mpatches.Rectangle((sigma, 0), 1, height, color=red) 
+        sigma3 = mpatches.Rectangle((sigma*6, 0), 1, height, color=red)  
+        
+        threshold = mpatches.Rectangle((self.threshold, 0), 1, height, color=black) 
               
         ax.add_patch(sigma2)
         ax.add_patch(sigma3)
+        ax.add_patch(threshold)
         
         print(
                 '''
@@ -878,7 +880,10 @@ sigma = {:.02f}
             nanoparticle.intensity = measures[4]
             
             if save:
-                name = '{}{}_np/{}_info.txt'.format(self.folder, FOLDER_EXPORTS, self.file)  
+                if not os.path.isdir(self.folder + FOLDER_EXPORTS_NP):
+                    os.mkdir(self.folder + FOLDER_EXPORTS_NP)
+                
+                name = '{}{}/{}_info.txt'.format(self.folder, FOLDER_EXPORTS_NP, self.file)  
                 if not save_all:
                     save_all = tl.before_save_file(name)
                 if save_all:

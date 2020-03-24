@@ -17,7 +17,10 @@ file = 'raw_10_1'
 
 
 folder=main_folder+'20_02_26_Q3/'
-file = 'raw_05_1'
+file = 'raw_18_1'
+
+#folder=main_folder+'20_02_26_L3/'
+#file = 'raw_03_1'
 
 video = Video(folder, file)
 video.loadData()
@@ -31,14 +34,12 @@ video.fouriere(level = 20)
 video.load_idea('idea_q3_04_np80')
 video.make_corr()
 
-
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 #video.image_process_beta(threshold = 100)    #750    
 video.image_process_gamma(threshold = 60)    #750    
 
 
-#video.characterize_nps(save = True)
-#video.save_idea('idea_q3_04_np80')
+video.characterize_nps(save = True)
 video.exclude_nps(contrast = 2)
 video.statistics()
 
@@ -47,8 +48,8 @@ video.make_toggle(['diff', 'corr'], [10, 10])
 video.explore()
 
 #video.make_corr()
-video.histogram()
+#video.histogram()
 #plt.hist(np.matrix.flatten(video.video), 100)
 
-print(video.np_count_integral[-1])
+#print(video.np_count_integral[-1])
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))

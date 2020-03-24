@@ -1,4 +1,5 @@
 FOLDER_EXPORTS = 'exports'
+FOLDER_EXPORTS_NP = 'exports_np'
 FOLDER_IDEAS = 'ideas'
 FOLDER_BIOEXPORTS = '/exports_bio'
 NAME_LOCAL_SPR = 'spr'
