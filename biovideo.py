@@ -10,7 +10,6 @@ import matplotlib.font_manager as fm
 
 from PIL import Image
 from np_analysis import np_analysis, is_np
-from classes import Cursor
 
 
 FOLDER_NAME = '/exports_bio'

@@ -32,6 +32,7 @@ def before_save_file(path):
         print('='*80)
         result = input()
         if result == 'y':
+            os.remove(path)
             return True
         return False
     return True

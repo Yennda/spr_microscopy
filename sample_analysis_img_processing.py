@@ -79,13 +79,13 @@ video.image_process_gamma(threshold = 80)    #750
 
 #video.make_diff(k = 10)
 
-video.make_toggle(['raw', 'corr'], [10, 10])
+video.make_toggle(['diff', 'int'], [10, 10])
 video.recognition_statistics()
 #video.characterize_nps()
 
 
 
-#video.make_toggle(10, 10)e
+#video.make_toggle(10, 10)
 
 
 video.explore()

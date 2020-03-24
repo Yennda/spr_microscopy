@@ -26,6 +26,16 @@ ELAPSED TIME: 78.07 s
 ELAPSED TIME: 7.21 s #condition for correlation
 ELAPSED TIME: 2.96 s #condition for peaks
 
+        x       y       con     I_np    I_np px I_bg px std
+04      28.65   12.55   3.54    33.64   1.92    0.62890 0.81684
+n= 276  6.82    2.35    2.51    32.73   1.17    0.19440 0.24794
+
+
+        x       y       con     I_np    I_np px I_bg px std
+04      30.27   12.70   4.52    41.57   2.32    0.53737 0.70390
+n= 188  6.23    2.24    2.31    31.29   1.08    0.12192 0.16142
+------------------------------------------------------------------
+
 
 2.0
 6.0

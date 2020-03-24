@@ -57,7 +57,7 @@ class Video(object):
         
         self.mask = None        
         self.candidates = None
-        self.px_for_image_mask = None
+        self.px_for_image_mask = []
 
         self._dict_of_patterns = None
         self.np_database = []
@@ -218,29 +218,29 @@ class Video(object):
         k_diff = self.k_diff
         k_diff = 1
         tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
+        
         for pm in self.px_for_image_mask:
             f, y, x = pm
             volume_mask[f, y, x, 1] = 1
-            volume_mask[f, y, x, 3] = 1
-        return volume_mask
+            volume_mask[f, y, x, 3] = 0.5
+        return volume_mask     
         
-        
-        for pm in self.px_for_image_mask:
-            f, y, x = pm
-            if f+k_diff > self.shape[0]:
-                end = self.shape[0]
-            else:
-                end = f+k_diff
-            volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
-            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-            if f+k_diff > self.shape[0]:
-                end = self.shape[0]
-            else:
-                end = f+k_diff
-            volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
-            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-            
-        return volume_mask
+#        for pm in self.px_for_image_mask:
+#            f, y, x = pm
+#            if f+k_diff > self.shape[0]:
+#                end = self.shape[0]
+#            else:
+#                end = f+k_diff
+#            volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
+#            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
+#            if f+k_diff > self.shape[0]:
+#                end = self.shape[0]
+#            else:
+#                end = f+k_diff
+#            volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
+#            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
+#            
+#        return volume_mask
     
     def process_mask(self):
         volume_mask = np.zeros(self.shape)
@@ -671,6 +671,8 @@ class Video(object):
             patterns = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)[-2][:-1]      
         
             for pattern in patterns:
+                [self.px_for_image_mask.append(tuple([f] + p[0, ::-1].tolist())) for p in pattern]
+                
                 if minimal_area < cv2.contourArea(pattern):
                     try:
                         ellipse = cv2.fitEllipse(pattern)
@@ -679,6 +681,7 @@ class Video(object):
                         continue
                     
                     loc, size, angle = ellipse
+                    
                     if 80 < angle < 100 and size[1] > size[0]:
                         candidate = (f, int(round(loc[1])), int(round(loc[0])))
                         self.candidates.append(candidate)
@@ -687,7 +690,7 @@ class Video(object):
                         omitted += 1
                     number += 1
                     
-        self.px_for_image_mask = copy.deepcopy(self.candidates)           
+#        self.px_for_image_mask = copy.deepcopy(self.candidates)           
 
         print("Dots number: {}".format(number))
         print("Fit fails: {}".format(fit_failed))
@@ -758,7 +761,10 @@ class Video(object):
                         
                         for f in range(nanoparticle.first_frame, nanoparticle.last_frame+1):
                             if f <= enp.last_frame:
-                                self.frame_np_ids[f].remove(enp.id)
+                                try:
+                                    self.frame_np_ids[f].remove(enp.id)
+                                except:
+                                    pass
                             if f >= bnp.first_frame:
                                 self.frame_np_ids[f].remove(bnp.id)
                             self.frame_np_ids[f].append(last_np_id)
@@ -800,9 +806,13 @@ class Video(object):
             self.valid = [True]*self.length
         
     def characterize_nps(self):
+        size = 25
         save_all = False
         for nanoparticle in self.np_database:
-            size = 25
+            
+            if not self.valid[nanoparticle.first_frame]:
+                continue
+            
             f = nanoparticle.peak
             y, x = nanoparticle.position_yx(f)
 
@@ -946,31 +956,31 @@ class Video(object):
             if self.show_pixels:
                 mask.set_array(volume_mask[ax.index])  
                 
-            if self.show_detected:
+            if self.show_detected:                
                 [p.remove() for p in reversed(ax.patches)]
-                if self._img_type == 'diff' or self._img_type or self._img_type == 'corr':
-                    for np_id in self.frame_np_ids[ax.index]:
-                        p = mpatches.Circle(
-                                self.np_database[np_id].position_xy(ax.index), 
-                                5, 
-                                color=self.np_database[np_id].color, 
-                                fill = False,
-                                alpha = 0.5,
-                                lw = 2)
-                        ax.add_patch(p)
-                    self.show_detected_all = False
+#                if self._img_type[not self._toggle] == 'diff' or self._img_type[not self._toggle] == 'corr':
+                for np_id in self.frame_np_ids[ax.index]:
+                    p = mpatches.Circle(
+                            self.np_database[np_id].position_xy(ax.index), 
+                            5, 
+                            color=self.np_database[np_id].color, 
+                            fill = False,
+                            alpha = 0.5,
+                            lw = 2)
+                    ax.add_patch(p)
+                self.show_detected_all = False
                     
-                elif self._img_type == 'int' or not self._img_type:
-                    for frame in self.frame_np_ids[:ax.index+1]:
-                        for np_id in frame:
-                            p = mpatches.Circle(
-                                    self.np_database[np_id].last_position_xy(), 
-                                    5, 
-                                    color=self.np_database[np_id].color, 
-                                    fill = False,
-                                    alpha = 0.5,
-                                    lw = 2)
-                            ax.add_patch(p)
+#                elif self._img_type[not self._toggle] == 'int':
+#                    for frame in self.frame_np_ids[:ax.index+1]:
+#                        for np_id in frame:
+#                            p = mpatches.Circle(
+#                                    self.np_database[np_id].last_position_xy(), 
+#                                    5, 
+#                                    color=self.np_database[np_id].color, 
+#                                    fill = False,
+#                                    alpha = 0.5,
+#                                    lw = 2)
+#                            ax.add_patch(p)
                             
             if self.show_stats:
                 location.xy=[ax.index, stat_plot.get_ylim()[0]]
