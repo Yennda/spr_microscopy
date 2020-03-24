@@ -45,7 +45,7 @@ video.loadData()
 #video._video['raw']=video._video['raw'][70:220,490:660,:]
 #video._video['raw']=video._video['raw'][100:150,500:600,:200]$
 
-video._video['raw']=video._video['raw'][100:300,300:500,:150]
+video._video['raw']=video._video['raw'][100:300,300:500,:]
 #video._video['raw']=video._video['raw'][109, 84:90, 154:166]            #idea 1
 #video._video['raw']=video._video['raw'][125: 131, 100: 110, 103:143]            #idea 2
 #video._video['raw']=video._video['raw'][140:170,60:95,200:250]
@@ -77,14 +77,14 @@ video.image_process_gamma(threshold = 80)    #750
 
 video.make_diff(k = 10)
 video.recognition_statistics()
-video.characterize_nps()
+#video.characterize_nps()
 
 
 
-#video.make_toggle(10, 10)
+#video.make_toggle(10, 10)e
 
 
-#video.explore()
+video.explore()
 
 #plt.hist(np.matrix.flatten(video.video), 100)
 

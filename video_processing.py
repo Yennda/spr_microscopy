@@ -911,7 +911,7 @@ class Video(object):
                             ax.add_patch(p)
                             
             if self.show_stats:
-                location.xy=[ax.index, -1]
+                location.xy=[ax.index, stat_plot.get_ylim()[0]]
                 fig_stat.canvas.draw()
             
             if self.valid is not None:
@@ -1114,7 +1114,7 @@ class Video(object):
             fig_stat, stat_plot = plt.subplots()
             stat_plot.grid(linestyle='--')
             stat_plot.set_title('info')
-            stat_plot.set_xlabel('time [min]')
+            stat_plot.set_xlabel('frame')
             stat_plot.set_ylabel('std of intensity [a. u.]')
             
             if len(self.np_database) > 0:
@@ -1122,12 +1122,15 @@ class Video(object):
                 validity_plot = stat_plot.twinx()
                 
                 np_plot.set_ylabel('Number of NPs')
-                validity_plot.set_ylabel('Validity [Au]')
-                validity_plot.spines['right'].set_color(red)
+#                validity_plot.set_ylabel('Validity [Au]')
+#                validity_plot.spines['right'].set_color(red)
                 validity_plot.yaxis.label.set_color(red)
                 validity_plot.tick_params(axis='y', colors=red)
 
             stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
+            stat_plot.yaxis.label.set_color(yellow)
+            stat_plot.spines['right'].set_color(yellow)
+            stat_plot.tick_params(axis='y', colors=yellow)
             stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=yellow, label='average stdev', ls=':')  
 #            stat_plot.set_ylim((0, 0.003))
             
@@ -1145,14 +1148,14 @@ class Video(object):
                     tick.set_visible(False)
                     
             rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
-            location = mpatches.Rectangle((ax.index, -1), 1/60, rectangle_height, color=red)                
+            location = mpatches.Rectangle((ax.index, stat_plot.get_ylim()[0]), 1, rectangle_height, color=red)                
             stat_plot.add_patch(location)
             fig_stat.legend(loc=2)
                         
                         
 #        cb = fig.colorbar(img, ax=ax)
             
-#        info = 'ej\nneki tekst\n i još nešta'
+
 #        ax.text(0, self.video.size+20, info, fontsize=10, bbox={'facecolor': 'white', 'alpha': 1, 'pad': 1})
         plt.tight_layout()
         plt.show()
