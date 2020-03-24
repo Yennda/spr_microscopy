@@ -615,11 +615,12 @@ class Video(object):
         np_masks = []        
         for position in positions_in_np:
             np_masks.append(self._dict_of_patterns[position])
-        peak = np.argmax([self.video[position] for position in positions_in_np])
-        nanoparticle = NanoParticle(0, positions_in_np, peak = positions_in_np[0][0] + peak, masks = np_masks)  
-                
+            
+#        peak = np.argmax([self.video[position] for position in positions_in_np])
+#        nanoparticle = NanoParticle(0, positions_in_np, peak = positions_in_np[0][0] + peak, masks = np_masks)  
+        nanoparticle = NanoParticle(0, positions_in_np, masks = np_masks)         
         return nanoparticle, points_excluded
-      
+          
     def image_process_gamma(self, threshold = 100):
         self.make_corr()
         
@@ -658,8 +659,6 @@ class Video(object):
                     else:
                         omitted += 1
                     number += 1
-                    
-#        self.px_for_image_mask = copy.deepcopy(self.candidates)           
 
         print("Dots number: {}".format(number))
         print("Fit fails: {}".format(fit_failed))
@@ -686,7 +685,7 @@ class Video(object):
             
             np_id += 1
             
-#        self.gamma_time_conection()
+        self.gamma_time_conection()
          
         self.show_mask = True
         self.show_pixels = True
@@ -724,7 +723,6 @@ class Video(object):
                         nanoparticle = NanoParticle(
                                 last_np_id, 
                                 enp.positions + gap_position + bnp.positions,
-                                peak = enp.peak,
                                 masks = enp.masks + gap_mask + bnp.masks
                                 )
                         
@@ -894,7 +892,6 @@ sigma = {:.02f}
 #                    self.frame_np_ids[f].remove(np_id)
                     self.np_database[np_id].color = tl.hex_to_list(green)
                     excluded.add(np_id)
-                    print(np_id)
                     
         print('Number of excluded nps: {}'.format(len(excluded)))
            
