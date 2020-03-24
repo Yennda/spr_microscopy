@@ -55,18 +55,20 @@ video._video['raw']=video._video['raw'][100:300,300:500,:]
 #video._video['raw']=video._video['raw'][100:150,300:400,100:300]
 #video._video['raw']=video._video['raw'][100:140,300:340,200:250]
 
-print('LOAD TIME: {:.2f} s'.format(t.time()-time_start))
+
 
 video.refresh()
 
 
 video.make_diff(k = 10)
+video.load_idea('idea_q3_np80')
 
 
-print('MAKE TIME: {:.2f} s'.format(t.time()-time_start))
+
+
 #video.fouriere(level = 20)
 
-video.load_idea('idea_q3_np80')
+#video.load_idea('idea_q3_np80')
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 #video.image_process_beta(threshold = 100)    #750    
 #video.image_process_beta(threshold = 5)     #600
@@ -75,7 +77,9 @@ video.image_process_gamma(threshold = 80)    #750
 #video.save_idea('idea_q3_np80')
 
 
-video.make_diff(k = 10)
+#video.make_diff(k = 10)
+
+video.make_toggle(['raw', 'corr'], [10, 10])
 video.recognition_statistics()
 #video.characterize_nps()
 

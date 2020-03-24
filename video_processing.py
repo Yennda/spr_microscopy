@@ -41,12 +41,12 @@ class Video(object):
         self._video = {
                 'raw': None,
                 'diff': None,
-                'int': None
+                'int': None,
+                'corr': None
                 }
-        self._toggle = True
+        self._toggle = False
         self._img_type = 'raw'
         
-        self.view = None
         self.rng = [-1, 1]
         self.time_info = None
 
@@ -88,7 +88,7 @@ class Video(object):
         
     def __iter__(self):
         self.n = -1
-        self.MAX = self.video.shape[2] - 1
+        self.MAX = self.shape[2] - 1
         return self
 
     def __next__(self):
@@ -98,16 +98,41 @@ class Video(object):
         else:
             raise StopIteration
 
+#    @property
+#    def video(self):
+#        if self._img_type == True:
+#            self._img_type = False
+#            return np.swapaxes(np.swapaxes(self._video['int'], 0, 2), 1, 2)
+#        elif self._img_type == False:
+#            self._img_type = True
+#            return np.swapaxes(np.swapaxes(self._video['diff'], 0, 2), 1, 2)
+#        else:
+#            return np.swapaxes(np.swapaxes(self._video[self._img_type], 0, 2), 1, 2)
     @property
     def video(self):
-        if self._img_type == True:
-            self._img_type = False
-            return np.swapaxes(np.swapaxes(self._video['int'], 0, 2), 1, 2)
-        elif self._img_type == False:
-            self._img_type = True
-            return np.swapaxes(np.swapaxes(self._video['diff'], 0, 2), 1, 2)
+        if len(self._img_type) == 1:
+            return np.swapaxes(np.swapaxes(self._video[self._img_type[0]], 0, 2), 1, 2)
         else:
-            return np.swapaxes(np.swapaxes(self._video[self._img_type], 0, 2), 1, 2)
+            self._toggle = not self._toggle
+            return np.swapaxes(np.swapaxes(
+                    self._video[self._img_type[int(not self._toggle)]]
+                    , 0, 2), 1, 2)
+        
+    def video_from(self, ch):
+        if type(ch) == int:
+            return np.swapaxes(np.swapaxes(
+                    self._video[self._img_type[ch]]
+                    , 0, 2), 1, 2)
+        elif type(ch) == str:
+            return np.swapaxes(np.swapaxes(
+                    self._video[ch]
+                    , 0, 2), 1, 2)
+        else:
+            raise ValueError('Unrecognized video type')
+    @property
+    def shape(self):
+        sh = self._video['raw'].shape
+        return (sh[2], sh[0], sh[1])
 
     def loadData(self):
         self.video_stats = self.loadBinVideoStats()
@@ -125,7 +150,6 @@ class Video(object):
         video_width = int(stats[1])
         video_hight = int(stats[2])
         video_fps = float(stats[4]) * int(stats[5])
-        self.view = [0, 0, video_width, video_hight]
         return [video_fps, [video_width, video_hight, video_length]]
 
     def loadBinVideo(self):
@@ -181,8 +205,16 @@ class Video(object):
         print(' DONE')
         return out
     
+    def process_corr(self):
+        if type(self.idea3d) == type(None):
+            raise ValueError('The image of NP pattern not defined.') 
+        print('Computing the correlation img')
+        out = sc.signal.correlate(self._video['diff'], self.idea3d, mode = 'same')*1e5
+        print(' DONE')
+        return out
+        
     def process_mask_image(self):
-        volume_mask = np.zeros(list(self.video.shape) + [4])
+        volume_mask = np.zeros(list(self.shape) + [4])
         k_diff = self.k_diff
         k_diff = 1
         tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
@@ -195,14 +227,14 @@ class Video(object):
         
         for pm in self.px_for_image_mask:
             f, y, x = pm
-            if f+k_diff > self.video.shape[0]:
-                end = self.video.shape[0]
+            if f+k_diff > self.shape[0]:
+                end = self.shape[0]
             else:
                 end = f+k_diff
             volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
             volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-            if f+k_diff > self.video.shape[0]:
-                end = self.video.shape[0]
+            if f+k_diff > self.shape[0]:
+                end = self.shape[0]
             else:
                 end = f+k_diff
             volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
@@ -211,21 +243,34 @@ class Video(object):
         return volume_mask
     
     def process_mask(self):
-        volume_mask = np.zeros(self.video.shape)
+        volume_mask = np.zeros(self.shape)
 
         for c in self.candidates:
             volume_mask[c] = 1
 
         return volume_mask
     
+    def process_arbitrary(self, name, k=1):
+        if name == 'diff':
+            out = self.process_diff(k)
+        elif name == 'int':
+            out = self.process_int(k)
+        elif name == 'corr':
+            out = self.process_corr()
+        elif name == 'raw':
+            out = self._video['raw']
+        else:
+            out = None
+        return out
+    
     def process_frame_stat(self):      
         i = 0
         out = []
         print('Computing the statistics')
-        for v in self.video:
+        for v in self.video_from(0):
             out.append(np.std(v))
             i += 1
-            print('\r\t{}/ {}'.format(i+1, len(self.video[:, 1, 1])), end="")
+            print('\r\t{}/ {}'.format(i+1, self.shape[0]), end="")
         print(' DONE')
         return np.array(out)
     
@@ -235,22 +280,41 @@ class Video(object):
         
     def make_diff(self, k = 1):
         self._video['diff'] = self.process_diff(k)
-        self._img_type = 'diff'
+        self._img_type = ['diff']
         self.rng = [-0.01, 0.01]
 
     def make_int(self, k = 1):
         self._video['int']= self.process_int(k)
-        self._img_type = 'int'
+        self._img_type = ['int']
         self.rng = [-0.01, 0.01]
         
-    def make_toggle(self, kd=1, ki=1):
-        if self._video['diff'] is None and self.k_diff==kd:
-            self._video['diff'] = self.process_diff(kd)
+    def make_corr(self):
+        self._video['corr']= self.process_corr()
+        self._img_type = ['corr']
+#        self.rng = [np.min(self._video['corr']), np.max(self._video['corr'])]
+        
+    def make_toggle(self, img_type, k):
+        """
+        Process two types of video data, the first one serves as the source for the statistics
+        
+        Parameters:
+            img_type (list): list of names of image types, only 2 can be specified, e.g. ['diff', 'int']
+            k (list): list of parameters for the image processing
             
-        if self._video['int'] is None and (self.k_int ==ki or self.k_int is None):    
-            self._video['int'] = self.process_int(ki)
+        Returns:
+            no return
             
-        self._img_type = False
+        """
+        if len(img_type) > 2:
+            raise ValueError('Only 2 image types can be processed. You added {}.'.format(len(img_type)))
+            
+        if self._video[img_type[0]] is None:
+            self._video[img_type[0]] = self.process_arbitrary(img_type[0], k[0])
+            
+        if self._video[img_type[1]] is None:
+            self._video[img_type[1]] = self.process_arbitrary(img_type[1], k[1])
+            
+        self._img_type = img_type
         self.rng = [-0.01, 0.01]
         
     def change_fps(self, n):
@@ -319,7 +383,6 @@ class Video(object):
                
         return four_ampli
         
-        
     def fouriere(self, level = 30, show = False):
         print('Filtering fouriere frequencies')
         if type(self._img_type) == bool:
@@ -383,12 +446,12 @@ class Video(object):
         
         i = 0
         time = tt.time()
-        all_processes = self.video.shape[1]*self.video.shape[2]   
+        all_processes = self.shape[1]*self.shape[2]   
         skipped_corr = 0
         skipped_peak = 0
         
-        for x in range(self.video.shape[2]):
-            for y in range(self.video.shape[1]):
+        for x in range(self.shape[2]):
+            for y in range(self.shape[1]):
                 
                 if np.abs(self.video[:, y, x]).max() > noise_level:
                     corr_out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
@@ -488,16 +551,14 @@ class Video(object):
         return nanoparticle, points_excluded
         
     def image_process_beta(self, threshold = 100):
-        self.idea3d = self._video['diff'][125: 131, 100: 110, 123: 143] #750    proc pres 20 framu???
+#        self.idea3d = self._video['diff'][125: 131, 100: 110, 123: 143] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
 #        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
 #        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
 #        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
 #        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
 
-        self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d)*1e5
-        self._img_type = 'corr'
-        self._video['corr'] = self._video['corr'][:, :, :-self.idea3d.shape[2]+1]
+        self.make_corr()
 
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = list()
@@ -591,8 +652,7 @@ class Video(object):
 #        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
 #        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
 
-        self._video['corr'] = sc.signal.correlate(self._video['diff'], self.idea3d, mode = 'same')*1e5
-        self._img_type = 'corr'
+        self.make_corr()
         
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = []
@@ -749,17 +809,17 @@ class Video(object):
             ly = int(np.heaviside(y - size, 1)*(y - size))
             lx = int(np.heaviside(x - size, 1)*(x - size))     
             
-            if y + size > self.video.shape[1]:
-                ry = self.video.shape[1]
+            if y + size > self.shape[1]:
+                ry = self.shape[1]
             else:
                 ry = y + size
                 
-            if x + size > self.video.shape[2]:
-                rx = self.video.shape[2]
+            if x + size > self.shape[2]:
+                rx = self.shape[2]
             else:
                 rx = x + size
                           
-            raw = self.video[f, ly:ry, lx: rx]
+            raw = self.video_from('diff')[f, ly:ry, lx: rx]
             
             img = np.zeros(raw.shape)
             contour = nanoparticle.mask_for_characterization - np.array([[lx, ly] for i in range(nanoparticle.mask_for_characterization.shape[0])])
@@ -822,7 +882,8 @@ class Video(object):
         def frame_info(i):
             if len(self.np_database) !=0:
                 if len(self.frame_np_ids[ax.index]) != 0:
-                    return '{}/{}  t= {} s dt= {:.2f} s\nNPs; now: {}, integral: {}'.format(
+                    return '{}: {}/{}  t= {} s dt= {:.2f} s\nNPs; now: {}, integral: {}'.format(
+                        self._img_type[not self._toggle],
                         i,
                         ax.volume.shape[0],
                         tl.SecToMin(self.time_info[i][0]),
@@ -832,7 +893,8 @@ class Video(object):
                     )
 
             
-            return '{}/{}  t= {} s dt= {:.2f} s'.format(
+            return '{}: {}/{}  t= {} s dt= {:.2f} s'.format(
+                self._img_type[not self._toggle],
                 i,
                 ax.volume.shape[0],
                 tl.SecToMin(self.time_info[i][0]),
@@ -988,8 +1050,18 @@ class Video(object):
                 [p.remove() for p in reversed(ax.patches)]
             elif event.key == 't':
                 ax.volume = self.video
+                if self._img_type[not self._toggle] == 'corr':
+                    img.set_clim(
+                            np.min(self.video_from('corr')),
+                            np.max(self.video_from('corr'))
+                            )
+                elif self._img_type[not self._toggle] == 'raw':
+                    img.set_clim(0, 1)
+                else:
+                    img.set_clim(self.rng[0], self.rng[1])
                 next_slice(0)
                 fig.canvas.draw()
+                
             elif event.key == 'm':
                 if self.show_graphic:
                     img.set_zorder(10)
@@ -1077,13 +1149,14 @@ class Video(object):
         fig, ax = plt.subplots()
         ax.volume = self.video
         ax.index = 0
-        ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, ax.volume.shape[0], self.time_info[ax.index][0],
-                                                              self.time_info[ax.index][1]))
+        ax.set_title(frame_info(ax.index))
+#        ax.set_title('{}/{}  t= {:.2f} s dt= {:.2f} s'.format(ax.index, ax.volume.shape[0], self.time_info[ax.index][0],
+#                                                              self.time_info[ax.index][1]))
 
-        if self._img_type == 'raw':
+        if self._img_type[not self._toggle] == 'raw':
             img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0)
-        elif self._img_type == 'corr':
-            img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=np.min(self.video), vmax=np.max(self.video)) 
+        elif self._img_type[not self._toggle] == 'corr':
+            img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=np.min(self.video_from('corr')), vmax=np.max(self.video_from('corr'))) 
         else:
             img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=self.rng[0], vmax=self.rng[1])
             
@@ -1124,12 +1197,12 @@ class Video(object):
                 np_plot.set_ylabel('Number of NPs')
 #                validity_plot.set_ylabel('Validity [Au]')
 #                validity_plot.spines['right'].set_color(red)
-                validity_plot.yaxis.label.set_color(red)
-                validity_plot.tick_params(axis='y', colors=red)
+#                validity_plot.yaxis.label.set_color(red)
+#                validity_plot.tick_params(axis='y', colors=red)
 
             stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
             stat_plot.yaxis.label.set_color(yellow)
-            stat_plot.spines['right'].set_color(yellow)
+            stat_plot.spines['left'].set_color(yellow)
             stat_plot.tick_params(axis='y', colors=yellow)
             stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=yellow, label='average stdev', ls=':')  
 #            stat_plot.set_ylim((0, 0.003))
