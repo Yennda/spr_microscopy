@@ -531,13 +531,6 @@ class Video(object):
         return nanoparticle, points_excluded
         
     def image_process_beta(self, threshold = 100):
-#        self.idea3d = self._video['diff'][125: 131, 100: 110, 123: 143] #750    proc pres 20 framu???
-#        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
-#        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
-#        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
-#        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
-#        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
-
         self.make_corr()
 
         self.frame_np_ids = [[] for i in range(self.length)]
@@ -625,13 +618,6 @@ class Video(object):
         return nanoparticle, points_excluded
       
     def image_process_gamma(self, threshold = 100):
-#        self.idea3d = self._video['diff'][125: 132, 100: 110, 123: 144] #750    proc pres 20 framu???
-#        self.idea3d = self._video['diff'][70: 73, 169:187] #750    proc pres 20 framu???
-#        self.idea3d = self._video['diff'][100:104, 55:69, 59: 79] #750  raw_07
-#        self.idea3d = self._video['diff'][49:53, 180:194, 41:61] #750  raw_27
-#        self.idea3d = self._video['diff'][19: 23, 10: 25, 101: 121] #750  raw_27
-#        self.idea3d = self._video['diff'][ 96: 100, 138: 142, 81: 111] #600
-
         self.make_corr()
         
         self.frame_np_ids = [[] for i in range(self.length)]
