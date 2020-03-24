@@ -15,6 +15,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from PIL import Image
 from skimage.feature import peak_local_max
+from scipy.optimize import curve_fit
 
 from np_analysis import np_analysis, is_np, measure_new, visualize_and_save
 import image_processing as ip
@@ -205,11 +206,10 @@ class Video(object):
         volume_mask = np.zeros(list(self.shape) + [4])
         k_diff = self.k_diff
         k_diff = 1
-        
-        
+
         for pm in self.px_for_image_mask:
             f, y, x = pm
-            volume_mask[f, y, x, 1] = 1
+            volume_mask[f, y, x, :3] = tl.hex_to_list(blue)
             volume_mask[f, y, x, 3] = 0.5
         return volume_mask     
     
@@ -770,6 +770,43 @@ class Video(object):
             
         else:
             self.valid = [True]*self.length
+            
+    def histogram(self):
+        def gauss(x, *p):
+            A, mu, sigma = p
+            return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+        
+        p0 = [1e6, 0., 50.0]
+
+        fig, ax = plt.subplots()
+        n, bins, patches = ax.hist(np.matrix.flatten(self.video), 100, color = blue)
+        
+        bin_centers = (bins[:-1] + bins[1:])/2
+        coeff, var_matrix = curve_fit(gauss, bin_centers, n, p0=p0)
+        A, mu, sigma = coeff
+        
+        span = ax.get_xlim()
+        x = np.arange(span[0], span[1], (span[1] - span[0])/1e3)
+        
+        ax.plot(x, gauss(x, *coeff), color = red, ls = '--')
+                    
+        height = ax.get_ylim()[1]
+        sigma2 = mpatches.Rectangle((sigma*2, 0), 1, height, color=red) 
+        sigma3 = mpatches.Rectangle((sigma*3, 0), 1, height, color=red)  
+              
+        ax.add_patch(sigma2)
+        ax.add_patch(sigma3)
+        
+        print(
+                '''
+sigma = {:.02f}
+3 x sigma = {:.02f}
+                '''.format(sigma, 3*sigma)
+                )
+
+#        print(n)
+#        print(bins)
+#        print(patches)
         
     def characterize_nps(self):
         size = 25

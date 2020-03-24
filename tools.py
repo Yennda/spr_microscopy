@@ -84,5 +84,9 @@ def closest(lst, K):
 def random_color():
     return (rn.random(), rn.random(), rn.random())
 
+def hex_to_list(color):
+    color = color[1:]
+    dec_list = [int(color[i:i+2], 16) for i in range(0, 5, 2)]
+    return [d/256 for d in dec_list]
 
 
