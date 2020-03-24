@@ -1,33 +1,38 @@
+import os
+import warnings
 import numpy as np
 import math as m
 import scipy as sc
+import cv2
+import copy
+import time as tt
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
-from PIL import Image
-import cv2
-import os
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
-import copy
-import time as tt
+from PIL import Image
 from skimage.feature import peak_local_max
 
 from np_analysis import np_analysis, is_np, measure_new, visualize_and_save
 import image_processing as ip
 import tools as tl
+from global_var import *
 from nanoparticle import NanoParticle
 
-FOLDER_EXPORTS = 'exports'
-FOLDER_IDEAS = 'ideas'
+warnings.filterwarnings('ignore', category=RuntimeWarning)
 
-
-yellow='#ffb200'
-red='#DD5544'
-blue='#0284C0'
-black='#000000'    
-SIDES = ['left', 'right', 'bottom', 'top']
+#FOLDER_EXPORTS = 'exports'
+#FOLDER_IDEAS = 'ideas'
+#
+#
+#yellow='#ffb200'
+#red='#DD5544'
+#blue='#0284C0'
+#black='#000000'    
+#SIDES = ['left', 'right', 'bottom', 'top']
             
 class Video(object):
 
@@ -36,7 +41,6 @@ class Video(object):
         self.file = file
         self.file_name = folder + file
         self.video_stats = None
-        self.length = None
         
         self._video = {
                 'raw': None,
@@ -44,7 +48,7 @@ class Video(object):
                 'int': None,
                 'corr': None
                 }
-        self._toggle = False
+        self.__toggle = False
         self._img_type = 'raw'
         
         self.rng = [-1, 1]
@@ -113,7 +117,7 @@ class Video(object):
         if len(self._img_type) == 1:
             return np.swapaxes(np.swapaxes(self._video[self._img_type[0]], 0, 2), 1, 2)
         else:
-            self._toggle = not self._toggle
+            self.__toggle = not self.__toggle
             return np.swapaxes(np.swapaxes(
                     self._video[self._img_type[int(not self._toggle)]]
                     , 0, 2), 1, 2)
@@ -129,14 +133,25 @@ class Video(object):
                     , 0, 2), 1, 2)
         else:
             raise ValueError('Unrecognized video type')
+            
     @property
     def shape(self):
         sh = self._video['raw'].shape
         return (sh[2], sh[0], sh[1])
-
+    
+    @property
+    def length(self):
+        return self._video['raw'].shape[2]
+    
+    @property
+    def _toggle(self):
+        if len(self._img_type) == 1:
+            return True
+        else:
+            return self.__toggle
+        
     def loadData(self):
         self.video_stats = self.loadBinVideoStats()
-        self.length = self.video_stats[1][2]
         self._video['raw'] = self.loadBinVideo()
 
     def loadBinVideoStats(self):
@@ -355,7 +370,7 @@ class Video(object):
         
     def refresh(self):
         self.video_stats[1] = [self._video['raw'].shape[1], self._video['raw'].shape[0], self._video['raw'].shape[2]]
-        self.length = self.video_stats[1][2]
+
 
     def time_fouriere(self):
         middle = int(self._video.shape[2] / 2)
@@ -384,25 +399,28 @@ class Video(object):
         return four_ampli
         
     def fouriere(self, level = 30, show = False):
-        print('Filtering fouriere frequencies')
-        if type(self._img_type) == bool:
-            img_type = ['int']
-        else:
-            img_type = [self._img_type]
+        
+        img_type = []
+        for it in self._img_type:
+            if it == 'int' or it == 'diff':
+                img_type.append(it)
+       
         for it in img_type:
-            for i in range(self._video[it].shape[2]):
-
-                print('\r\t{}/ {}'.format(i+1, self.video_stats[1][2]), end="")    
+            print('Filtering fouriere frequencies in {}'.format(it))
+            
+            for i in range(self.length):
+                print('\r\t{}/ {}'.format(i+1, self.length), end="")    
                 f = np.fft.fft2(self._video[it][:, :, i])
-
-                magnitude_spectrum = 20 * np.log(np.abs(f))
- 
+                try:
+                    magnitude_spectrum = 20 * np.log(np.abs(f))
+                except:
+                    pass
                 mask = np.real(magnitude_spectrum) > level
                 f[mask] = 0
                   
                 img_back = np.fft.ifft2(f)
                 self._video[it][:, :, i] = np.real(img_back)
-        print(' DONE')
+            print(' DONE')
         
         if show:
             fig_four, axes_four = plt.subplots()
@@ -772,7 +790,7 @@ class Video(object):
                         self.np_database.append(nanoparticle)
                         last_np_id += 1
 
-    def recognition_statistics(self):
+    def explore_statistics(self):
         self.make_frame_stats()
         self.show_stats = True
         

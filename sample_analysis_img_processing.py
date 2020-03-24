@@ -32,7 +32,7 @@ file = 'raw_10_1'
 
 #file = 'raw_05_1'
 folder=main_folder+'20_02_26_Q3/'
-file = 'raw_04_1'
+file = 'raw_05_1'
 #file = 'raw_27_1'
 #folder=main_folder+'20_02_25_M5/'
 #file = 'raw_08_1'
@@ -41,9 +41,7 @@ video = Video(folder, file)
 video.loadData()
 
 
-#video._video['raw']=video._video['raw'][700+110:700+180,70:130,:370]☻
-#video._video['raw']=video._video['raw'][70:220,490:660,:]
-#video._video['raw']=video._video['raw'][100:150,500:600,:200]$
+
 
 video._video['raw']=video._video['raw'][100:300,300:500,:]
 #video._video['raw']=video._video['raw'][109, 84:90, 154:166]            #idea 1
@@ -52,42 +50,38 @@ video._video['raw']=video._video['raw'][100:300,300:500,:]
 #video._video['raw']=video._video['raw'][:,:,220:]
 
 
-#video._video['raw']=video._video['raw'][100:150,300:400,100:300]
-#video._video['raw']=video._video['raw'][100:140,300:340,200:250]
-
 
 
 video.refresh()
-
-
 video.make_diff(k = 10)
-video.load_idea('idea_q3_np80')
+#video.load_idea('idea_q3_np80')
 
 
 
 
-#video.fouriere(level = 20)
+
 
 #video.load_idea('idea_q3_np80')
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 #video.image_process_beta(threshold = 100)    #750    
 #video.image_process_beta(threshold = 5)     #600
 
-video.image_process_gamma(threshold = 80)    #750    
+#video.image_process_gamma(threshold = 80)    #750    
 #video.save_idea('idea_q3_np80')
 
 
 #video.make_diff(k = 10)
 
 video.make_toggle(['diff', 'int'], [10, 10])
-video.recognition_statistics()
+video.fouriere(level = 20)
+
 #video.characterize_nps()
 
 
 
-#video.make_toggle(10, 10)
 
 
+video.explore_statistics()
 video.explore()
 
 #plt.hist(np.matrix.flatten(video.video), 100)
