@@ -252,19 +252,22 @@ class Video(object):
             out = None
         return out
     
-    def process_frame_stat(self):      
+    def process_fn(self, fn):      
         i = 0
         out = []
         print('Computing the statistics')
         for v in self.video_from(0):
-            out.append(np.std(v))
+            out.append(fn(v))
             i += 1
             print('\r\t{}/ {}'.format(i+1, self.shape[0]), end="")
         print(' DONE')
         return np.array(out)
-    
+
     def make_frame_stats(self):
-        self.stats_std = self.process_frame_stat()
+        self.stats_std = self.process_fn(np.std)
+        self.stats_min = self.process_fn(np.min)
+        self.stats_max = self.process_fn(np.max)
+        
         self.show_stats = True
         
     def make_diff(self, k = 1):
@@ -624,7 +627,7 @@ class Video(object):
         self.candidates = []
         self._dict_of_patterns = dict()
         
-        self.mask = (np.abs(self._video['corr']) > threshold)*1  
+        self.mask = (self._video['corr'] > threshold)*1  
         minimal_area = 10
         
         number = 0
@@ -683,7 +686,7 @@ class Video(object):
             
             np_id += 1
             
-        self.gamma_time_conection()
+#        self.gamma_time_conection()
          
         self.show_mask = True
         self.show_pixels = True
@@ -730,15 +733,20 @@ class Video(object):
                                 try:
                                     self.frame_np_ids[f].remove(enp.id)
                                 except:
+#                                    print('removal failed, enp {}'.format(enp.id))
                                     pass
                             if f >= bnp.first_frame:
-                                self.frame_np_ids[f].remove(bnp.id)
+                                try:
+                                    self.frame_np_ids[f].remove(bnp.id)
+                                except:
+#                                    print('removal failed, bnp {}'.format(bnp.id))
+                                    pass
                             self.frame_np_ids[f].append(last_np_id)
                             
                         self.np_database.append(nanoparticle)
                         last_np_id += 1
 
-    def explore_statistics(self):
+    def statistics(self):
         self.make_frame_stats()
         self.show_stats = True
         
@@ -750,8 +758,14 @@ class Video(object):
             for f in range(self.length):
                 self.np_count_present[f] = len(self.frame_np_ids[f])
                 
-            for nanoparticle in self.np_database:
-                self.np_count_first_occurance[nanoparticle.first_frame]+=1
+#            for nanoparticle in self.np_database:
+#                self.np_count_first_occurance[nanoparticle.first_frame]+=1
+            already_counted = set()    
+            for f in range(self.length):
+                for np_id in self.frame_np_ids[f]:      
+                    if np_id not in already_counted:
+                        self.np_count_first_occurance[self.np_database[np_id].first_frame]+=1
+                        already_counted.add(np_id)
                 
             self.np_count_integral = [sum(self.np_count_first_occurance[:i+1]) for i in range(len(self.np_count_first_occurance))]
                 
@@ -779,7 +793,7 @@ class Video(object):
         p0 = [1e6, 0., 50.0]
 
         fig, ax = plt.subplots()
-        n, bins, patches = ax.hist(np.matrix.flatten(self.video), 100, color = blue)
+        n, bins, patches = ax.hist(np.matrix.flatten(self.video_from('corr')), 1000, color = blue)
         
         bin_centers = (bins[:-1] + bins[1:])/2
         coeff, var_matrix = curve_fit(gauss, bin_centers, n, p0=p0)
@@ -803,18 +817,15 @@ sigma = {:.02f}
 3 x sigma = {:.02f}
                 '''.format(sigma, 3*sigma)
                 )
-
-#        print(n)
-#        print(bins)
-#        print(patches)
         
-    def characterize_nps(self):
+    def characterize_nps(self, save = False):
         size = 25
         save_all = False
+        
         for nanoparticle in self.np_database:
             
-            if not self.valid[nanoparticle.first_frame]:
-                continue
+#            if not self.valid[nanoparticle.first_frame]:
+#                continue
             
             f = nanoparticle.peak
             y, x = nanoparticle.position_yx(f)
@@ -862,18 +873,31 @@ sigma = {:.02f}
             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
                         
             measures = measure_new(raw, mask, [dx, dy])
-            name = '{}{}_np/{}_info.txt'.format(self.folder, FOLDER_EXPORTS, self.file)  
+
+            nanoparticle.contrast = measures[2]
+            nanoparticle.intensity = measures[4]
             
-            
-            if not save_all:
-                save_all = tl.before_save_file(name)
-                
-                
-            if save_all:
-                visualize_and_save(raw, measures, name)
-            else:
-                break
-            
+            if save:
+                name = '{}{}_np/{}_info.txt'.format(self.folder, FOLDER_EXPORTS, self.file)  
+                if not save_all:
+                    save_all = tl.before_save_file(name)
+                if save_all:
+                    visualize_and_save(raw, measures, name)
+                else:
+                    break
+                         
+    def exclude_nps(self):
+        excluded = set()
+        for f in range(self.length):
+            for np_id in self.frame_np_ids[f]:
+                if self.np_database[np_id].contrast < 1.5:
+#                    self.frame_np_ids[f].remove(np_id)
+                    self.np_database[np_id].color = tl.hex_to_list(green)
+                    excluded.add(np_id)
+                    print(np_id)
+                    
+        print('Number of excluded nps: {}'.format(len(excluded)))
+           
     def save_idea(self, name):
         if not os.path.isdir(self.folder + FOLDER_IDEAS):
             os.mkdir(self.folder + FOLDER_IDEAS)
@@ -971,7 +995,7 @@ sigma = {:.02f}
                             alpha = 0.5,
                             lw = 2)
                     ax.add_patch(p)
-                self.show_detected_all = False
+                    self.show_detected_all = False
                     
 #                elif self._img_type[not self._toggle] == 'int':
 #                    for frame in self.frame_np_ids[:ax.index+1]:
@@ -1144,14 +1168,14 @@ sigma = {:.02f}
 
                 # saves the exact nad precise tiff file
                 pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-                pilimage.save(name + '.tiff')
+#                pilimage.save(name + '.tiff')
                 
-                image = Image.open(name + '.tiff')
-                imarray = np.array(image)
-                plt.close("all")
-#                image.show()
-                plt.imshow(imarray)
-                plt.show()
+#                image = Image.open(name + '.tiff')
+#                imarray = np.array(image)
+#                plt.close("all")
+##                image.show()
+#                plt.imshow(imarray)
+#                plt.show()
                 
                 print('File SAVED @{}'.format(name))
 
@@ -1216,7 +1240,18 @@ sigma = {:.02f}
             stat_plot.spines['left'].set_color(yellow)
             stat_plot.tick_params(axis='y', colors=yellow)
             stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=yellow, label='average stdev', ls=':')  
-#            stat_plot.set_ylim((0, 0.003))
+            
+#            stat2_plot = stat_plot.twinx()
+##            stat2_plot.plot(self.stats_min, linewidth=1, color=blue, label='min')
+##            stat2_plot.plot(self.stats_max, linewidth=1, color=blue, label='max')
+#            
+#            nmax = self.stats_max/np.max(self.stats_max)
+#            nmin = self.stats_min/np.min(self.stats_min)
+#            
+#            stat2_plot.plot(nmin, linewidth=1, color=blue, label='min')
+#            stat2_plot.plot(nmax, linewidth=1, color=blue, label='max', ls=':')
+#            stat2_plot.plot(np.multiply(nmax,nmax), linewidth=1, color=red, label='max')
+
             
             if len(self.np_database) > 0:              
                 np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))

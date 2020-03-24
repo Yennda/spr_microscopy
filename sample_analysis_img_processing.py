@@ -29,16 +29,21 @@ video.fouriere(level = 20)
 video.make_diff(k = 10)
 
 video.load_idea('idea_q3_04_np80')
+video.make_corr()
+
 
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 #video.image_process_beta(threshold = 100)    #750    
-video.image_process_gamma(threshold = 50)    #750    
+video.image_process_gamma(threshold = 80)    #750    
 
-#video.characterize_nps()
+
+video.characterize_nps(save = False)
 #video.save_idea('idea_q3_04_np80')
+video.exclude_nps()
+video.statistics()
 
 video.make_toggle(['diff', 'corr'], [10, 10])
-video.explore_statistics()
+
 video.explore()
 
 #video.make_corr()

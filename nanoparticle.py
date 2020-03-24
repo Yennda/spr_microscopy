@@ -1,11 +1,12 @@
 import tools as tl
 import numpy as np
+from global_var import *
 
 class NanoParticle():
     def __init__(self, np_id, positions, peak = None, masks = None, k_diff = 10, method = 'beta'):
         self.id = np_id
-        self.color = tl.random_color()
-        
+#        self.color = tl.random_color()
+        self.color = tl.hex_to_list(red)
 
         if method == 'beta':
             self.positions = positions
@@ -18,7 +19,10 @@ class NanoParticle():
             self.peak = positions[0] 
         
         self.first_frame = self.positions[0][0]
-        self.last_frame = self.positions[-1][0]         
+        self.last_frame = self.positions[-1][0]
+
+        self.contrast = None
+        self.intensity = None         
         
     def position_xy(self, frame):
         if frame > self.last_frame:
