@@ -5,6 +5,7 @@ from global_var import *
 class NanoParticle():
     def __init__(self, np_id, positions, masks = None, k_diff = 10, method = 'beta'):
         self.id = np_id
+        self.good = True
 #        self.color = tl.random_color()
         self.color = tl.hex_to_list(red)
 
@@ -22,9 +23,10 @@ class NanoParticle():
         self.last_frame = self.positions[-1][0]
         self.peak = int(round((self.first_frame + self.last_frame)/2))
 
+        self.size = None
         self.contrast = None
         self.intensity = None         
-        
+                
     def position_xy(self, frame):
         if frame > self.last_frame:
             raise Exception('The nanoparticle does not occur in this frame.')

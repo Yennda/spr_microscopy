@@ -663,7 +663,7 @@ class Video(object):
 
         print("Dots number: {}".format(number))
         print("Fit fails: {}".format(fit_failed))
-        print("Omitted: {}".format(omitted))
+#        print("Omitted: {}".format(omitted))
 
         self.mask = self.process_mask()  
         
@@ -726,6 +726,8 @@ class Video(object):
                                 enp.positions + gap_position + bnp.positions,
                                 masks = enp.masks + gap_mask + bnp.masks
                                 )
+                        enp.good = False
+                        bnp.good - False
                         
                         for f in range(nanoparticle.first_frame, nanoparticle.last_frame+1):
                             if f <= enp.last_frame:
@@ -792,11 +794,14 @@ class Video(object):
         p0 = [1e6, 0., 50.0]
 
         fig, ax = plt.subplots()
+        ax.set_title(self.file)
+        
         n, bins, patches = ax.hist(np.matrix.flatten(self.video_from('corr')), 1000, color = blue)
         
         bin_centers = (bins[:-1] + bins[1:])/2
         coeff, var_matrix = curve_fit(gauss, bin_centers, n, p0=p0)
         A, mu, sigma = coeff
+        sigma = np.abs(sigma)
         
         span = ax.get_xlim()
         x = np.arange(span[0], span[1], (span[1] - span[0])/1e3)
@@ -804,20 +809,31 @@ class Video(object):
         ax.plot(x, gauss(x, *coeff), color = red, ls = '--')
                     
         height = ax.get_ylim()[1]
-        sigma2 = mpatches.Rectangle((sigma, 0), 1, height, color=red) 
+        
+        sigma2 = mpatches.Rectangle((sigma*5, 0), 1, height, color=red) 
+        ax.add_patch(sigma2)
+#        ax.text(sigma*5, 0, '$5\sigma$', transform=ax.transAxes, fontsize=14, color = red) 
+        
         sigma3 = mpatches.Rectangle((sigma*6, 0), 1, height, color=red)  
+        ax.add_patch(sigma3)
         
         threshold = mpatches.Rectangle((self.threshold, 0), 1, height, color=black) 
-              
-        ax.add_patch(sigma2)
-        ax.add_patch(sigma3)
         ax.add_patch(threshold)
+            
+        
+        
+        
         
         print(
                 '''
-sigma = {:.02f}
-3 x sigma = {:.02f}
-                '''.format(sigma, 3*sigma)
+5 x sigma = {:.02f}
+6 x sigma = {:.02f}
+threshold = {}
+                '''.format(
+                5*sigma, 
+                6*sigma,
+                self.threshold
+                )
                 )
         
     def characterize_nps(self, save = False):
@@ -825,7 +841,9 @@ sigma = {:.02f}
         save_all = False
         
         for nanoparticle in self.np_database:
-            
+            if not nanoparticle.good:
+                continue
+                
 #            if not self.valid[nanoparticle.first_frame]:
 #                continue
             
@@ -875,9 +893,11 @@ sigma = {:.02f}
             dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
                         
             measures = measure_new(raw, mask, [dx, dy])
-
+            
+            nanoparticle.size = measures[:2]
             nanoparticle.contrast = measures[2]
             nanoparticle.intensity = measures[4]
+            
             
             if save:
                 if not os.path.isdir(self.folder + FOLDER_EXPORTS_NP):
@@ -891,15 +911,42 @@ sigma = {:.02f}
                 else:
                     break
                          
-    def exclude_nps(self, contrast):
+    def exclude_nps(self, thresholds, exclude = True):
+        method_lambdas = [
+                lambda x: x.contrast,
+                lambda x: x.size[0]
+                ]
+        
         excluded = set()
         for f in range(self.length):
             ids = copy.deepcopy(self.frame_np_ids[f])
+            frame_excluded = set()
             for np_id in ids:
-                if self.np_database[np_id].contrast < contrast:
-                    self.frame_np_ids[f].remove(np_id)
+                for i in range(len(thresholds)): 
+                    if np_id in frame_excluded:
+                        continue
+                    if method_lambdas[i](self.np_database[np_id]) < thresholds[i]:
+                        if exclude:
+                            self.frame_np_ids[f].remove(np_id)
+                            frame_excluded.add(np_id)
+                            self.np_database[np_id].good = False
+                        else:
+                            self.np_database[np_id].color = tl.hex_to_list(green)
+                            frame_excluded.add(np_id)
+                        excluded.add(np_id)
+                
+                
+#                if self.np_database[np_id].size[0] < 30:
+##                    self.frame_np_ids[f].remove(np_id)
 #                    self.np_database[np_id].color = tl.hex_to_list(green)
-                    excluded.add(np_id)
+#                    excluded.add(np_id)
+                    
+#                if self.np_database[np_id].contrast < contrast:
+#                    if exclude:
+#                        self.frame_np_ids[f].remove(np_id)
+#                    else:
+#                        self.np_database[np_id].color = tl.hex_to_list(green)
+#                    excluded.add(np_id)
                     
         print('Number of excluded nps: {}'.format(len(excluded)))
            

@@ -31,7 +31,7 @@ folder=main_folder+'20_02_26_Q3/'
 
 
 if __name__ == "__main__":
-    files=[folder + 'exports_np/' + 'raw_{:02.0f}_1'.format(f) for f in   [4, 5, 18]]
+    files=[folder + 'exports_np/' + 'raw_{:02.0f}_1'.format(f) for f in   [4, 5, 7, 9, 18]]
 
     print('\tx \ty \tcon \tI_np \tI_np px\tI_bg px\tstd')
     
