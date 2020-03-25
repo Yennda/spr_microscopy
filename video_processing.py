@@ -665,7 +665,7 @@ class Video(object):
                     else:
                         omitted += 1
                     number += 1
-        self.info_add("AR GAMMA:")
+        self.info_add("\n--gamma--")
         self.info_add("Dots number: {}".format(number))
         self.info_add("Fit fails: {}".format(fit_failed))
 #        print("Omitted: {}".format(omitted))
@@ -769,11 +769,38 @@ class Video(object):
             for f in range(self.length):
                 for np_id in self.frame_np_ids[f]:      
                     if np_id not in already_counted:
-                        self.np_count_first_occurance[self.np_database[np_id].first_frame]+=1
+                        self.np_count_first_occurance[
+                                self.np_database[np_id].first_frame
+                                ]+=1
                         already_counted.add(np_id)
-                
-            self.np_count_integral = [sum(self.np_count_first_occurance[:i+1]) for i in range(len(self.np_count_first_occurance))]
+                                        
+            self.np_count_integral = [
+                    sum(self.np_count_first_occurance[:i+1]) 
+                    for i in range(len(self.np_count_first_occurance))
+                    ]
+            self.info_add('\n--statistics--')
             self.info_add("NP count: {}".format(self.np_count_integral[-1]))    
+            
+            #average binding rate
+            
+            for i in range(len(self.np_count_first_occurance)):
+                if self.np_count_integral[i] > 10:
+                    start = i
+                    break
+                
+            for i in range(1, len(self.np_count_first_occurance)):
+                if self.np_count_integral[-i] < self.np_count_integral[-1] - 10:
+                    end = len(self.np_count_first_occurance) - i
+                    break
+            
+            binding_rate = (
+                    self.np_count_integral[end] - 
+                    self.np_count_integral[start]
+                    )/(end - start)*100
+            
+            self.info_add('Rate per 100 frames: {:.01f}'.format(binding_rate))
+            self.info_add('Compared to reference: {:.01f} %'.format(binding_rate/95*100))
+            
             
             np_count = self.np_count_present
     
@@ -828,13 +855,11 @@ class Video(object):
         
         
         
-        
+        self.info_add('\n--histogram--')
         self.info_add(
-                '''
-5 x sigma = {:.02f}
+'''5 x sigma = {:.02f}
 6 x sigma = {:.02f}
-threshold = {}
-                '''.format(
+threshold = {}'''.format(
                 5*sigma, 
                 6*sigma,
                 self.threshold
@@ -935,19 +960,7 @@ threshold = {}
                             frame_excluded.add(np_id)
                         excluded.add(np_id)
                 
-                
-#                if self.np_database[np_id].size[0] < 30:
-##                    self.frame_np_ids[f].remove(np_id)
-#                    self.np_database[np_id].color = tl.hex_to_list(green)
-#                    excluded.add(np_id)
-                    
-#                if self.np_database[np_id].contrast < contrast:
-#                    if exclude:
-#                        self.frame_np_ids[f].remove(np_id)
-#                    else:
-#                        self.np_database[np_id].color = tl.hex_to_list(green)
-#                    excluded.add(np_id)
-        self.info_add('EXCLUDE NPS:')       
+        self.info_add('\n--exclusion--')       
         self.info_add('Number of excluded nps: {}'.format(len(excluded)))
            
     def save_idea(self, name):
