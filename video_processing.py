@@ -846,58 +846,53 @@ threshold = {}
                 
 #            if not self.valid[nanoparticle.first_frame]:
 #                continue
-            
-            f = nanoparticle.peak
-            y, x = nanoparticle.position_yx(f)
-
-            ly = int(np.heaviside(y - size, 1)*(y - size))
-            lx = int(np.heaviside(x - size, 1)*(x - size))     
-            
-            if y + size > self.shape[1]:
-                ry = self.shape[1]
-            else:
-                ry = y + size
+            all_measures = []
+            all_contrast = []
+            i = 0
+            for np_mask in nanoparticle.masks:
                 
-            if x + size > self.shape[2]:
-                rx = self.shape[2]
-            else:
-                rx = x + size
-                          
-            raw = self.video_from('diff')[f, ly:ry, lx: rx]
+                f = nanoparticle.first_frame + i
+                y, x = nanoparticle.position_yx(f)
+    
+                ly = int(np.heaviside(y - size, 1)*(y - size))
+                lx = int(np.heaviside(x - size, 1)*(x - size))     
+                
+                if y + size > self.shape[1]:
+                    ry = self.shape[1]
+                else:
+                    ry = y + size
+                    
+                if x + size > self.shape[2]:
+                    rx = self.shape[2]
+                else:
+                    rx = x + size
+                              
+                raw = self.video_from('diff')[f, ly:ry, lx: rx]
             
-            img = np.zeros(raw.shape)
-            contour = nanoparticle.mask_for_characterization - np.array([[lx, ly] for i in range(nanoparticle.mask_for_characterization.shape[0])])
-            
-            cv2.fillPoly(img, [contour], color = 1)
-            cv2.drawContours(img, [contour], 0, 0, 1)
-            mask = img == 1
-            
-            px_y = [y]*2
-            px_x = [x]*2
-            extreme_pxs = [px_y, px_x]
-            
-            for space_px in nanoparticle.mask_for_characterization:
-                px = tuple([nanoparticle.peak] + list(space_px)[::-1])
-                i = 1
-                for epx in extreme_pxs:
-                    if epx[0] <= px[i] <= epx[1]:
-                        pass
-                    else:
-                        if  px[i] < epx[0]:
-                            epx[0] = px[i]
-                        elif  px[i] > epx[1]:
-                            epx[1] = px[i]
-                    i += 1
-            
-            dy = extreme_pxs[0][1]-extreme_pxs[0][0]+1           
-            dx = extreme_pxs[1][1]-extreme_pxs[1][0]+1
-                        
-            measures = measure_new(raw, mask, [dx, dy])
-            
+#            npm = nanoparticle.mask_for_characterization
+
+                npm = np.squeeze(np_mask)
+                
+                img = np.zeros(raw.shape)
+                contour = npm - np.array([[lx, ly] for i in range(npm.shape[0])])
+                cv2.fillPoly(img, [contour], color = 1)
+                cv2.drawContours(img, [contour], 0, 0, 1)
+                mask = img == 1
+          
+                dy = np.max(npm[:, 1]) - np.min(npm[:, 1]) + 1
+                dx = np.max(npm[:, 0]) - np.min(npm[:, 0]) + 1
+                
+                results = measure_new(raw, mask, [dx, dy])
+                all_measures.append(results)
+                all_contrast.append(np.abs(results[2]))
+                i += 1
+                
+            measures = all_measures[np.argmax(all_contrast)]
+
             nanoparticle.size = measures[:2]
             nanoparticle.contrast = measures[2]
             nanoparticle.intensity = measures[4]
-            
+        
             
             if save:
                 if not os.path.isdir(self.folder + FOLDER_EXPORTS_NP):

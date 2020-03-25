@@ -26,12 +26,17 @@ def measure_new(raw, mask_np, sizes):
 
     contrast = int_np_norm_px / int_bg_px
     sizes = [s*SCALE for s in sizes]
+     
+    out = sizes + [contrast, int_np_norm*1e3, int_np_norm_px*1e3, int_bg_px*1e3, std*1e3]
     
+    for i in range(len(out)):
+        if m.isnan(out[i]):
+            out[i] = 0
 #    fig, ax = plt.subplots()
 #    ax.imshow(raw)
 #    ax.imshow(mask_np, alpha = 0.5)      
     
-    return sizes + [contrast, int_np_norm*1e3, int_np_norm_px*1e3, int_bg_px*1e3, std*1e3]
+    return out
 
 def visualize_and_save(raw, measures, name):
 #    fig, ax = plt.subplots()
