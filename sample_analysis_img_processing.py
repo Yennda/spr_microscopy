@@ -36,7 +36,7 @@ video.make_corr()
 
 #video.img_process_alpha(3.5, dip = -0.003, noise_level = 0.001)
 #video.image_process_beta(threshold = 100)    #750    
-video.image_process_gamma(threshold = 60)  
+video.image_process_gamma(threshold = 44)  
 video.characterize_nps(save = False)
 video.exclude_nps([1.7], exclude = True)
 video.statistics()
@@ -50,5 +50,5 @@ video.explore()
 
 video.histogram()
 
-print(video.np_count_integral[-1])
+print(video.info)
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))

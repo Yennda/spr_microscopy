@@ -80,6 +80,8 @@ class Video(object):
         self.show_stats = False
         self.show_mask = True
         
+        self.info = '='*60 + '\nINFO:\n'
+        
     def __iter__(self):
         self.n = -1
         self.MAX = self.shape[2] - 1
@@ -130,6 +132,9 @@ class Video(object):
         else:
             return self.__toggle
         
+    def info_add(self, text):
+        self.info += '{}\n'.format(text)
+        
     def loadData(self):
         self.__video_stats = self.loadBinVideoStats()
         self._video['raw'] = self.loadBinVideo()
@@ -165,7 +170,7 @@ class Video(object):
         out = np.zeros(sh)
         out[:, :, :2*k] = np.zeros((sh[0], sh[1], 2*k))
         
-        print('Computing the differential image') 
+        print('Differential image') 
         
         for i in range(2*k, sh[-1]):   
             print('\r\t{}/ {}'.format(i+1, self.length), end="")
@@ -184,7 +189,7 @@ class Video(object):
         out[:, :, 0] = np.zeros(sh[0:2])
         reference = np.sum(self._video['raw'][:,:,self.ref_frame: self.ref_frame + k], axis=2)/k
         
-        print('Computing the integral img')
+        print('Integral img')
         
         for i in range(1, sh[-1]):
             print('\r\t{}/ {}'.format(i+1, self.length), end="")
@@ -197,9 +202,9 @@ class Video(object):
     def process_corr(self):
         if type(self.idea3d) == type(None):
             raise ValueError('The image of NP pattern not defined.') 
-        print('Computing the correlation img')
+        print('Correlation')
         out = sc.signal.correlate(self._video['diff'], self.idea3d, mode = 'same')*1e5
-        print(' DONE')
+        print('\tDONE')
         return out
         
     def process_mask_image(self):
@@ -255,7 +260,7 @@ class Video(object):
     def process_fn(self, fn):      
         i = 0
         out = []
-        print('Computing the statistics')
+        print('Statistics')
         for v in self.video_from(0):
             out.append(fn(v))
             i += 1
@@ -371,7 +376,7 @@ class Video(object):
                 img_type.append(it)
        
         for it in img_type:
-            print('Filtering fouriere frequencies in {}'.format(it))
+            print('Fourier filter {}'.format(it))
             
             for i in range(self.length):
                 print('\r\t{}/ {}'.format(i+1, self.length), end="")    
@@ -660,9 +665,9 @@ class Video(object):
                     else:
                         omitted += 1
                     number += 1
-
-        print("Dots number: {}".format(number))
-        print("Fit fails: {}".format(fit_failed))
+        self.info_add("AR GAMMA:")
+        self.info_add("Dots number: {}".format(number))
+        self.info_add("Fit fails: {}".format(fit_failed))
 #        print("Omitted: {}".format(omitted))
 
         self.mask = self.process_mask()  
@@ -759,8 +764,7 @@ class Video(object):
             for f in range(self.length):
                 self.np_count_present[f] = len(self.frame_np_ids[f])
                 
-#            for nanoparticle in self.np_database:
-#                self.np_count_first_occurance[nanoparticle.first_frame]+=1
+
             already_counted = set()    
             for f in range(self.length):
                 for np_id in self.frame_np_ids[f]:      
@@ -769,7 +773,8 @@ class Video(object):
                         already_counted.add(np_id)
                 
             self.np_count_integral = [sum(self.np_count_first_occurance[:i+1]) for i in range(len(self.np_count_first_occurance))]
-                
+            self.info_add("NP count: {}".format(self.np_count_integral[-1]))    
+            
             np_count = self.np_count_present
     
             cut_std = self.stats_std[self.k_diff*3:]
@@ -824,7 +829,7 @@ class Video(object):
         
         
         
-        print(
+        self.info_add(
                 '''
 5 x sigma = {:.02f}
 6 x sigma = {:.02f}
@@ -942,8 +947,8 @@ threshold = {}
 #                    else:
 #                        self.np_database[np_id].color = tl.hex_to_list(green)
 #                    excluded.add(np_id)
-                    
-        print('Number of excluded nps: {}'.format(len(excluded)))
+        self.info_add('EXCLUDE NPS:')       
+        self.info_add('Number of excluded nps: {}'.format(len(excluded)))
            
     def save_idea(self, name):
         if not os.path.isdir(self.folder + FOLDER_IDEAS):
@@ -1302,8 +1307,8 @@ threshold = {}
             
             if len(self.np_database) > 0:              
                 np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
-                np_plot.plot(self.np_count_present, linewidth=1, color=black, label='integral count', ls=':')  
-                np_plot.plot(self.np_count_integral, linewidth=1, color=black, label='count in frame')
+                np_plot.plot(self.np_count_present, linewidth=1, color=black, label='count in frame', ls=':')  
+                np_plot.plot(self.np_count_integral, linewidth=1, color=black, label='integral count')
 
                 validity_plot.plot(self.validity, color = red, label = 'validity')
                 validity_plot.plot([np.average(self.validity)*2 for i in range(self.length)], color = red, label = 'validity, 2avg', ls=':')
