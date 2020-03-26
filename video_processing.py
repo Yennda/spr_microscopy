@@ -742,6 +742,7 @@ class Video(object):
                     )[-2][: -1]      
         
             for pattern in patterns:
+                
                 for p in pattern:
                     self.px_for_image_mask.append(
                             tuple([f] + 
