@@ -4,6 +4,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib.widgets import RectangleSelector
 
 from PIL import Image
 import tools
@@ -52,6 +53,38 @@ def visualize_and_save(raw, measures, name):
 
     with open(name, "a+", encoding="utf-8") as f:
         f.write('{:.02f}\t{:.02f}\t{}\t{}\t{}\t{}\t{}\n'.format(*measures))
+        
+def select_idea(raw):
+    def line_select_callback(eclick, erelease):
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+        print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
+        print(" The button you used were: %s %s" % (eclick.button, erelease.button))
+
+    def toggle_selector(event):
+        print(' Key pressed.')
+        if event.key in ['X', 'x'] and toggle_selector.RS.active:
+            print(' RectangleSelector deactivated.')
+            toggle_selector.RS.set_active(False)
+        if event.key in ['A', 'a'] and not toggle_selector.RS.active:
+            print(' RectangleSelector activated.')
+            toggle_selector.RS.set_active(True)
+
+    fig, ax = plt.subplots()
+    img = ax.imshow(
+            raw,
+            cmap='gray'
+            )
+    
+    toggle_selector.RS = RectangleSelector(ax, line_select_callback,
+                                       drawtype='box', useblit=True,
+                                       button=[1, 3],  # don't use middle button
+                                       minspanx=5, minspany=5,
+                                       spancoords='pixels',
+                                       interactive=True)
+    
+    plt.connect('key_press_event', toggle_selector)
+    
 
 def stats(raw, p=False):
     avg = np.average(raw)

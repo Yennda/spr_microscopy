@@ -11,13 +11,14 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
 import matplotlib.font_manager as fm
+from matplotlib.widgets import RectangleSelector
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from PIL import Image
 from skimage.feature import peak_local_max
 from scipy.optimize import curve_fit
 
-from np_analysis import np_analysis, is_np, measure_new, visualize_and_save
+from np_analysis import select_idea, is_np, measure_new, visualize_and_save
 import image_processing as ip
 import tools as tl
 from global_var import *
@@ -44,8 +45,7 @@ class Video(object):
         self.rng = [-1, 1]
         self.time_info = None
 
-        self.np_number=0
-        self.ref_frame=0
+        self.ref_frame = 0
         self.k_diff = None
         self.k_int = None
         
@@ -80,7 +80,7 @@ class Video(object):
         self.show_stats = False
         self.show_mask = True
         
-        self.info = '='*60 + '\nINFO:\n'
+        self.info = '=' * 60 + '\nINFO:\n'
         
     def __iter__(self):
         self.n = -1
@@ -97,7 +97,9 @@ class Video(object):
     @property
     def video(self):
         if len(self._img_type) == 1:
-            return np.swapaxes(np.swapaxes(self._video[self._img_type[0]], 0, 2), 1, 2)
+            return np.swapaxes(
+                    np.swapaxes(self._video[self._img_type[0]], 0, 2), 1, 2
+                    )
         else:
             self.__toggle = not self.__toggle
             return np.swapaxes(np.swapaxes(
@@ -150,6 +152,7 @@ class Video(object):
         video_width = int(stats[1])
         video_hight = int(stats[2])
         video_fps = float(stats[4]) * int(stats[5])
+        
         return [video_fps, [video_width, video_hight, video_length]]
 
     def loadBinVideo(self):
@@ -168,14 +171,21 @@ class Video(object):
     def process_diff(self, k = 1):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
-        out[:, :, :2*k] = np.zeros((sh[0], sh[1], 2*k))
+        out[:, :, :2 * k] = np.zeros((sh[0], sh[1], 2*k))
         
         print('Differential image') 
         
-        for i in range(2*k, sh[-1]):   
-            print('\r\t{}/ {}'.format(i+1, self.length), end="")
-            current = np.sum(self._video['raw'][:,:,i - k+1: i+1], axis=2)/k
-            previous = np.sum(self._video['raw'][:,:,i - 2*k+1: i - k+1], axis=2)/k
+        for i in range(2 * k, sh[-1]):   
+            print('\r\t{}/ {}'.format(i + 1, self.length), end = "")
+            current = np.sum(
+                    self._video['raw'][:, :, i - k + 1: i + 1], 
+                    axis = 2
+                    ) / k
+            previous = np.sum(
+                    self._video['raw'][:, :, i - 2 * k + 1: i - k + 1], 
+                    axis = 2
+                    ) / k
+                    
             out[:, :, i] = current - previous
             
         self.k_diff = k
@@ -186,13 +196,16 @@ class Video(object):
     def process_int(self, k = 1):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
-        out[:, :, 0] = np.zeros(sh[0:2])
-        reference = np.sum(self._video['raw'][:,:,self.ref_frame: self.ref_frame + k], axis=2)/k
+        out[:, :, 0] = np.zeros(sh[0: 2])
+        reference = np.sum(
+                self._video['raw'][:, :, self.ref_frame: self.ref_frame + k], 
+                axis = 2
+                ) / k
         
-        print('Integral img')
+        print('Integral image')
         
         for i in range(1, sh[-1]):
-            print('\r\t{}/ {}'.format(i+1, self.length), end="")
+            print('\r\t{}/ {}'.format(i + 1, self.length), end = "")
             out[:, :, i] = self._video['raw'][:, :, i] - reference
         self.k_int = k
             
@@ -201,9 +214,16 @@ class Video(object):
     
     def process_corr(self):
         if type(self.idea3d) == type(None):
-            raise ValueError('The image of NP pattern not defined.') 
+            raise ValueError('The image of the NP pattern not defined.') 
+            
         print('Correlation')
-        out = sc.signal.correlate(self._video['diff'], self.idea3d, mode = 'same')*1e5
+        
+        out = sc.signal.correlate(
+                self._video['diff'], 
+                self.idea3d, 
+                mode = 'same'
+                ) * 1e5
+                
         print('\tDONE')
         return out
         
@@ -218,24 +238,6 @@ class Video(object):
             volume_mask[f, y, x, 3] = 0.5
         return volume_mask     
     
-#        tri = [ip.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
-#        for pm in self.px_for_image_mask:
-#            f, y, x = pm
-#            if f+k_diff > self.shape[0]:
-#                end = self.shape[0]
-#            else:
-#                end = f+k_diff
-#            volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
-#            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-#            if f+k_diff > self.shape[0]:
-#                end = self.shape[0]
-#            else:
-#                end = f+k_diff
-#            volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
-#            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
-#            
-#        return volume_mask
-    
     def process_mask(self):
         volume_mask = np.zeros(self.shape)
 
@@ -244,7 +246,7 @@ class Video(object):
 
         return volume_mask
     
-    def process_arbitrary(self, name, k=1):
+    def process_arbitrary(self, name, k = 1):
         if name == 'diff':
             out = self.process_diff(k)
         elif name == 'int':
@@ -255,16 +257,19 @@ class Video(object):
             out = self._video['raw']
         else:
             out = None
+            
         return out
     
     def process_fn(self, fn):      
         i = 0
         out = []
         print('Statistics')
+        
         for v in self.video_from(0):
             out.append(fn(v))
             i += 1
-            print('\r\t{}/ {}'.format(i+1, self.shape[0]), end="")
+            print('\r\t{}/ {}'.format(i + 1, self.shape[0]), end = "")
+            
         print(' DONE')
         return np.array(out)
 
@@ -272,7 +277,6 @@ class Video(object):
         self.stats_std = self.process_fn(np.std)
         self.stats_min = self.process_fn(np.min)
         self.stats_max = self.process_fn(np.max)
-        
         self.show_stats = True
         
     def make_diff(self, k = 1):
@@ -302,13 +306,19 @@ class Video(object):
             
         """
         if len(img_type) > 2:
-            raise ValueError('Only 2 image types can be processed. You added {}.'.format(len(img_type)))
+            raise ValueError(
+                    'Only 2 image types can be processed. You added {}.'
+                    .format(len(img_type)))
             
         if self._video[img_type[0]] is None:
-            self._video[img_type[0]] = self.process_arbitrary(img_type[0], k[0])
+            self._video[img_type[0]] = (
+                    self.process_arbitrary(img_type[0], k[0])
+                    )
             
         if self._video[img_type[1]] is None:
-            self._video[img_type[1]] = self.process_arbitrary(img_type[1], k[1])
+            self._video[img_type[1]] = (
+                    self.process_arbitrary(img_type[1], k[1])
+                    )
             
         self._img_type = img_type
         self.rng = [-0.01, 0.01]
@@ -325,45 +335,38 @@ class Video(object):
             no return
             
         """
-        out=np.ndarray(list(self._video['raw'].shape[0:2])+[self._video['raw'].shape[2]//n-1])
+        out=np.ndarray(
+                list(self._video['raw'].shape[0: 2])+
+                [self._video['raw'].shape[2] // n - 1]
+                )
+        
         t_out=[]
-        for i in range(n,self._video['raw'].shape[-1]//n*n,n):
-            out[:,:,i//n-1] = np.average(self._video['raw'][:,:,i-n: i], axis = 2)
-            t_time=self.time_info[i][0]
+        
+        for i in range(n,self._video['raw'].shape[-1] // n * n, n):
+            out[:, :, i // n - 1] = np.average(
+                    self._video['raw'][:, :, i - n: i], 
+                    axis = 2
+                    )
+            
+            t_time = self.time_info[i][0]
             t_period = 0
             
-            for t in self.time_info[i-n: i]:
+            for t in self.time_info[i - n: i]:
                 t_period += t[1]
                 
-            t_time+=t_period
+            t_time += t_period
             t_out.append([t_time, t_period])
             
         self._video['raw'] = out
         self.time_info=t_out
         self.refresh()
-
-    def time_fouriere(self):
-        middle = int(self._video.shape[2] / 2)
-        out = np.zeros(self._video.shape)
-        for i in range(self._video.shape[0]):
-            print('done {}/{}'.format(i, self._video.shape[0]))
-            for j in range(self._video.shape[1]):
-                signal = self._video[i, j, :]
-                fspec = np.fft.fft(signal)
-                fspec[middle - 5:middle + 5] = 0
-
-                out[i, j, :] = np.fft.ifft(fspec)
-            if not self.show_original:
-                self._video_new = out
-            else:
-                self._video = out
                 
     def image_properties(self, it = 'int', level = 20):
         f = np.fft.fft2(self._video[it][:, :, -1])
         magnitude_spectrum = 20 * np.log(np.abs(f))
         mask = np.real(magnitude_spectrum) > level     
         
-        std = np.std(self.video[-20:-1,:,:])
+        std = np.std(self.video[-20: -1, :, :])
         four_ampli = sum(magnitude_spectrum[mask])
                
         return four_ampli
@@ -379,22 +382,26 @@ class Video(object):
             print('Fourier filter {}'.format(it))
             
             for i in range(self.length):
-                print('\r\t{}/ {}'.format(i+1, self.length), end="")    
+                print('\r\t{}/ {}'.format(i + 1, self.length), end = "")   
                 f = np.fft.fft2(self._video[it][:, :, i])
-                try:
-                    magnitude_spectrum = 20 * np.log(np.abs(f))
-                except:
-                    pass
+                magnitude_spectrum = 20 * np.log(np.abs(f))
+
                 mask = np.real(magnitude_spectrum) > level
                 f[mask] = 0
                   
                 img_back = np.fft.ifft2(f)
                 self._video[it][:, :, i] = np.real(img_back)
+                
             print(' DONE')
         
         if show:
             fig_four, axes_four = plt.subplots()
-            axes_four.imshow(magnitude_spectrum, cmap = 'gray', vmin=-50, vmax=50)
+            axes_four.imshow(
+                    magnitude_spectrum, 
+                    cmap = 'gray', 
+                    vmin=-50, 
+                    vmax=50
+                    )
             
         
     def alpha_detect_nps(self, px):
@@ -407,20 +414,36 @@ class Video(object):
             if (f, y, x) in pixels_in_np:
                 continue
             
-            found_pxs = self.mask[f-3:f+4, y-1:y+2, x-1:x+2].nonzero()
+            found_pxs = self.mask[
+                    f - 3 : f + 4, 
+                    y - 1 : y + 2, 
+                    x - 1 : x + 2
+                    ].nonzero()
 
             for i in range(len(found_pxs[0])):
-                points_to_do.add((f+found_pxs[0][i]-3, y+found_pxs[1][i]-1, x+found_pxs[2][i]-1))
+                points_to_do.add(
+                        (
+                                f+found_pxs[0][i] - 3, 
+                                y+found_pxs[1][i] - 1, 
+                                x+found_pxs[2][i] - 1
+                                )
+                        )
                 
             pixels_in_np.add((f, y, x))
             
-        npf=int(round(np.average([p[0] for p in pixels_in_np])))
-        npy=np.average([p[1] for p in pixels_in_np])
-        npx=np.average([p[2] for p in pixels_in_np])
+        npf = int(round(np.average([p[0] for p in pixels_in_np])))
+        npy = np.average([p[1] for p in pixels_in_np])
+        npx = np.average([p[2] for p in pixels_in_np])
             
         return pixels_in_np, (npf, npy, npx)
         
-    def img_process_alpha(self, threshold = 15, dip = -0.003, noise_level = 0.001):
+    def img_process_alpha(
+            self, 
+            threshold = 15, 
+            dip = -0.003, 
+            noise_level = 0.001
+            ):
+        
         if self._img_type != 'diff':
             print('Processes only the differential image. Use make_diff method first.')
             return
@@ -442,35 +465,64 @@ class Video(object):
             for y in range(self.shape[1]):
                 
                 if np.abs(self.video[:, y, x]).max() > noise_level:
-                    corr_out = ip.correlation_temporal(self.video[:, y, x], self.k_diff, dip, threshold)
+                    corr_out = ip.correlation_temporal(
+                            self.video[:, y, x], 
+                            self.k_diff, 
+                            dip, 
+                            threshold
+                            )
                     
                     if len(corr_out['bind'][0]) != 0:
                         for f in corr_out['bind'][0]:
                             self.candidates.add((f, y, x))
                     else:
-                        skipped_peak+=1
+                        skipped_peak += 1
                 else:
-                    skipped_corr+=1
+                    skipped_corr += 1
                     
-                i+=1
-                print('\r\t{}/ {}, remains {:.2f} s'.format(i+1, all_processes, (tt.time()-time)/i*(all_processes-i)), end="") 
+                i += 1
+                print('\r\t{}/ {}, remains {:.2f} s'.format(
+                        i + 1, 
+                        all_processes, 
+                        (tt.time()-time) / i * (all_processes - i)), 
+                        end = ""
+                        ) 
                 
         print(' DONE')
-        print('#PXS excluded from correlation: {} / {}, {:.1f} %'.format(skipped_corr, all_processes, skipped_corr/all_processes*100))
-        print('#PXS excluded from peaks: {} / {}, {:.1f} %'.format(skipped_peak, all_processes-skipped_corr, skipped_peak/(all_processes-skipped_corr)*100))
+        print('#PXS excluded from correlation: {} / {}, {:.1f} %'
+              .format(
+                      skipped_corr, 
+                      all_processes, 
+                      skipped_corr/all_processes * 100
+                      ))
+        print('#PXS excluded from peaks: {} / {}, {:.1f} %'
+              .format(
+                      skipped_peak, 
+                      all_processes-skipped_corr, 
+                      skipped_peak/(all_processes-skipped_corr) * 100
+                      ))
         
         self.mask = self.process_mask(self.candidates)
 
-        print('Connecting the detected pxs into patterns.', end="")
+        print('Connecting the detected pxs into patterns.', end = "")
+        
         np_id = 0
+        
         while len(self.candidates) != 0:
-            pixels_in_np, position = self.alpha_detect_nps(self.candidates.pop())
+            pixels_in_np, position = self.alpha_detect_nps(
+                    self.candidates.pop()
+                    )
             
-            nanoparticle = NanoParticle(np_id, position, pixels_in_np, method = 'alpha')
+            nanoparticle = NanoParticle(
+                    np_id, position, 
+                    pixels_in_np, 
+                    method = 'alpha'
+                    )
+            
             self.np_database.append(nanoparticle)
             
-            for f in range(-self.k_diff//2, self.k_diff//2):
-                self.frame_np_ids[position[0]+f].append(np_id)
+            for f in range(- self.k_diff // 2, self.k_diff // 2):
+                self.frame_np_ids[position[0] + f].append(np_id)
             
             self.candidates.difference_update(pixels_in_np)
             np_id += 1
@@ -514,7 +566,11 @@ class Video(object):
         go = f + 1 < self.length
         last_point = copy.deepcopy(central_point)
         while go:
-            neighbors_indeces = self.mask[f + i, y-dys:y+dys, x-dx:x+dx].nonzero() 
+            neighbors_indeces = self.mask[
+                    f + i, 
+                    y - dys : y + dys, 
+                    x - dx : x + dx
+                    ].nonzero() 
 
             if len(neighbors_indeces[0]) != 0:   
                 neighbors = [np.array([f + i, y , x]) - dist + np.array(
@@ -525,13 +581,15 @@ class Video(object):
                 closest_point = neighbors[np.argmin(norms)]
                 last_point = copy.deepcopy(closest_point)    
                 positions_in_np.append(tuple(closest_point))
+                
                 for n in neighbors:
                     points_excluded.add(tuple(n))
             else:
                 go = False
                 
             i += 1    
-            if f+i >= self.length:
+            
+            if f + i >= self.length:
                 go = False
                            
         nanoparticle = NanoParticle(0, positions_in_np)  
@@ -545,7 +603,11 @@ class Video(object):
         self.candidates = list()
 
         for f in range(self.length):
-            coordinates = peak_local_max(self._video['corr'][:, :, f], threshold_abs = threshold)
+            coordinates = peak_local_max(
+                    self._video['corr'][:, :, f], 
+                    threshold_abs = threshold
+                    )
+            
             for c in coordinates:
                 y, x = c
                 self.candidates.append((f, y, x))
@@ -555,7 +617,9 @@ class Video(object):
         
         np_id = 0
         while len(self.candidates) != 0:
-            nanoparticle, points_excluded = self.beta_peaks_processing(self.candidates.pop(0))
+            nanoparticle, points_excluded = self.beta_peaks_processing(
+                    self.candidates.pop(0)
+                    )
             nanoparticle.id = np_id
             
             for pe in points_excluded:
@@ -565,7 +629,10 @@ class Video(object):
                     
             self.np_database.append(nanoparticle)
             
-            for f in range(nanoparticle.positions[0][0], nanoparticle.positions[-1][0]+1):
+            for f in range(
+                    nanoparticle.positions[0][0], 
+                    nanoparticle.positions[-1][0]+1
+                    ):
                 self.frame_np_ids[f].append(np_id)
             
             np_id += 1
@@ -583,7 +650,7 @@ class Video(object):
         points_excluded.add(px)
         
         dist = [0] + list(self.idea3d.shape[:2])
-        dist = [d//2 for d in dist]
+        dist = [d // 2 for d in dist]
         df, dy, dx = dist
         dys = dy
         dxs = dx
@@ -597,13 +664,25 @@ class Video(object):
         i = 1         
         go = f + 1 < self.length
         last_point = px
+        
         while go:
-            neighbors_indeces = self.mask[f + i, y-dys:y+dy, x-dxs:x+dx].nonzero() 
+            neighbors_indeces = self.mask[
+                    f + i, 
+                    y - dys : y + dy, 
+                    x - dxs : x + dx
+                    ].nonzero() 
 
             if len(neighbors_indeces[0]) != 0:   
-                neighbors = [np.array([f + i, y , x]) - dist + np.array(
-                    [0, neighbors_indeces[0][j], neighbors_indeces[1][j]]
-                    ) for j in range(len(neighbors_indeces[0]))]
+                neighbors = [
+                        np.array([f + i, y , x]) - 
+                        dist + 
+                        np.array([
+                                0, 
+                                neighbors_indeces[0][j], 
+                                neighbors_indeces[1][j]
+                                ]) 
+                for j in range(len(neighbors_indeces[0]))
+                ]
     
                 norms = [np.linalg.norm(last_point - n) for n in neighbors]
                 closest_point = neighbors[np.argmin(norms)]
@@ -614,16 +693,21 @@ class Video(object):
                 go = False
                 
             i += 1    
+            
             if f+i >= self.length:
                 go = False
                 
         np_masks = []        
+        
         for position in positions_in_np:
             np_masks.append(self._dict_of_patterns[position])
             
-#        peak = np.argmax([self.video[position] for position in positions_in_np])
-#        nanoparticle = NanoParticle(0, positions_in_np, peak = positions_in_np[0][0] + peak, masks = np_masks)  
-        nanoparticle = NanoParticle(0, positions_in_np, masks = np_masks)         
+        nanoparticle = NanoParticle(
+                0, 
+                positions_in_np, 
+                masks = np_masks
+                )         
+        
         return nanoparticle, points_excluded
           
     def image_process_gamma(self, threshold = 100):
@@ -643,11 +727,25 @@ class Video(object):
         
         for f in range(self.length):
             gray = self.mask[:, :, f].astype(np.uint8)    
-            th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-            patterns = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)[-2][:-1]      
+            th, threshed = cv2.threshold(
+                    gray, 
+                    100, 
+                    255, 
+                    cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU
+                    )
+            
+            patterns = cv2.findContours(
+                    threshed, 
+                    cv2.RETR_LIST, 
+                    cv2.CHAIN_APPROX_NONE
+                    )[-2][: -1]      
         
             for pattern in patterns:
-                [self.px_for_image_mask.append(tuple([f] + p[0, ::-1].tolist())) for p in pattern]
+                for p in pattern:
+                    self.px_for_image_mask.append(
+                            tuple([f] + 
+                                  p[0,: : -1].tolist())
+                            )
                 
                 if minimal_area < cv2.contourArea(pattern):
                     try:
@@ -676,7 +774,9 @@ class Video(object):
         
         np_id = 0
         while len(self.candidates) != 0:
-            nanoparticle, points_excluded = self.gamma_peaks_processing(self.candidates.pop(0))
+            nanoparticle, points_excluded = self.gamma_peaks_processing(
+                    self.candidates.pop(0)
+                    )
             nanoparticle.id = np_id
             
             for pe in points_excluded:
@@ -686,7 +786,10 @@ class Video(object):
                     
             self.np_database.append(nanoparticle)
             
-            for f in range(nanoparticle.positions[0][0], nanoparticle.positions[-1][0]+1):
+            for f in range(
+                    nanoparticle.positions[0][0], 
+                    nanoparticle.positions[-1][0] + 1
+                    ):
                 self.frame_np_ids[f].append(np_id)
             
             np_id += 1
@@ -722,8 +825,12 @@ class Video(object):
                             ) < 0:
                         
                         gap_position = [tuple(
-                                (np.array(enp.positions[-1]) + np.array(bnp.positions[0]))//2
+                                (
+                                        np.array(enp.positions[-1]) + 
+                                        np.array(bnp.positions[0])
+                                        )//2
                                 )]
+                                
                         gap_mask = [enp.masks[-1]]
                         
                         nanoparticle = NanoParticle(
@@ -734,18 +841,21 @@ class Video(object):
                         enp.good = False
                         bnp.good - False
                         
-                        for f in range(nanoparticle.first_frame, nanoparticle.last_frame+1):
+                        for f in range(
+                                nanoparticle.first_frame, 
+                                nanoparticle.last_frame + 1
+                                ):
+                            
                             if f <= enp.last_frame:
                                 try:
                                     self.frame_np_ids[f].remove(enp.id)
                                 except:
-#                                    print('removal failed, enp {}'.format(enp.id))
                                     pass
+                                
                             if f >= bnp.first_frame:
                                 try:
                                     self.frame_np_ids[f].remove(bnp.id)
                                 except:
-#                                    print('removal failed, bnp {}'.format(bnp.id))
                                     pass
                             self.frame_np_ids[f].append(last_np_id)
                             
@@ -764,18 +874,20 @@ class Video(object):
             for f in range(self.length):
                 self.np_count_present[f] = len(self.frame_np_ids[f])
                 
-
-            already_counted = set()    
+            already_counted = set()
+            
             for f in range(self.length):
-                for np_id in self.frame_np_ids[f]:      
+                
+                for np_id in self.frame_np_ids[f]:  
+                    
                     if np_id not in already_counted:
                         self.np_count_first_occurance[
                                 self.np_database[np_id].first_frame
-                                ]+=1
+                                ] += 1
                         already_counted.add(np_id)
                                         
             self.np_count_integral = [
-                    sum(self.np_count_first_occurance[:i+1]) 
+                    sum(self.np_count_first_occurance[: i + 1]) 
                     for i in range(len(self.np_count_first_occurance))
                     ]
             self.info_add('\n--statistics--')
@@ -789,7 +901,10 @@ class Video(object):
                     break
                 
             for i in range(1, len(self.np_count_first_occurance)):
-                if self.np_count_integral[-i] < self.np_count_integral[-1] - 10:
+                if self.np_count_integral[-i] < (
+                        self.np_count_integral[-1] - 
+                        10
+                        ):
                     end = len(self.np_count_first_occurance) - i
                     break
             
@@ -798,8 +913,13 @@ class Video(object):
                     self.np_count_integral[start]
                     )/(end - start)*100
             
-            self.info_add('Rate per 100 frames: {:.01f}'.format(binding_rate))
-            self.info_add('Compared to reference: {:.01f} %'.format(binding_rate/95*100))
+            self.info_add('Rate per 100 frames: {:.01f}'.format(
+                    binding_rate)
+            )
+            
+            self.info_add('Compared to reference: {:.01f} %'.format(
+                    binding_rate/95*100)
+            )
             
             
             np_count = self.np_count_present
@@ -808,10 +928,16 @@ class Video(object):
             cut_np_count = np_count[self.k_diff*3:]  
             
             norm_std = (cut_std-min(cut_std))/max(cut_std)
-            norm_np_count = (np.array(cut_np_count)-min(cut_np_count))/max(cut_np_count)
+            norm_np_count = (
+                    np.array(cut_np_count) -
+                    min(cut_np_count)
+                    )/max(cut_np_count)
             
     #        difference = norm_std - norm_np_count
-            self.validity = np.concatenate((np.array([0]*self.k_diff*3), np.multiply(norm_np_count, norm_std)))
+            self.validity = np.concatenate(
+                    (np.array([0]*self.k_diff*3), 
+                     np.multiply(norm_np_count, norm_std))
+                    )
             
             self.valid = self.validity < 2*np.average(self.validity)
             
@@ -828,10 +954,21 @@ class Video(object):
         fig, ax = plt.subplots()
         ax.set_title(self.file)
         
-        n, bins, patches = ax.hist(np.matrix.flatten(self.video_from('corr')), 1000, color = blue)
+        n, bins, patches = ax.hist(
+                np.matrix.flatten(self.video_from('corr')), 
+                1000, 
+                color = blue
+                )
         
         bin_centers = (bins[:-1] + bins[1:])/2
-        coeff, var_matrix = curve_fit(gauss, bin_centers, n, p0=p0)
+        
+        coeff, var_matrix = curve_fit(
+                gauss, 
+                bin_centers, 
+                n, 
+                p0=p0
+                )
+        
         A, mu, sigma = coeff
         sigma = np.abs(sigma)
         
@@ -844,24 +981,21 @@ class Video(object):
         
         sigma2 = mpatches.Rectangle((sigma*5, 0), 1, height, color=red) 
         ax.add_patch(sigma2)
-#        ax.text(sigma*5, 0, '$5\sigma$', transform=ax.transAxes, fontsize=14, color = red) 
+
         
         sigma3 = mpatches.Rectangle((sigma*6, 0), 1, height, color=red)  
         ax.add_patch(sigma3)
         
         threshold = mpatches.Rectangle((self.threshold, 0), 1, height, color=black) 
         ax.add_patch(threshold)
-            
-        
-        
         
         self.info_add('\n--histogram--')
         self.info_add(
 '''5 x sigma = {:.02f}
 6 x sigma = {:.02f}
 threshold = {}'''.format(
-                5*sigma, 
-                6*sigma,
+                5 * sigma, 
+                6 * sigma,
                 self.threshold
                 )
                 )
@@ -897,14 +1031,17 @@ threshold = {}'''.format(
                 else:
                     rx = x + size
                               
-                raw = self.video_from('diff')[f, ly:ry, lx: rx]
+                raw = self.video_from('diff')[f, ly: ry, lx: rx]
             
 #            npm = nanoparticle.mask_for_characterization
 
                 npm = np.squeeze(np_mask)
                 
                 img = np.zeros(raw.shape)
-                contour = npm - np.array([[lx, ly] for i in range(npm.shape[0])])
+                contour = npm - np.array([
+                        [lx, ly] 
+                        for i in range(npm.shape[0])
+                        ])
                 cv2.fillPoly(img, [contour], color = 1)
                 cv2.drawContours(img, [contour], 0, 0, 1)
                 mask = img == 1
@@ -919,20 +1056,28 @@ threshold = {}'''.format(
                 
             measures = all_measures[np.argmax(all_contrast)]
 
-            nanoparticle.size = measures[:2]
+            nanoparticle.size = measures[: 2]
             nanoparticle.contrast = measures[2]
             nanoparticle.intensity = measures[4]
         
             
             if save:
+                
                 if not os.path.isdir(self.folder + FOLDER_EXPORTS_NP):
                     os.mkdir(self.folder + FOLDER_EXPORTS_NP)
                 
-                name = '{}{}/{}_info.txt'.format(self.folder, FOLDER_EXPORTS_NP, self.file)  
+                name = '{}{}/{}_info.txt'.format(
+                        self.folder, 
+                        FOLDER_EXPORTS_NP, 
+                        self.file
+                        )  
+                
                 if not save_all:
                     save_all = tl.before_save_file(name)
+                    
                 if save_all:
                     visualize_and_save(raw, measures, name)
+                    
                 else:
                     break
                          
@@ -941,22 +1086,32 @@ threshold = {}'''.format(
                 lambda x: x.contrast,
                 lambda x: x.size[0]
                 ]
-        
         excluded = set()
+        
         for f in range(self.length):
             ids = copy.deepcopy(self.frame_np_ids[f])
             frame_excluded = set()
+            
             for np_id in ids:
+                
                 for i in range(len(thresholds)): 
+                    
                     if np_id in frame_excluded:
                         continue
-                    if method_lambdas[i](self.np_database[np_id]) < thresholds[i]:
+                    
+                    if method_lambdas[i](
+                            self.np_database[np_id]
+                            ) < thresholds[i]:
+                        
                         if exclude:
                             self.frame_np_ids[f].remove(np_id)
                             frame_excluded.add(np_id)
                             self.np_database[np_id].good = False
+                            
                         else:
-                            self.np_database[np_id].color = tl.hex_to_list(green)
+                            self.np_database[np_id].color = tl.hex_to_list(
+                                    green
+                                    )
                             frame_excluded.add(np_id)
                         excluded.add(np_id)
                 
@@ -968,9 +1123,11 @@ threshold = {}'''.format(
             os.mkdir(self.folder + FOLDER_IDEAS)
             
         file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
+        
         if tl.before_save_file(file_name):
             np.save(file_name, self.idea3d)
             print('File saved')
+            
         else:
             print('Could not save the file.')
         
@@ -978,11 +1135,18 @@ threshold = {}'''.format(
         file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
         self.idea3d = np.load(file_name)
                 
-    def explore(self, source='vid'):
+    def choose_idea(self, eclick, erelease):
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+        print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
+        print(" The button you used were: %s %s" % (eclick.button, erelease.button))
         
-
+    def explore(self, source='vid'):
+                
         def frame_info(i):
+            
             if len(self.np_database) !=0:
+                
                 if len(self.frame_np_ids[ax.index]) != 0:
                     return '{}: {}/{}  t= {} s dt= {:.2f} s\nNPs; now: {}, integral: {}'.format(
                         self._img_type[not self._toggle],
@@ -1003,44 +1167,7 @@ threshold = {}'''.format(
                 self.time_info[i][1]
             )
 
-        def mouse_scroll(event):
-            fig = event.canvas.figure
-            ax = fig.axes[0]
-            if event.button == 'down':
-                next_slice(1)
-            elif event.button == 'up':
-                next_slice(-1)
-            fig.canvas.draw()
-
-        def mouse_click(event):
-            if event.button == 3:
-                self.np_number+=1
-                print(self.np_number)
-                fig = event.canvas.figure
-                ax = fig.axes[0]
-                x = int(event.xdata)
-                y = int(event.ydata)
-                raw = ax.volume[ax.index]
-                np_analysis(raw[y - 25: y + 25, x - 25:x + 25], self.folder, self.file)
-
-                p = mpatches.Rectangle((x - 0.5, y - 0.5), 5, 5, color='#FF0000', alpha=0.5)
-                ax.add_patch(p)
-                print('you pressed', event.button, event.xdata, event.ydata)
-                fig.canvas.draw()
-                
-            elif event.dblclick:
-                fig = event.canvas.figure
-                ax = fig.axes[0]
-                x = int((event.xdata + 0.5) // 1)
-                y = int((event.ydata + 0.5) // 1)
-                #                file = open('data.txt', 'a')
-                #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
-                #                file.close()
-                print('------------')
-                print('x = {}'.format(x))
-                print('y = {}'.format(y))
-                ip.correlation_temporal(ax.volume[:, y, x], k_diff=self.k_diff, step=self.dip, threshold=self.threshold,  show=True)
-                
+        
         def next_slice(i):
             ax.index = (ax.index + i) % ax.volume.shape[0]
             img.set_array(ax.volume[ax.index])
@@ -1096,9 +1223,12 @@ threshold = {}'''.format(
 
             # creates the name, appends the rigth numeb at the end
 
-            name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_EXPORTS, self.file,
-                                                                  self.time_info[ax.index][0],
-                                                                  self.time_info[ax.index][1] * 100)
+            name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(
+                    self.folder+FOLDER_EXPORTS, 
+                    self.file,
+                    self.time_info[ax.index][0],
+                    self.time_info[ax.index][1] * 100
+                    )
 
             i = 1
             while os.path.isfile(name + '_{:02d}.png'.format(i)):
@@ -1114,44 +1244,94 @@ threshold = {}'''.format(
             ylim = [int(i) for i in ax.get_ylim()]
 
 #            saves the exact nad precise tiff file
-            pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-            pilimage.save(name + '.tiff')
+            pilimage = Image.fromarray(img.get_array()[
+                    ylim[1]: ylim[0],
+                    xlim[0]: xlim[1]
+                    ])
+            
+#            pilimage.save(name + '.tiff')
             print('File SAVED @{}'.format(name))
 
             img.set_array(ax.volume[ax.index])
             fig.canvas.draw_idle()
+        
+        def mouse_scroll(event):
+            fig = event.canvas.figure
+            ax = fig.axes[0]
             
+            if event.button == 'down':
+                next_slice(1)
+                
+            elif event.button == 'up':
+                next_slice(-1)
+                
+            fig.canvas.draw()
+
+        def mouse_click(event):
+            if event.button == 3:
+                
+                fig = event.canvas.figure
+                ax = fig.axes[0]
+                x = int(event.xdata)
+                y = int(event.ydata)
+                raw = ax.volume[ax.index]
+                select_idea(raw[y - 25: y + 25, x - 25:x + 25], self.folder, self.file)
+
+                p = mpatches.Rectangle(
+                        (x - 0.5, y - 0.5),
+                        5,
+                        5, 
+                        color='#FF0000', 
+                        alpha=0.5
+                        )
+                ax.add_patch(p)
+                fig.canvas.draw()
+                
+            elif event.dblclick:
+                fig = event.canvas.figure
+                ax = fig.axes[0]
+                x = int((event.xdata + 0.5) // 1)
+                y = int((event.ydata + 0.5) // 1)
+                #                file = open('data.txt', 'a')
+                #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
+                #                file.close()
+                print('------------')
+                print('x = {}'.format(x))
+                print('y = {}'.format(y))
+                ip.correlation_temporal(
+                        ax.volume[:, y, x], 
+                        k_diff=self.k_diff, 
+                        step=self.dip, 
+                        threshold=self.threshold,  
+                        show=True
+                        )
+                
         def button_press(event):
             fig = event.canvas.figure
             ax = fig.axes[0]
+            
             if event.key == '6':
-                fig = event.canvas.figure
                 next_slice(10)
                 fig.canvas.draw()
             elif event.key == '4':
-                fig = event.canvas.figure
                 next_slice(-10)
                 fig.canvas.draw()
             elif event.key == '9':
-                fig = event.canvas.figure
                 next_slice(100)
                 fig.canvas.draw()
             elif event.key == '7':
-                fig = event.canvas.figure
                 next_slice(-100)
                 fig.canvas.draw()
             elif event.key == '3':
-                fig = event.canvas.figure
                 next_slice(1)
                 fig.canvas.draw()
             elif event.key == '1':
-                fig = event.canvas.figure
                 next_slice(-1)
                 fig.canvas.draw()
-            elif event.key == 'x':
-                [p.remove() for p in reversed(ax.patches)]
             elif event.key == 't':
+                # Toggle between img types
                 ax.volume = self.video
+                
                 if self._img_type[not self._toggle] == 'corr':
                     img.set_clim(
                             np.min(self.video_from('corr')),
@@ -1159,22 +1339,67 @@ threshold = {}'''.format(
                             )
                 elif self._img_type[not self._toggle] == 'raw':
                     img.set_clim(0, 1)
+                    
                 else:
                     img.set_clim(self.rng[0], self.rng[1])
+                    
                 next_slice(0)
+                fig.canvas.draw()
+            
+            elif event.key == 'd':
+                # Define the NP pattern                
+                xlim = [int(i) for i in ax.get_xlim()]
+                ylim = [int(i) for i in ax.get_ylim()]
+
+                raw_idea = img.get_array()[
+                    ylim[1]: ylim[0],
+                    xlim[0]: xlim[1]
+                    ]
+                
+                def toggle_selector(event):
+                    print(' Key pressed.')
+                    if event.key in ['X', 'x'] and toggle_selector.RS.active:
+                        print(' RectangleSelector deactivated.')
+                        toggle_selector.RS.set_active(False)
+                    if event.key in ['A', 'a'] and not toggle_selector.RS.active:
+                        print(' RectangleSelector activated.')
+                        toggle_selector.RS.set_active(True)
+            
+                fig_idea, ax_idea = plt.subplots()
+                img_idea = ax_idea.imshow(
+                        raw_idea,
+                        cmap='gray'
+                        )
+                
+                toggle_selector.RS = RectangleSelector(ax_idea, self.choose_idea,
+                                                   drawtype='box', useblit=True,
+                                                   button=[1, 3],  # don't use middle button
+                                                   minspanx=5, minspany=5,
+                                                   spancoords='pixels',
+                                                   interactive=True)
+                
+                plt.connect('key_press_event', toggle_selector)
+#                select_idea(raw_idea)
+                
                 fig.canvas.draw()
                 
             elif event.key == 'm':
+                #switch off/on the overlaying graphics
                 if self.show_graphic:
                     img.set_zorder(10)
                     self.show_graphic = False
+                    
                 else:
                     img.set_zorder(0)
                     self.show_graphic = True
+                    
                 fig.canvas.draw()
             elif event.key == 'b':
+                
                 if self.show_detected_all == False:
+                    
                     for frame in self.frame_np_ids[:ax.index+1]:
+                        
                         for np_id in frame:
                             p = mpatches.Circle(
                                     self.np_database[np_id].last_position_xy(), 
@@ -1184,6 +1409,7 @@ threshold = {}'''.format(
                                     alpha = 0.5,
                                     lw = 2)
                             ax.add_patch(p)
+                            
                     self.show_detected_all = True
                     
                 else:
@@ -1192,61 +1418,27 @@ threshold = {}'''.format(
                     
                     
             elif event.key == 'n':
+                
                 if self.show_mask:
                     mask.set_zorder(-1)
                     self.show_mask = False
+                    
                 else:
                     mask.set_zorder(1)
                     self.show_mask = True
                 fig.canvas.draw()
+                
             elif event.key == '5':
                 lim = [i * 1.2 for i in img.get_clim()]
                 img.set_clim(lim)
             elif event.key == '8':
                 lim = [i / 1.2 for i in img.get_clim()]
                 img.set_clim(lim)
-            elif event.key == 'p':
-                self.np_number=0
             elif event.key == 'a':
-                # checks and eventually creates the folder 'export_image' in the folder of data
-                if not os.path.isdir(self.folder + FOLDER_EXPORTS):
-                    os.mkdir(self.folder + FOLDER_EXPORTS)
-
-                # creates the name, appends the rigth numeb at the end
-
-                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_EXPORTS, self.file,
-                                                                      self.time_info[ax.index][0],
-                                                                      self.time_info[ax.index][1] * 100)
-
-                i = 1
-                while os.path.isfile(name + '_{:02d}.png'.format(i)):
-                    i += 1
-                name += '_{:02d}'.format(i)
-
-                # saves the png file of the view
-
-                fig.savefig(name + '.png', dpi=300)
-                fig_stat.savefig(name + '_int.png', dpi=300)
-
-                xlim = [int(i) for i in ax.get_xlim()]
-                ylim = [int(i) for i in ax.get_ylim()]
-
-                # saves the exact nad precise tiff file
-                pilimage = Image.fromarray(img.get_array()[ylim[1]:ylim[0], xlim[0]:xlim[1]])
-#                pilimage.save(name + '.tiff')
-                
-#                image = Image.open(name + '.tiff')
-#                imarray = np.array(image)
-#                plt.close("all")
-##                image.show()
-#                plt.imshow(imarray)
-#                plt.show()
-                
-                print('File SAVED @{}'.format(name))
-
+                save_frame()
+               
             img.set_array(ax.volume[ax.index])
             fig.canvas.draw_idle()
-
 
         fig, ax = plt.subplots()
         ax.volume = self.video
@@ -1254,19 +1446,37 @@ threshold = {}'''.format(
         ax.set_title(frame_info(ax.index))
 
         if self._img_type[not self._toggle] == 'raw':
-            img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0)
+            img = ax.imshow(
+                    ax.volume[ax.index], 
+                    cmap='gray', 
+                    zorder = 0
+                    )
+            
         elif self._img_type[not self._toggle] == 'corr':
-            img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=np.min(self.video_from('corr')), vmax=np.max(self.video_from('corr'))) 
+            img = ax.imshow(
+                    ax.volume[ax.index], 
+                    cmap='gray', 
+                    zorder = 0, 
+                    vmin=np.min(self.video_from('corr')), 
+                    vmax=np.max(self.video_from('corr'))
+                    ) 
+            
         else:
-            img = ax.imshow(ax.volume[ax.index], cmap='gray', zorder = 0, vmin=self.rng[0], vmax=self.rng[1])
+            img = ax.imshow(
+                    ax.volume[ax.index], 
+                    cmap='gray', 
+                    zorder = 0, 
+                    vmin=self.rng[0], 
+                    vmax=self.rng[1]
+                    )
             
         if self.show_pixels:
             volume_mask = self.process_mask_image()
             ax.volume_mask = volume_mask
-            mask = ax.imshow(volume_mask[ax.index])
-            
-                       
-            
+            mask = ax.imshow(
+                    volume_mask[ax.index]
+                    )
+
         fig.canvas.mpl_connect('scroll_event', mouse_scroll)
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)
@@ -1300,11 +1510,22 @@ threshold = {}'''.format(
 #                validity_plot.yaxis.label.set_color(red)
 #                validity_plot.tick_params(axis='y', colors=red)
 
-            stat_plot.plot(self.stats_std, linewidth=1, color=yellow, label='stdev')
+            stat_plot.plot(
+                    self.stats_std, 
+                    linewidth=1, 
+                    color=yellow, 
+                    label='stdev'
+                    )
             stat_plot.yaxis.label.set_color(yellow)
             stat_plot.spines['left'].set_color(yellow)
             stat_plot.tick_params(axis='y', colors=yellow)
-            stat_plot.plot([np.average(self.stats_std) for i in self.stats_std], linewidth=1, color=yellow, label='average stdev', ls=':')  
+            stat_plot.plot(
+                    [np.average(self.stats_std) for i in self.stats_std], 
+                    linewidth=1, 
+                    color=yellow, 
+                    label='average stdev', 
+                    ls=':'
+                    )  
             
 #            stat2_plot = stat_plot.twinx()
 ##            stat2_plot.plot(self.stats_min, linewidth=1, color=blue, label='min')
@@ -1320,19 +1541,51 @@ threshold = {}'''.format(
             
             if len(self.np_database) > 0:              
                 np_plot.yaxis.set_major_locator(MaxNLocator(integer=True))
-                np_plot.plot(self.np_count_present, linewidth=1, color=black, label='count in frame', ls=':')  
-                np_plot.plot(self.np_count_integral, linewidth=1, color=black, label='integral count')
+                np_plot.plot(
+                        self.np_count_present, 
+                        linewidth=1, 
+                        color=black, 
+                        label='count in frame', 
+                        ls=':'
+                        )  
+                np_plot.plot(
+                        self.np_count_integral, 
+                        linewidth=1, 
+                        color=black, 
+                        label='integral count'
+                        )
 
-                validity_plot.plot(self.validity, color = red, label = 'validity')
-                validity_plot.plot([np.average(self.validity)*2 for i in range(self.length)], color = red, label = 'validity, 2avg', ls=':')
+                validity_plot.plot(
+                        self.validity, 
+                        color = red, 
+                        label = 'validity'
+                        )
+                validity_plot.plot(
+                        [
+                                np.average(self.validity)*2 
+                                for i in range(self.length)
+                                ], 
+                        color = red, 
+                        label = 'validity, 2avg', 
+                        ls=':'
+                        )
                 
                 for tick in validity_plot.get_yticklines():
                     tick.set_visible(False)
+                    
                 for tick in validity_plot.get_yticklabels():
                     tick.set_visible(False)
                     
-            rectangle_height = np.abs(stat_plot.get_ylim()[1] - stat_plot.get_ylim()[0])
-            location = mpatches.Rectangle((ax.index, stat_plot.get_ylim()[0]), 1, rectangle_height, color=red)                
+            rectangle_height = np.abs(
+                    stat_plot.get_ylim()[1] - 
+                    stat_plot.get_ylim()[0]
+                    )
+            location = mpatches.Rectangle(
+                    (ax.index, stat_plot.get_ylim()[0]), 
+                    1, 
+                    rectangle_height, 
+                    color=red
+                    )                
             stat_plot.add_patch(location)
             fig_stat.legend(loc=2)
                         
