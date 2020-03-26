@@ -29,15 +29,17 @@ video._video['raw']=video._video['raw'][100:300,300:500,:]
 
 video.make_diff(k = 10)
 video.fouriere(level = 20)
-video.load_idea('idea_q3_04_np80')
+video.load_idea()
+
+#video.load_idea('idea_q3_04_np80')
 #video.load_idea('idea_q3_09_np80')
 
 #video.make_corr()
 
-#video.image_process_gamma(threshold = 52)  
-#video.characterize_nps(save = False)
-#video.exclude_nps([2], exclude = True)
-#video.statistics()
+video.image_process_gamma(threshold = 52)  
+video.characterize_nps(save = False)
+video.exclude_nps([2], exclude = True)
+video.statistics()
 
 
 #video.characterize_nps(save = True)

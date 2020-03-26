@@ -37,6 +37,9 @@ def before_save_file(path):
         return False
     return True
 
+def true_coordinate(x):
+    return int((x + 0.5) // 1)
+
 def all_bin_files(folder):
     out = list()
     for r, d, f in os.walk(folder):

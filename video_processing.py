@@ -69,6 +69,7 @@ class Video(object):
         self.threshold = 4
         self.dip = -0.003
         self.noise_level = 0.001
+        self._idea_frame = int()
         self.idea3d = None
         
         
@@ -176,7 +177,7 @@ class Video(object):
         print('Differential image') 
         
         for i in range(2 * k, sh[-1]):   
-            print('\r\t{}/ {}'.format(i + 1, self.length), end = "")
+            print('\r\t{}/ {}'.format(i + 1, self.length), end = '')
             current = np.sum(
                     self._video['raw'][:, :, i - k + 1: i + 1], 
                     axis = 2
@@ -205,7 +206,7 @@ class Video(object):
         print('Integral image')
         
         for i in range(1, sh[-1]):
-            print('\r\t{}/ {}'.format(i + 1, self.length), end = "")
+            print('\r\t{}/ {}'.format(i + 1, self.length), end = '')
             out[:, :, i] = self._video['raw'][:, :, i] - reference
         self.k_int = k
             
@@ -268,7 +269,7 @@ class Video(object):
         for v in self.video_from(0):
             out.append(fn(v))
             i += 1
-            print('\r\t{}/ {}'.format(i + 1, self.shape[0]), end = "")
+            print('\r\t{}/ {}'.format(i + 1, self.shape[0]), end = '')
             
         print(' DONE')
         return np.array(out)
@@ -382,7 +383,7 @@ class Video(object):
             print('Fourier filter {}'.format(it))
             
             for i in range(self.length):
-                print('\r\t{}/ {}'.format(i + 1, self.length), end = "")   
+                print('\r\t{}/ {}'.format(i + 1, self.length), end = '')   
                 f = np.fft.fft2(self._video[it][:, :, i])
                 magnitude_spectrum = 20 * np.log(np.abs(f))
 
@@ -485,7 +486,7 @@ class Video(object):
                         i + 1, 
                         all_processes, 
                         (tt.time()-time) / i * (all_processes - i)), 
-                        end = ""
+                        end = ''
                         ) 
                 
         print(' DONE')
@@ -504,7 +505,7 @@ class Video(object):
         
         self.mask = self.process_mask(self.candidates)
 
-        print('Connecting the detected pxs into patterns.', end = "")
+        print('Connecting the detected pxs into patterns.', end = '')
         
         np_id = 0
         
@@ -1118,28 +1119,49 @@ threshold = {}'''.format(
         self.info_add('\n--exclusion--')       
         self.info_add('Number of excluded nps: {}'.format(len(excluded)))
            
-    def save_idea(self, name):
+    def save_idea(self, name = None):
         if not os.path.isdir(self.folder + FOLDER_IDEAS):
             os.mkdir(self.folder + FOLDER_IDEAS)
             
+        if name == None:
+            name = self.file
+            file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
+            np.save(file_name, self.idea3d)
+            print('File saved')
+            return
+ 
         file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
         
         if tl.before_save_file(file_name):
             np.save(file_name, self.idea3d)
-            print('File saved')
+            print('Pattern saved')
             
         else:
-            print('Could not save the file.')
+            print('Could not save the pattern.')
         
-    def load_idea(self, name):
+    def load_idea(self, name = None):
+        if name == None:
+            name = self.file
+            
         file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
         self.idea3d = np.load(file_name)
                 
-    def choose_idea(self, eclick, erelease):
-        x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = erelease.xdata, erelease.ydata
-        print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
-        print(" The button you used were: %s %s" % (eclick.button, erelease.button))
+    def handle_choose_idea(self, eclick, erelease):
+        beginning = eclick.xdata, eclick.ydata
+        end = erelease.xdata, erelease.ydata
+        
+        beginning = [tl.true_coordinate(b) for b in beginning]
+        end = [tl.true_coordinate(e) for e in end]
+        
+        self.idea3d = self._video['diff'][
+                beginning[1] + 1: end[1], 
+                beginning[0] + 1: end[0], 
+                self._idea_frame - self.k_diff: self._idea_frame + self.k_diff
+                ]
+        print('Pattern chosen')
+        
+    def handle_save_idea(self, event):
+        self.save_idea()
         
     def explore(self, source='vid'):
                 
@@ -1217,7 +1239,7 @@ threshold = {}'''.format(
             ax.set_title(frame_info(ax.index))
             
         def save_frame():
-             # checks and eventually creates the folder 'export_image' in the folder of data
+            "checks and eventually creates the folder 'export_image' in the folder of data"
             if not os.path.isdir(self.folder + FOLDER_EXPORTS):
                 os.mkdir(self.folder + FOLDER_EXPORTS)
 
@@ -1329,7 +1351,7 @@ threshold = {}'''.format(
                 next_slice(-1)
                 fig.canvas.draw()
             elif event.key == 't':
-                # Toggle between img types
+                "Toggle between img types"
                 ax.volume = self.video
                 
                 if self._img_type[not self._toggle] == 'corr':
@@ -1347,7 +1369,8 @@ threshold = {}'''.format(
                 fig.canvas.draw()
             
             elif event.key == 'd':
-                # Define the NP pattern                
+                "Define the NP pattern"
+                self._idea_frame = ax.index
                 xlim = [int(i) for i in ax.get_xlim()]
                 ylim = [int(i) for i in ax.get_ylim()]
 
@@ -1364,6 +1387,9 @@ threshold = {}'''.format(
                     if event.key in ['A', 'a'] and not toggle_selector.RS.active:
                         print(' RectangleSelector activated.')
                         toggle_selector.RS.set_active(True)
+                        
+                def handle_close(evt):
+                    print('Closed Figure!')
             
                 fig_idea, ax_idea = plt.subplots()
                 img_idea = ax_idea.imshow(
@@ -1371,7 +1397,7 @@ threshold = {}'''.format(
                         cmap='gray'
                         )
                 
-                toggle_selector.RS = RectangleSelector(ax_idea, self.choose_idea,
+                toggle_selector.RS = RectangleSelector(ax_idea, self.handle_choose_idea,
                                                    drawtype='box', useblit=True,
                                                    button=[1, 3],  # don't use middle button
                                                    minspanx=5, minspany=5,
@@ -1379,12 +1405,10 @@ threshold = {}'''.format(
                                                    interactive=True)
                 
                 plt.connect('key_press_event', toggle_selector)
-#                select_idea(raw_idea)
-                
-                fig.canvas.draw()
+                fig_idea.canvas.mpl_connect('close_event', self.handle_save_idea)
                 
             elif event.key == 'm':
-                #switch off/on the overlaying graphics
+                "switch off/on the overlaying graphics"
                 if self.show_graphic:
                     img.set_zorder(10)
                     self.show_graphic = False
