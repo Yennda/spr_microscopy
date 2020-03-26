@@ -12,7 +12,6 @@ black='#000000'
 green='#008000'
 
 
-
 COLORS = [yellow, blue, red, black]
 
 SIDES = ['left', 'right', 'bottom', 'top']

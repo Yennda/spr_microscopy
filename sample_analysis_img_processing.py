@@ -5,7 +5,7 @@ from video_processing import Video
 import matplotlib.pyplot as plt
 
 
-#plt.close("all")
+plt.close("all")
 time_start=t.time()
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'

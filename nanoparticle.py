@@ -3,7 +3,15 @@ import numpy as np
 from global_var import *
 
 class NanoParticle():
-    def __init__(self, np_id, positions, masks = None, k_diff = 10, method = 'beta'):
+    def __init__(
+            self, 
+            np_id, 
+            positions, 
+            masks = None, 
+            k_diff = 10, 
+            method = 'beta'
+            ):
+        
         self.id = np_id
         self.good = True
 #        self.color = tl.random_color()
@@ -12,16 +20,19 @@ class NanoParticle():
         if method == 'beta':
             self.positions = positions
             self.masks = masks
-#            self.peak = peak
             
         elif method == 'alpha':
-            self.positions = [(positions[0] + i, positions[1], positions[2]) for i in range(-k_diff//2, k_diff//2)]
+            self.positions = [
+                    (positions[0] + i, positions[1], positions[2]) 
+                    for i in range(-k_diff//2, k_diff//2)
+                    ]
+            
             self.masks = masks
             self.peak = positions[0] 
         
         self.first_frame = self.positions[0][0]
         self.last_frame = self.positions[-1][0]
-        self.peak = int(round((self.first_frame + self.last_frame)/2))
+        self.peak = int(round((self.first_frame + self.last_frame) / 2))
 
         self.size = None
         self.contrast = None

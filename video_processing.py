@@ -18,8 +18,8 @@ from PIL import Image
 from skimage.feature import peak_local_max
 from scipy.optimize import curve_fit
 
-from np_analysis import select_idea, is_np, measure_new, visualize_and_save
-import image_processing as ip
+import characterization
+import alpha_help_methods as ahm
 import tools as tl
 from global_var import *
 from nanoparticle import NanoParticle
@@ -466,7 +466,7 @@ class Video(object):
             for y in range(self.shape[1]):
                 
                 if np.abs(self.video[:, y, x]).max() > noise_level:
-                    corr_out = ip.correlation_temporal(
+                    corr_out = ahm.correlation_temporal(
                             self.video[:, y, x], 
                             self.k_diff, 
                             dip, 
@@ -1065,7 +1065,7 @@ threshold = {}'''.format(
                 dy = np.max(npm[:, 1]) - np.min(npm[:, 1]) + 1
                 dx = np.max(npm[:, 0]) - np.min(npm[:, 0]) + 1
                 
-                results = measure_new(raw, mask, [dx, dy])
+                results = characterization.characterize(raw, mask, [dx, dy])
                 all_measures.append(results)
                 all_contrast.append(np.abs(results[2]))
                 i += 1
@@ -1092,7 +1092,7 @@ threshold = {}'''.format(
                     save_all = tl.before_save_file(name)
                     
                 if save_all:
-                    visualize_and_save(raw, measures, name)
+                    characterization.save(raw, measures, name)
                     
                 else:
                     break
