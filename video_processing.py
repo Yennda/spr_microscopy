@@ -296,10 +296,13 @@ class Video(object):
         
     def make_toggle(self, img_type, k):
         """
-        Process two types of video data, the first one serves as the source for the statistics
+        Process two types of video data, 
+        the first one serves as the source for the statistics
         
         Parameters:
-            img_type (list): list of names of image types, only 2 can be specified, e.g. ['diff', 'int']
+            img_type (list): list of names of image types, 
+            only 2 can be specified, e.g. ['diff', 'int']
+            
             k (list): list of parameters for the image processing
             
         Returns:
@@ -327,7 +330,8 @@ class Video(object):
     def change_fps(self, n):
         """
         Sums n frames into one, hence changes the frame rate of the video.
-        Works only on the raw data. Therefore call before calling make_... functions
+        Works only on the raw data. 
+        Therefore call before calling make_... functions
         
         Parameters:
             n (int): number of integrated frames
@@ -446,7 +450,8 @@ class Video(object):
             ):
         
         if self._img_type != 'diff':
-            print('Processes only the differential image. Use make_diff method first.')
+            print('Processes only the differential image. '
+                  'Use make_diff method first.')
             return
         
         self.threshold = threshold
@@ -759,7 +764,11 @@ class Video(object):
                     loc, size, angle = ellipse
                     
                     if 80 < angle < 100 and size[1] > size[0]:
-                        candidate = (f, int(round(loc[1])), int(round(loc[0])))
+                        candidate = (
+                                f, 
+                                int(round(loc[1])), 
+                                int(round(loc[0]))
+                                )
                         self.candidates.append(candidate)
                         self._dict_of_patterns[candidate] =  pattern
                     else:
@@ -1187,7 +1196,7 @@ threshold = {}'''.format(
             if len(self.np_database) !=0:
                 
                 if len(self.frame_np_ids[ax.index]) != 0:
-                    return '{}: {}/{}  t= {} s dt= {:.2f} s\nNPs; now: {}, integral: {}'.format(
+                    return '{}: {}/{}  t= {} s dt= {:.2f}s\nNPs; now: {}, integral: {}'.format(
                         self._img_type[not self._toggle],
                         i,
                         ax.volume.shape[0],
@@ -1256,7 +1265,10 @@ threshold = {}'''.format(
             ax.set_title(frame_info(ax.index))
             
         def save_frame():
-            "checks and eventually creates the folder 'export_image' in the folder of data"
+            """
+            checks and eventually creates the folder 
+            'export_image' in the folder of data
+            """
             if not os.path.isdir(self.folder + FOLDER_EXPORTS):
                 os.mkdir(self.folder + FOLDER_EXPORTS)
 
@@ -1370,24 +1382,14 @@ threshold = {}'''.format(
                 self._idea_frame = ax.index
                 xlim = [int(i) for i in ax.get_xlim()]
                 ylim = [int(i) for i in ax.get_ylim()]
-                print(xlim)
-                print(ylim)
+
                 raw_idea = img.get_array()[
                     ylim[1]: ylim[0],
                     xlim[0]: xlim[1]
                     ]
                 
                 def toggle_selector(event):
-                    print(' Key pressed.')
-                    if event.key in ['X', 'x'] and toggle_selector.RS.active:
-                        print(' RectangleSelector deactivated.')
-                        toggle_selector.RS.set_active(False)
-                    if event.key in ['A', 'a'] and not toggle_selector.RS.active:
-                        print(' RectangleSelector activated.')
-                        toggle_selector.RS.set_active(True)
-                        
-                def handle_close(evt):
-                    print('Closed Figure!')
+                    pass
             
                 fig_idea, ax_idea = plt.subplots()
                 img_idea = ax_idea.imshow(
@@ -1402,11 +1404,12 @@ threshold = {}'''.format(
                                 eclick, 
                                 erelease
                                 ),
-                        drawtype='box', useblit=True,
-                        button=[1, 3],  # don't use middle button
-                        minspanx=5, minspany=5,
-                        spancoords='pixels',
-                        interactive=True
+                        drawtype=  'box', useblit=True,
+                        button = [1, 3],  # don't use middle button
+                        minspanx = 5, 
+                        minspany = 5,
+                        spancoords = 'pixels',
+                        interactive = True
                         )
                 
                 plt.connect('key_press_event', toggle_selector)
@@ -1560,15 +1563,41 @@ threshold = {}'''.format(
                     )  
             
 #            stat2_plot = stat_plot.twinx()
-##            stat2_plot.plot(self.stats_min, linewidth=1, color=blue, label='min')
-##            stat2_plot.plot(self.stats_max, linewidth=1, color=blue, label='max')
+#            stat2_plot.plot(
+#                    self.stats_min, 
+#                    linewidth = 1, 
+#                    color = blue, 
+#                    label = 'min'
+#                    )
+#            stat2_plot.plot(
+#                    self.stats_max, 
+#                    linewidth = 1, 
+#                    color = blue, 
+#                    label = 'max'
+#                    )
 #            
-#            nmax = self.stats_max/np.max(self.stats_max)
-#            nmin = self.stats_min/np.min(self.stats_min)
+#            nmax = self.stats_max / np.max(self.stats_max)
+#            nmin = self.stats_min / np.min(self.stats_min)
 #            
-#            stat2_plot.plot(nmin, linewidth=1, color=blue, label='min')
-#            stat2_plot.plot(nmax, linewidth=1, color=blue, label='max', ls=':')
-#            stat2_plot.plot(np.multiply(nmax,nmax), linewidth=1, color=red, label='max')
+#            stat2_plot.plot(
+#                    nmin, 
+#                    linewidth = 1, 
+#                    color = blue, 
+#                    label = 'min'
+#                    )
+#            stat2_plot.plot(
+#                    nmax, 
+#                    linewidth = 1, 
+#                    color = blue, 
+#                    label = 'max', 
+#                    ls = ':'
+#                    )
+#            stat2_plot.plot(
+#                    np.multiply(nmax, nmax), 
+#                    linewidth = 1, 
+#                    color = red, 
+#                    label = 'max'
+#                    )
 
             
             if len(self.np_database) > 0:              
