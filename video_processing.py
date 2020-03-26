@@ -980,14 +980,29 @@ class Video(object):
                     
         height = ax.get_ylim()[1]
         
-        sigma2 = mpatches.Rectangle((sigma*5, 0), 1, height, color=red) 
+        sigma2 = mpatches.Rectangle(
+                (sigma*5, 0), 
+                1, 
+                height, 
+                color=red
+                ) 
         ax.add_patch(sigma2)
 
         
-        sigma3 = mpatches.Rectangle((sigma*6, 0), 1, height, color=red)  
+        sigma3 = mpatches.Rectangle(
+                (sigma*6, 0), 
+                1, 
+                height, 
+                color=red
+                )  
         ax.add_patch(sigma3)
         
-        threshold = mpatches.Rectangle((self.threshold, 0), 1, height, color=black) 
+        threshold = mpatches.Rectangle(
+                (self.threshold, 0),
+                1, 
+                height, 
+                color=black
+                ) 
         ax.add_patch(threshold)
         
         self.info_add('\n--histogram--')
@@ -1146,18 +1161,19 @@ threshold = {}'''.format(
         file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
         self.idea3d = np.load(file_name)
                 
-    def handle_choose_idea(self, eclick, erelease):
-        beginning = eclick.xdata, eclick.ydata
-        end = erelease.xdata, erelease.ydata
+    def handle_choose_idea(self, shift, eclick, erelease):
+        corner_1 = eclick.xdata, eclick.ydata
+        corner_2 = erelease.xdata, erelease.ydata
         
-        beginning = [tl.true_coordinate(b) for b in beginning]
-        end = [tl.true_coordinate(e) for e in end]
-        
+        corner_1 = [tl.true_coordinate(b) for b in corner_1]
+        corner_2 = [tl.true_coordinate(e) for e in corner_2]
+
         self.idea3d = self._video['diff'][
-                beginning[1] + 1: end[1], 
-                beginning[0] + 1: end[0], 
+                shift[0] + corner_1[1] + 1: shift[0] + corner_2[1], 
+                shift[1] + corner_1[0] + 1: shift[1] + corner_2[0], 
                 self._idea_frame - self.k_diff: self._idea_frame + self.k_diff
                 ]
+        
         print('Pattern chosen')
         
     def handle_save_idea(self, event):
@@ -1290,42 +1306,22 @@ threshold = {}'''.format(
             fig.canvas.draw()
 
         def mouse_click(event):
-            if event.button == 3:
-                
-                fig = event.canvas.figure
-                ax = fig.axes[0]
-                x = int(event.xdata)
-                y = int(event.ydata)
-                raw = ax.volume[ax.index]
-                select_idea(raw[y - 25: y + 25, x - 25:x + 25], self.folder, self.file)
-
-                p = mpatches.Rectangle(
-                        (x - 0.5, y - 0.5),
-                        5,
-                        5, 
-                        color='#FF0000', 
-                        alpha=0.5
-                        )
-                ax.add_patch(p)
-                fig.canvas.draw()
-                
-            elif event.dblclick:
+            
+            if event.dblclick:
                 fig = event.canvas.figure
                 ax = fig.axes[0]
                 x = int((event.xdata + 0.5) // 1)
                 y = int((event.ydata + 0.5) // 1)
-                #                file = open('data.txt', 'a')
-                #                file.write('['+', '.join([str(i) for i in self._video[y, x,:]])+'],\n')
-                #                file.close()
+
                 print('------------')
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
                 ip.correlation_temporal(
-                        ax.volume[:, y, x], 
-                        k_diff=self.k_diff, 
-                        step=self.dip, 
-                        threshold=self.threshold,  
-                        show=True
+                        ax.volume[: , y, x], 
+                        k_diff = self.k_diff, 
+                        step = self.dip, 
+                        threshold = self.threshold,  
+                        show = True
                         )
                 
         def button_press(event):
@@ -1373,7 +1369,8 @@ threshold = {}'''.format(
                 self._idea_frame = ax.index
                 xlim = [int(i) for i in ax.get_xlim()]
                 ylim = [int(i) for i in ax.get_ylim()]
-
+                print(xlim)
+                print(ylim)
                 raw_idea = img.get_array()[
                     ylim[1]: ylim[0],
                     xlim[0]: xlim[1]
@@ -1397,15 +1394,25 @@ threshold = {}'''.format(
                         cmap='gray'
                         )
                 
-                toggle_selector.RS = RectangleSelector(ax_idea, self.handle_choose_idea,
-                                                   drawtype='box', useblit=True,
-                                                   button=[1, 3],  # don't use middle button
-                                                   minspanx=5, minspany=5,
-                                                   spancoords='pixels',
-                                                   interactive=True)
+                toggle_selector.RS = RectangleSelector(
+                        ax_idea, 
+                        lambda eclick, erelease: self.handle_choose_idea(
+                                (ylim[1], xlim[0]), 
+                                eclick, 
+                                erelease
+                                ),
+                        drawtype='box', useblit=True,
+                        button=[1, 3],  # don't use middle button
+                        minspanx=5, minspany=5,
+                        spancoords='pixels',
+                        interactive=True
+                        )
                 
                 plt.connect('key_press_event', toggle_selector)
-                fig_idea.canvas.mpl_connect('close_event', self.handle_save_idea)
+                fig_idea.canvas.mpl_connect(
+                        'close_event', 
+                        self.handle_save_idea
+                        )
                 
             elif event.key == 'm':
                 "switch off/on the overlaying graphics"
@@ -1616,8 +1623,6 @@ threshold = {}'''.format(
                         
 #        cb = fig.colorbar(img, ax=ax)
             
-
-#        ax.text(0, self.video.size+20, info, fontsize=10, bbox={'facecolor': 'white', 'alpha': 1, 'pad': 1})
         plt.tight_layout()
         plt.show()
 

@@ -5,7 +5,7 @@ from video_processing import Video
 import matplotlib.pyplot as plt
 
 
-plt.close("all")
+#plt.close("all")
 time_start=t.time()
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
@@ -29,9 +29,10 @@ video._video['raw']=video._video['raw'][100:300,300:500,:]
 
 video.make_diff(k = 10)
 video.fouriere(level = 20)
-video.load_idea()
 
-#video.load_idea('idea_q3_04_np80')
+#video.load_idea()
+
+video.load_idea('idea_q3_04_np80')
 #video.load_idea('idea_q3_09_np80')
 
 #video.make_corr()
