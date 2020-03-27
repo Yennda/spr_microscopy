@@ -905,6 +905,8 @@ class Video(object):
             self.info_add("NP count: {}".format(self.np_count_integral[-1]))    
             
             #average binding rate
+            start = 0
+            end = self.length - 1
             
             for i in range(len(self.np_count_first_occurance)):
                 if self.np_count_integral[i] > 10:
@@ -922,7 +924,7 @@ class Video(object):
             binding_rate = (
                     self.np_count_integral[end] - 
                     self.np_count_integral[start]
-                    )/(end - start)*100
+                    )/(end - start) * 100
             
             self.info_add('Rate per 100 frames: {:.01f}'.format(
                     binding_rate)
@@ -956,6 +958,9 @@ class Video(object):
             self.valid = [True]*self.length
             
     def histogram(self):
+        if self._video['corr'] is None:
+            return
+        
         def gauss(x, *p):
             A, mu, sigma = p
             return A*np.exp(-(x-mu)**2/(2.*sigma**2))
