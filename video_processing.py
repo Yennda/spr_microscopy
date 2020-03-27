@@ -69,7 +69,9 @@ class Video(object):
         self.threshold = 4
         self.dip = -0.003
         self.noise_level = 0.001
-        self._idea_frame = int()
+        self._idea_frame = None
+        self._idea_span_x = None
+        self._idea_span_y = None
         self.idea3d = None
         
         
@@ -725,13 +727,25 @@ class Video(object):
         self._dict_of_patterns = dict()
         
         self.mask = (self._video['corr'] > threshold)*1  
-        minimal_area = 10
         
+        #600
+#        minimal_area = 2
+#        condition = True
+        
+        #650
+        minimal_area = 4
+#        condition = (size[1] >= size[0])
+        
+        #750
+#        minimal_area = 10
+
         number = 0
         fit_failed = 0
         omitted = 0
         
+        print('Processing frames')
         for f in range(self.length):
+            print('\r\t{}/ {}'.format(f + 1, self.length), end = '')
             gray = self.mask[:, :, f].astype(np.uint8)    
             th, threshed = cv2.threshold(
                     gray, 
@@ -745,7 +759,7 @@ class Video(object):
                     cv2.RETR_LIST, 
                     cv2.CHAIN_APPROX_NONE
                     )[-2][: -1]      
-        
+            
             for pattern in patterns:
                 
                 for p in pattern:
@@ -763,7 +777,11 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-                    if 80 < angle < 100 and size[1] > size[0]:
+#                    condition = (80 < angle < 100 and size[1] > size[0])
+                    condition = (size[1] >= size[0])
+#                    condition = True
+                    
+                    if condition:
                         candidate = (
                                 f, 
                                 int(round(loc[1])), 
@@ -774,6 +792,7 @@ class Video(object):
                     else:
                         omitted += 1
                     number += 1
+                
         self.info_add("\n--gamma--")
         self.info_add("Dots number: {}".format(number))
         self.info_add("Fit fails: {}".format(fit_failed))
@@ -988,35 +1007,36 @@ class Video(object):
         A, mu, sigma = coeff
         sigma = np.abs(sigma)
         
-        span = ax.get_xlim()
-        x = np.arange(span[0], span[1], (span[1] - span[0])/1e3)
+        span_x = ax.get_xlim()
+        x = np.arange(span_x[0], span_x[1], (span_x[1] - span_x[0]) / 1e3)
         
         ax.plot(x, gauss(x, *coeff), color = red, ls = '--')
                     
         height = ax.get_ylim()[1]
+        width = np.abs(span_x[1] - span_x[0]) / 1000
         
         sigma2 = mpatches.Rectangle(
-                (sigma*5, 0), 
-                1, 
+                (sigma * 5, 0), 
+                width, 
                 height, 
-                color=red
+                color = red
                 ) 
         ax.add_patch(sigma2)
 
         
         sigma3 = mpatches.Rectangle(
-                (sigma*6, 0), 
-                1, 
+                (sigma * 6, 0), 
+                width, 
                 height, 
-                color=red
+                color = red
                 )  
         ax.add_patch(sigma3)
         
         threshold = mpatches.Rectangle(
                 (self.threshold, 0),
-                1, 
+                width, 
                 height, 
-                color=black
+                color = black
                 ) 
         ax.add_patch(threshold)
         
@@ -1155,17 +1175,18 @@ threshold = {}'''.format(
             
         if name == None:
             name = self.file
-            file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
-            np.save(file_name, self.idea3d)
-            print('File saved')
-            return
- 
-        file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
-        
-        if tl.before_save_file(file_name):
-            np.save(file_name, self.idea3d)
-            print('Pattern saved')
             
+        file_name = self.folder + FOLDER_IDEAS + '/' + name
+        
+        if tl.before_save_file(file_name) or name == self.file:
+            
+            np.save(file_name + '.npy', self.idea3d)
+            np.save(file_name + '_frame' + '.npy', np.array(self._idea_frame))
+            np.save(file_name + '_spanx' + '.npy', self._idea_span_x)
+            np.save(file_name + '_spany' + '.npy', self._idea_span_y)
+            
+            print('Pattern saved')
+
         else:
             print('Could not save the pattern.')
         
@@ -1173,8 +1194,13 @@ threshold = {}'''.format(
         if name == None:
             name = self.file
             
-        file_name = self.folder + FOLDER_IDEAS + '/' + name + '.npy'
-        self.idea3d = np.load(file_name)
+        file_name = self.folder + FOLDER_IDEAS + '/' + name
+        self.idea3d = np.load(file_name + '.npy')
+        
+        if os.path.isfile(file_name + '_frame' + '.npy'):
+            self._idea_frame = np.load(file_name + '_frame' + '.npy').max()
+            self._idea_span_x = np.load(file_name + '_spanx' + '.npy')
+            self._idea_span_y = np.load(file_name + '_spany' + '.npy')
                 
     def handle_choose_idea(self, shift, eclick, erelease):
         corner_1 = eclick.xdata, eclick.ydata
@@ -1182,15 +1208,52 @@ threshold = {}'''.format(
         
         corner_1 = [tl.true_coordinate(b) for b in corner_1]
         corner_2 = [tl.true_coordinate(e) for e in corner_2]
+        
+        span_x = np.array([
+                shift[1] + corner_1[0] + 1 - 2, 
+                shift[1] + corner_2[0] + 2
+                ])
+        span_y = np.array([
+                shift[0] + corner_1[1] + 1 - 2, 
+                shift[0] + corner_2[1] + 2
+                ])
+        
+        self._idea_span_x = span_x
+        self._idea_span_y = span_y
 
         self.idea3d = self._video['diff'][
-                shift[0] + corner_1[1] + 1: shift[0] + corner_2[1], 
-                shift[1] + corner_1[0] + 1: shift[1] + corner_2[0], 
+                span_y[0]: span_y[1], 
+                span_x[0]: span_x[1], 
                 self._idea_frame - self.k_diff: self._idea_frame + self.k_diff
                 ]
         
         print('Pattern chosen')
         
+    @property
+    def auto_contrast(self):
+        nanoparticle = None
+        for np_id in self.frame_np_ids[self._idea_frame]:
+            position = self.np_database[np_id].position_yx(self._idea_frame)
+            
+            position_x = (
+                    self._idea_span_x[0] < 
+                    position[1] < 
+                    self._idea_span_x[1]
+                    )
+            
+            position_y = (
+                    self._idea_span_y[0] < 
+                    position[0] < 
+                    self._idea_span_y[1]
+                    )
+            
+            if position_x and position_y:
+                nanoparticle =  self.np_database[np_id]
+        if nanoparticle is None:
+            print('Could not detect the initial nanoparticle')
+        else:
+            return (nanoparticle.contrast - 1) / 3 + 1
+            
     def handle_save_idea(self, event):
         self.save_idea()
         
@@ -1384,9 +1447,10 @@ threshold = {}'''.format(
             
             elif event.key == 'd':
                 "Define the NP pattern"
-                self._idea_frame = ax.index
                 xlim = [int(i) for i in ax.get_xlim()]
                 ylim = [int(i) for i in ax.get_ylim()]
+                
+                self._idea_frame = ax.index
 
                 raw_idea = img.get_array()[
                     ylim[1]: ylim[0],

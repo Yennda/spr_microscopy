@@ -16,9 +16,10 @@ file = 'raw_10_1'
 #file = 'raw_16_1'
 
 
-#folder=main_folder+'20_02_26_Q3/'
-#file = 'raw_19_1'
-
+folder=main_folder+'20_02_26_Q3/'
+file = 'raw_04_1'
+folder=main_folder+'20_03_16_K4/'
+file = 'raw_05_1'
 #folder=main_folder+'20_02_26_L3/'
 #file = 'raw_03_1'
 
@@ -34,12 +35,14 @@ video.load_idea()
 
 #video.load_idea('idea_q3_04_np80')
 #video.load_idea('idea_q3_09_np80')
+#video.load_idea('idea_p3_09_np80')
+#video.save_idea('idea_k4_05_np80')
 
 video.make_corr()
-#
-video.image_process_gamma(threshold = 3.8)  
+video.image_process_gamma(threshold = 6.7)  
 video.characterize_nps(save = False)
-video.exclude_nps([2], exclude = False)
+
+video.exclude_nps([video.auto_contrast], exclude = False)
 video.statistics()
 
 
