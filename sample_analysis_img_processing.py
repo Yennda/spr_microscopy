@@ -16,10 +16,10 @@ file = 'raw_10_1'
 #file = 'raw_16_1'
 
 
-folder=main_folder+'20_02_26_Q3/'
-file = 'raw_04_1'
-folder=main_folder+'20_03_16_K4/'
-file = 'raw_05_1'
+#folder=main_folder+'20_02_26_Q3/'
+#file = 'raw_21_1'
+folder=main_folder+'20_03_16_K5/'
+file = 'raw_20_1'
 #folder=main_folder+'20_02_26_L3/'
 #file = 'raw_03_1'
 
@@ -31,24 +31,19 @@ video._video['raw']=video._video['raw'][100:300,300:500,:]
 video.make_diff(k = 10)
 video.fouriere(level = 20)
 
-video.load_idea()
-
-#video.load_idea('idea_q3_04_np80')
-#video.load_idea('idea_q3_09_np80')
-#video.load_idea('idea_p3_09_np80')
-#video.save_idea('idea_k4_05_np80')
-
-video.make_corr()
-video.image_process_gamma(threshold = 6.7)  
-video.characterize_nps(save = False)
-
-video.exclude_nps([video.auto_contrast], exclude = False)
+#video.load_idea()
+#video.make_corr()
+#video.image_process_gamma(threshold = 22.4)  
+#video.characterize_nps(save = False)
+#video.info_add('\n--auto contrast--')
+#video.info_add(video.auto_contrast)
+#video.exclude_nps([1.4], exclude = True)
+#video.make_toggle(['diff', 'corr'], [10, 10])
 video.statistics()
-
 
 #video.characterize_nps(save = True)
 
-video.make_toggle(['diff', 'corr'], [10, 10])
+
 
 video.explore()
 

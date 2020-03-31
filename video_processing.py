@@ -733,7 +733,7 @@ class Video(object):
 #        condition = True
         
         #650
-        minimal_area = 4
+        minimal_area = 2
 #        condition = (size[1] >= size[0])
         
         #750
@@ -777,7 +777,7 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-#                    condition = (80 < angle < 100 and size[1] > size[0])
+#                    condition = (75 < angle < 105 and size[1] > size[0])
                     condition = (size[1] >= size[0])
 #                    condition = True
                     
@@ -935,7 +935,7 @@ class Video(object):
             for i in range(1, len(self.np_count_first_occurance)):
                 if self.np_count_integral[-i] < (
                         self.np_count_integral[-1] - 
-                        10
+                        20
                         ):
                     end = len(self.np_count_first_occurance) - i
                     break
@@ -950,7 +950,7 @@ class Video(object):
             )
             
             self.info_add('Compared to reference: {:.01f} %'.format(
-                    binding_rate/95*100)
+                    binding_rate/26*100)
             )
             
             
@@ -1050,6 +1050,7 @@ threshold = {}'''.format(
                 self.threshold
                 )
                 )
+#    return int(round(sigma * 5))
         
     def characterize_nps(self, save = False):
         size = 25
@@ -1157,13 +1158,14 @@ threshold = {}'''.format(
                         if exclude:
                             self.frame_np_ids[f].remove(np_id)
                             frame_excluded.add(np_id)
-                            self.np_database[np_id].good = False
+                            
                             
                         else:
                             self.np_database[np_id].color = tl.hex_to_list(
                                     green
                                     )
                             frame_excluded.add(np_id)
+                        self.np_database[np_id].good = False
                         excluded.add(np_id)
                 
         self.info_add('\n--exclusion--')       
@@ -1249,10 +1251,13 @@ threshold = {}'''.format(
             
             if position_x and position_y:
                 nanoparticle =  self.np_database[np_id]
+                
         if nanoparticle is None:
-            print('Could not detect the initial nanoparticle')
+            raise ValueError('Could not detect the initial nanoparticle')
+            
         else:
-            return (nanoparticle.contrast - 1) / 3 + 1
+            self.info_add(nanoparticle.contrast)
+            return (nanoparticle.contrast - 2.5) * 0.2 + 1.6
             
     def handle_save_idea(self, event):
         self.save_idea()
