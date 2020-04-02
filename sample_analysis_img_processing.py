@@ -18,28 +18,33 @@ file = 'raw_10_1'
 
 #folder=main_folder+'20_02_26_Q3/'
 #file = 'raw_21_1'
-folder=main_folder+'20_03_16_K5/'
-file = 'raw_20_1'
+#folder=main_folder+'20_03_16_K5/'
+#file = 'raw_20_1'
 #folder=main_folder+'20_02_26_L3/'
 #file = 'raw_03_1'
 
 video = Video(folder, file)
 video.loadData()
 
-video._video['raw']=video._video['raw'][100:300,300:500,:]
+video._video['raw']=video._video['raw'][100:300,300:500,:120]
 
 video.make_diff(k = 10)
 video.fouriere(level = 20)
 
 #video.load_idea()
 #video.make_corr()
-#video.image_process_gamma(threshold = 22.4)  
-#video.characterize_nps(save = False)
+
+
+video.img_process_alpha(threshold = 3, dip = -0.003, noise_level = 0.001)
+
+
+#video.image_process_gamma(threshold = 2.4)  
+video.characterize_nps(save = False)
 #video.info_add('\n--auto contrast--')
 #video.info_add(video.auto_contrast)
-#video.exclude_nps([1.4], exclude = True)
+#video.exclude_nps([1.4], exclude = False)
 #video.make_toggle(['diff', 'corr'], [10, 10])
-video.statistics()
+#video.statistics()
 
 #video.characterize_nps(save = True)
 

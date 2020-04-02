@@ -1,5 +1,6 @@
 import math as m
 import numpy as np
+import matplotlib.pyplot as plt
 
 SCALE = 2.93  # mu/px
 SHAPE = 50  # dimension of the image in px
@@ -30,9 +31,9 @@ def characterize(raw, mask_np, sizes):
         if m.isnan(out[i]):
             out[i] = 0
             
-#    fig, ax = plt.subplots()
-#    ax.imshow(raw)
-#    ax.imshow(mask_np, alpha = 0.5)      
+    fig, ax = plt.subplots()
+    ax.imshow(raw)
+    ax.imshow(mask_np, cmap = 'autumn', alpha = 0.8)      
     return out
 
 def save(raw, measures, name):

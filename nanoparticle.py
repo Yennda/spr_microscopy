@@ -1,5 +1,7 @@
 import tools as tl
 import numpy as np
+
+
 from global_var import *
 
 class NanoParticle():
@@ -26,8 +28,9 @@ class NanoParticle():
                     (positions[0] + i, positions[1], positions[2]) 
                     for i in range(-k_diff//2, k_diff//2)
                     ]
-            
-            self.masks = masks
+#            time = [m[0] for m in masks]
+            space = np.array([m[1:] for m in masks])
+            self.masks = [space for i in range(len(self.positions))]
             self.peak = positions[0] 
         
         self.first_frame = self.positions[0][0]

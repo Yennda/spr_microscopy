@@ -49,6 +49,8 @@ class Video(object):
         self.k_diff = None
         self.k_int = None
         
+        #image processing
+        self._img_proc_type = None
         self.mask = None        
         self.candidates = None
         self.px_for_image_mask = []
@@ -233,13 +235,32 @@ class Video(object):
     def process_mask_image(self):
         volume_mask = np.zeros(list(self.shape) + [4])
         k_diff = self.k_diff
-        k_diff = 1
+#        k_diff = 1
+        tri = [ahm.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
 
+#        for pm in self.px_for_image_mask:
+#            f, y, x = pm
+#            volume_mask[f, y, x, :3] = tl.hex_to_list(blue)
+#            volume_mask[f, y, x, 3] = 0.5
+#        return volume_mask     
+    
         for pm in self.px_for_image_mask:
             f, y, x = pm
-            volume_mask[f, y, x, :3] = tl.hex_to_list(blue)
-            volume_mask[f, y, x, 3] = 0.5
-        return volume_mask     
+            if f+k_diff > self.video.shape[0]:
+                end = self.video.shape[0]
+            else:
+                end = f+k_diff
+            volume_mask[f-k_diff:end, y, x, 1] = [1]*(end-f+k_diff)
+            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
+            
+#            if f+k_diff > self.video.shape[0]:
+#                end = self.video.shape[0]
+#            else:
+#                end = f+k_diff
+#            volume_mask[f-k_diff:end, y, x, 0] = [1]*(end-f+k_diff)
+#            volume_mask[f-k_diff:end, y, x, 3] = tri[:end-f+k_diff]
+            
+        return volume_mask
     
     def process_mask(self):
         volume_mask = np.zeros(self.shape)
@@ -451,7 +472,9 @@ class Video(object):
             noise_level = 0.001
             ):
         
-        if self._img_type != 'diff':
+        self._img_proc_type = 'alpha'
+        
+        if  'diff' not in self._img_type:
             print('Processes only the differential image. '
                   'Use make_diff method first.')
             return
@@ -472,9 +495,9 @@ class Video(object):
         for x in range(self.shape[2]):
             for y in range(self.shape[1]):
                 
-                if np.abs(self.video[:, y, x]).max() > noise_level:
+                if np.abs(self.video_from('diff')[:, y, x]).max() > noise_level:
                     corr_out = ahm.correlation_temporal(
-                            self.video[:, y, x], 
+                            self.video_from('diff')[:, y, x], 
                             self.k_diff, 
                             dip, 
                             threshold
@@ -495,6 +518,8 @@ class Video(object):
                         (tt.time()-time) / i * (all_processes - i)), 
                         end = ''
                         ) 
+                        
+        self.px_for_image_mask = copy.deepcopy(self.candidates)
                 
         print(' DONE')
         print('#PXS excluded from correlation: {} / {}, {:.1f} %'
@@ -510,7 +535,7 @@ class Video(object):
                       skipped_peak/(all_processes-skipped_corr) * 100
                       ))
         
-        self.mask = self.process_mask(self.candidates)
+        self.mask = self.process_mask()
 
         print('Connecting the detected pxs into patterns.', end = '')
         
@@ -522,7 +547,8 @@ class Video(object):
                     )
             
             nanoparticle = NanoParticle(
-                    np_id, position, 
+                    np_id, 
+                    position, 
                     pixels_in_np, 
                     method = 'alpha'
                     )
@@ -729,11 +755,11 @@ class Video(object):
         self.mask = (self._video['corr'] > threshold)*1  
         
         #600
-#        minimal_area = 2
+        minimal_area = 0
 #        condition = True
         
         #650
-        minimal_area = 2
+#        minimal_area = 4
 #        condition = (size[1] >= size[0])
         
         #750
@@ -778,8 +804,8 @@ class Video(object):
                     loc, size, angle = ellipse
                     
 #                    condition = (75 < angle < 105 and size[1] > size[0])
-                    condition = (size[1] >= size[0])
-#                    condition = True
+#                    condition = (size[1] >= size[0])
+                    condition = True
                     
                     if condition:
                         candidate = (
@@ -976,8 +1002,8 @@ class Video(object):
         else:
             self.valid = [True]*self.length
             
-    def histogram(self):
-        if self._video['corr'] is None:
+    def histogram(self, what = 'corr'):
+        if self._video[what] is None:
             return
         
         def gauss(x, *p):
@@ -990,7 +1016,7 @@ class Video(object):
         ax.set_title(self.file)
         
         n, bins, patches = ax.hist(
-                np.matrix.flatten(self.video_from('corr')), 
+                np.matrix.flatten(self.video_from(what)), 
                 1000, 
                 color = blue
                 )
@@ -1056,7 +1082,7 @@ threshold = {}'''.format(
         size = 25
         save_all = False
         
-        for nanoparticle in self.np_database:
+        for nanoparticle in self.np_database[10:15]:
             if not nanoparticle.good:
                 continue
                 
@@ -1076,26 +1102,38 @@ threshold = {}'''.format(
                 if y + size > self.shape[1]:
                     ry = self.shape[1]
                 else:
-                    ry = y + size
+                    ry = int(round(y + size))
                     
                 if x + size > self.shape[2]:
                     rx = self.shape[2]
                 else:
-                    rx = x + size
-                              
+                    rx = int(round(x + size))
+         
                 raw = self.video_from('diff')[f, ly: ry, lx: rx]
             
 #            npm = nanoparticle.mask_for_characterization
 
-                npm = np.squeeze(np_mask)
+                
                 
                 img = np.zeros(raw.shape)
-                contour = npm - np.array([
+
+                
+                if self._img_proc_type == 'alpha':
+                    npm = np_mask
+                    contour = npm - np.array([
+                        [ly, lx] 
+                        for i in range(npm.shape[0])
+                        ])
+                    print(contour)
+                    img[contour[:,0], contour[:,1]] = 1
+                else:
+                    npm = np.squeeze(np_mask)
+                    contour = npm - np.array([
                         [lx, ly] 
                         for i in range(npm.shape[0])
                         ])
-                cv2.fillPoly(img, [contour], color = 1)
-                cv2.drawContours(img, [contour], 0, 0, 1)
+                    cv2.fillPoly(img, [contour], color = 1)
+                    cv2.drawContours(img, [contour], 0, 0, 1)
                 mask = img == 1
           
                 dy = np.max(npm[:, 1]) - np.min(npm[:, 1]) + 1
