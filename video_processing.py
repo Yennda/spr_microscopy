@@ -522,13 +522,14 @@ class Video(object):
         self.px_for_image_mask = copy.deepcopy(self.candidates)
                 
         print(' DONE')
-        print('#PXS excluded from correlation: {} / {}, {:.1f} %'
+        self.info_add("\n--alpha--")
+        self.info_add('#PXS excluded from correlation: {} / {}, {:.1f} %'
               .format(
                       skipped_corr, 
                       all_processes, 
                       skipped_corr/all_processes * 100
                       ))
-        print('#PXS excluded from peaks: {} / {}, {:.1f} %'
+        self.info_add('#PXS excluded from peaks: {} / {}, {:.1f} %'
               .format(
                       skipped_peak, 
                       all_processes-skipped_corr, 
@@ -537,11 +538,15 @@ class Video(object):
         
         self.mask = self.process_mask()
 
-        print('Connecting the detected pxs into patterns.', end = '')
+        print('Connecting the detected pxs into patterns.')
         
         np_id = 0
+        i = 0
+        waitting = ['/', '--', '\\', '|']
         
         while len(self.candidates) != 0:
+            print('\r{}'.format(waitting[i%len(waitting)]), end = '')   
+            i += 1 
             pixels_in_np, position = self.alpha_detect_nps(
                     self.candidates.pop()
                     )
@@ -976,7 +981,7 @@ class Video(object):
             )
             
             self.info_add('Compared to reference: {:.01f} %'.format(
-                    binding_rate/26*100)
+                    binding_rate/47.9*100)
             )
             
             
@@ -1082,9 +1087,14 @@ threshold = {}'''.format(
         size = 25
         save_all = False
         
+        i = 0
+        waitting = ['/', '--', '\\', '|']
+        
         for nanoparticle in self.np_database:
             if not nanoparticle.good:
                 continue
+            print('\r{}'.format(waitting[i%len(waitting)]), end = '')   
+            i += 1 
                 
 #            if not self.valid[nanoparticle.first_frame]:
 #                continue
@@ -1435,7 +1445,7 @@ threshold = {}'''.format(
                 print('------------')
                 print('x = {}'.format(x))
                 print('y = {}'.format(y))
-                ip.correlation_temporal(
+                ahm.correlation_temporal(
                         ax.volume[: , y, x], 
                         k_diff = self.k_diff, 
                         step = self.dip, 

@@ -35,7 +35,7 @@ if __name__ == "__main__":
     files=[
             folder + 
             'exports_np/' + 
-            'raw_{:02.0f}_1'.format(f) for f in [10]
+            'raw_{:02.0f}_1'.format(f) for f in [3, 4, 5, 6, 7, 8, 9, 10, 11]
 #            'raw_{:02.0f}_1'.format(f) for f in [4, 5, 6, 7, 8, 9, 10, 18, 21]
 #            'raw_{:02.0f}_1'.format(f) for f in [3, 4, 5, 6, 7, 8]
             ]
