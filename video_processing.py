@@ -1082,7 +1082,7 @@ threshold = {}'''.format(
         size = 25
         save_all = False
         
-        for nanoparticle in self.np_database[10:15]:
+        for nanoparticle in self.np_database:
             if not nanoparticle.good:
                 continue
                 
@@ -1124,7 +1124,6 @@ threshold = {}'''.format(
                         [ly, lx] 
                         for i in range(npm.shape[0])
                         ])
-                    print(contour)
                     img[contour[:,0], contour[:,1]] = 1
                 else:
                     npm = np.squeeze(np_mask)
@@ -1174,7 +1173,8 @@ threshold = {}'''.format(
     def exclude_nps(self, thresholds, exclude = True):
         method_lambdas = [
                 lambda x: x.contrast,
-                lambda x: x.size[0]
+                lambda x: x.size[0],
+                lambda x: len(x.masks[0])
                 ]
         excluded = set()
         
@@ -1185,24 +1185,19 @@ threshold = {}'''.format(
             for np_id in ids:
                 
                 for i in range(len(thresholds)): 
-                    
                     if np_id in frame_excluded:
                         continue
-                    
-                    if method_lambdas[i](
-                            self.np_database[np_id]
-                            ) < thresholds[i]:
                         
+                    if method_lambdas[i](self.np_database[np_id]) < thresholds[i]:
+
                         if exclude:
                             self.frame_np_ids[f].remove(np_id)
-                            frame_excluded.add(np_id)
-                            
-                            
+
                         else:
                             self.np_database[np_id].color = tl.hex_to_list(
                                     green
                                     )
-                            frame_excluded.add(np_id)
+                        frame_excluded.add(np_id)
                         self.np_database[np_id].good = False
                         excluded.add(np_id)
                 

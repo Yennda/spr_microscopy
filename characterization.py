@@ -31,9 +31,9 @@ def characterize(raw, mask_np, sizes):
         if m.isnan(out[i]):
             out[i] = 0
             
-    fig, ax = plt.subplots()
-    ax.imshow(raw)
-    ax.imshow(mask_np, cmap = 'autumn', alpha = 0.8)      
+#    fig, ax = plt.subplots()
+#    ax.imshow(raw)
+#    ax.imshow(mask_np, cmap = 'autumn', alpha = 0.8)      
     return out
 
 def save(raw, measures, name):
