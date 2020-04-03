@@ -8,10 +8,15 @@ import matplotlib.pyplot as plt
 plt.close("all")
 time_start=t.time()
 
+def change(video, thresholds):
+    video.exclude_nps(thresholds, exclude = True)
+    video.statistics()
+    video.explore()
+    
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 
 folder = main_folder+'20_02_25_P3/'
-file = 'raw_12_1'
+file = 'raw_16_1'
 #file = 'raw_11_1'
 #file = 'raw_16_1'
 
@@ -33,9 +38,9 @@ video.fouriere(level = 20)
 
 "alpha"
 
-video.img_process_alpha(threshold = 2, noise_level = 0.0012♥)
+video.img_process_alpha(threshold = 3, noise_level = 0.0015)
 video.characterize_nps(save = False)
-video.exclude_nps([3, 0, 1.1], exclude = True)
+video.exclude_nps([4, 0, 1.1], exclude = True)
 video.make_toggle(['diff', 'int'], [10, 10])
 
 

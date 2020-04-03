@@ -58,6 +58,7 @@ class Video(object):
         self._dict_of_patterns = None
         self.np_database = []
         self.frame_np_ids = []
+        self._frame_np_ids_original = []
         
         #statistics
         self.stats_std = None
@@ -571,6 +572,7 @@ class Video(object):
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
+        self._frame_np_ids_original = copy.deepcopy(self.frame_np_ids)
         
     def beta_peaks_processing(self, px):
         positions_in_np = []
@@ -679,6 +681,7 @@ class Video(object):
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True
+        self._frame_np_ids_original = copy.deepcopy(self.frame_np_ids)
         
     def gamma_peaks_processing(self, px):
         positions_in_np = []
@@ -860,6 +863,7 @@ class Video(object):
         self.show_mask = True
         self.show_pixels = True
         self.show_detected = True 
+        self._frame_np_ids_original = copy.deepcopy(self.frame_np_ids)
         
     def gamma_time_conection(self):
         dist = [d//2 for d in self.idea3d.shape[:2]]
@@ -1187,6 +1191,7 @@ threshold = {}'''.format(
                 lambda x: len(x.masks[0])
                 ]
         excluded = set()
+        self.frame_np_ids = copy.deepcopy(self._frame_np_ids_original)
         
         for f in range(self.length):
             ids = copy.deepcopy(self.frame_np_ids[f])
