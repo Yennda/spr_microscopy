@@ -1,29 +1,8 @@
 import numpy as np
+from tools import readinfo, statistics
 
 
-def readinfo(file):
-    
-    with open(file + '_info.txt') as f:
-        infolist = f.read()
-    info = []
-    
-    for i in infolist.split('\n')[:-1]:
-        info.append([float(j) for j in i.split('\t')])
 
-    return info
-
-
-def statistics(info):
-    avg = []
-    std = []
-    num = []
-    
-    for quantity in range(7):
-        avg.append(np.average([item[quantity] for item in info]))
-        std.append(np.std([item[quantity] for item in info]))
-        num.append(len([item[quantity] for item in info]))
-        
-    return avg, std, len([item[0] for item in info])
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder=main_folder+'20_02_25_P3/'
@@ -32,7 +11,7 @@ folder=main_folder+'20_02_25_P3/'
 #folder=main_folder+'20_03_16_K4/'
 
 if __name__ == "__main__":
-    files=[
+    files = [
             folder + 
             'exports_np/' + 
             'raw_{:02.0f}_1'.format(f) for f in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]

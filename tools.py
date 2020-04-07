@@ -1,5 +1,6 @@
 import os
 import random as rn
+import numpy as np
 
 
 def new_export(folder, name):
@@ -33,6 +34,30 @@ def before_save_file(path):
         return False
     
     return True
+
+
+def readinfo(file):
+    
+    with open(file + '_info.txt') as f:
+        infolist = f.read()
+    info = []
+    
+    for i in infolist.split('\n')[:-1]:
+        info.append([float(j) for j in i.split('\t')])
+
+    return info
+
+def statistics(info):
+    avg = []
+    std = []
+    num = []
+    
+    for quantity in range(7):
+        avg.append(np.average([item[quantity] for item in info]))
+        std.append(np.std([item[quantity] for item in info]))
+        num.append(len([item[quantity] for item in info]))
+        
+    return avg, std, len([item[0] for item in info])
 
 def true_coordinate(x):
     return int((x + 0.5) // 1)

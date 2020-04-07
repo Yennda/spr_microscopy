@@ -6,6 +6,7 @@ import scipy as sc
 import cv2
 import copy
 import time as tt
+import sqlite3
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -23,8 +24,11 @@ import alpha_help_methods as ahm
 import tools as tl
 from global_var import *
 from nanoparticle import NanoParticle
+from database_methods import Table
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
+
+
             
 class Video(object):
 
@@ -59,6 +63,10 @@ class Video(object):
         self.np_database = []
         self.frame_np_ids = []
         self._frame_np_ids_original = []
+        
+        #AR
+        self._ip_parameters = None
+        self._exclude_thresholds = None
         
         #statistics
         self.stats_std = None
@@ -472,6 +480,7 @@ class Video(object):
             dip = -0.003, 
             noise_level = 0.001
             ):
+        self._ip_parameters = (threshold, dip, noise_level)
         
         self._img_proc_type = 'alpha'
         
@@ -543,7 +552,7 @@ class Video(object):
         
         np_id = 0
         i = 0
-        waitting = ['/', '--', '\\', '|']
+        waitting = ['/', '-', '\\', '|']
         
         while len(self.candidates) != 0:
             print('\r{}'.format(waitting[i%len(waitting)]), end = '')   
@@ -638,6 +647,7 @@ class Video(object):
         return nanoparticle, points_excluded
         
     def image_process_beta(self, threshold = 100):
+        self._ip_parameters = (threshold)
         self.make_corr()
 
         self.frame_np_ids = [[] for i in range(self.length)]
@@ -753,6 +763,7 @@ class Video(object):
         return nanoparticle, points_excluded
           
     def image_process_gamma(self, threshold = 100):
+        self._ip_parameters = (threshold)
         self.threshold = threshold
         self.make_corr()
         
@@ -763,7 +774,7 @@ class Video(object):
         self.mask = (self._video['corr'] > threshold)*1  
         
         #600
-        minimal_area = 0
+#        minimal_area = 0
 #        condition = True
         
         #650
@@ -771,7 +782,7 @@ class Video(object):
 #        condition = (size[1] >= size[0])
         
         #750
-#        minimal_area = 10
+        minimal_area = 10
 
         number = 0
         fit_failed = 0
@@ -811,9 +822,9 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-#                    condition = (75 < angle < 105 and size[1] > size[0])
+                    condition = (75 < angle < 105 and size[1] > size[0])
 #                    condition = (size[1] >= size[0])
-                    condition = True
+#                    condition = True
                     
                     if condition:
                         candidate = (
@@ -1092,7 +1103,7 @@ threshold = {}'''.format(
         save_all = False
         
         i = 0
-        waitting = ['/', '--', '\\', '|']
+        waitting = ['/', '-', '\\', '|']
         
         for nanoparticle in self.np_database:
             if not nanoparticle.good:
@@ -1183,8 +1194,67 @@ threshold = {}'''.format(
                     
                 else:
                     break
-                         
+                
+    def save_info_experiment(self, master, dip):
+        ind = self.folder[-2::-1].index('/') + 1
+        folder = self.folder[- ind:]  
+        date = folder[:8].replace('_', '-')
+        
+        con = sqlite3.connect('database_results.db')
+        cursor = con.execute("""
+        SELECT ID from 'masters'
+        WHERE MASTER == '{}';
+        """.format(master))
+        
+        master_id = [row[0] for row in cursor][0]
+        
+        exp = Table(con, name = 'experiments')
+        
+        exp.insert(
+                date,
+                master_id,
+                dip,
+                folder,
+                )
+        exp.commit()
+        con.close()
+        print('saved')
+        
+    def save_info_measurement(self, np_diam, wl):
+        ind = self.folder[-2::-1].index('/') + 1
+        folder = self.folder[- ind:]  
+        
+        con = sqlite3.connect('database_results.db')
+        cursor = con.execute("""
+        SELECT ID from 'experiments'
+        WHERE FOLDER == '{}';
+        """.format(folder))
+        
+        experiment_id = [row[0] for row in cursor][0]
+        
+        meas = Table(con, name = 'measurements')
+        
+        file = self.folder + 'exports_np/' + self.file
+        info = tl.readinfo(file)
+        info_stat = tl.statistics(info)
+                
+        meas.insert(
+                experiment_id,
+                np_diam,
+                wl,
+                self.file,
+                str(self._ip_parameters),
+                info_stat[2],
+                *info_stat[0],
+                *info_stat[1]
+                )
+        
+        meas.commit()
+        con.close()
+        print('saved')
+                           
     def exclude_nps(self, thresholds, exclude = True):
+        self._exclude_thresholds = thresholds
         method_lambdas = [
                 lambda x: x.contrast,
                 lambda x: x.size[0],

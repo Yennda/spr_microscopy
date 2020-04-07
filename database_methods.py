@@ -22,10 +22,10 @@ class Table():
     def process_values(*args):
         values = str()
         for a in args:
-            if type(a) is int or type(a) is float:
-                values += str(a)
-            elif type(a) is str:
+            if type(a) is str:
                 values += "'{}'".format(a)
+            else: 
+                values += str(a)
             values += ', '
         return values[:-2]
         
