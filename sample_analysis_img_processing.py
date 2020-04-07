@@ -22,7 +22,7 @@ file = 'raw_16_1'
 
 
 folder = main_folder+'20_02_26_Q3/'
-file = 'raw_04_1'
+file = 'raw_05_1'
 #folder=main_folder+'20_03_16_K5/'
 #file = 'raw_20_1'
 #folder=main_folder+'20_02_26_L3/'
@@ -47,7 +47,7 @@ video.fouriere(level = 20)
 "gamma"
 video.load_idea()
 video.make_corr()
-video.image_process_gamma(threshold = 60)  
+video.image_process_gamma(threshold = 48)  
 video.characterize_nps(save = False)
 #video.info_add('\n--auto contrast--')
 #video.info_add(video.auto_contrast)
