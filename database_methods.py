@@ -45,7 +45,7 @@ class Table():
         return values[:-2]
         
     def insert(self, *args):
-        values = self.process_values(*args)      
+        values = self.process_values(*args)     
         self.con.execute("""
         INSERT INTO  {} ({})
         VALUES ({})

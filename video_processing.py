@@ -77,8 +77,8 @@ class Video(object):
         self._threshold = 4
         self._dip = -0.003
         self._noise_level = 0.001
-        self._minimal_area = None
-        self._condition = None
+        self._minimal_area = 0
+        self._condition = 0
         self._exclude_thresholds = None
         self._idea_frame = None
         self._idea_span_x = None
@@ -774,16 +774,16 @@ class Video(object):
         self.mask = (self._video['corr'] > threshold)*1  
         
         #600
-#        minimal_area = 0
+        minimal_area = 0
 #        condition = True
         
         #650
-        minimal_area = 6
+#        minimal_area = 6
 #        condition = (size[1] >= size[0])
         
         #750
-#        minimal_area = 10
-        self._minimal_area = minimal_area
+        minimal_area = 10
+#        self._minimal_area = minimal_area
         number = 0
         fit_failed = 0
         omitted = 0
@@ -822,11 +822,11 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-#                    condition = (75 < angle < 105 and size[1] > size[0])
-#                    self._condition = 2
+                    condition = (75 < angle < 105 and size[1] > size[0])
+                    self._condition = 2
                     
-                    condition = (size[1] >= size[0])
-                    self._condition = 1
+#                    condition = (size[1] >= size[0])
+#                    self._condition = 1
                     
 #                    condition = True
 #                    self._condition = 0

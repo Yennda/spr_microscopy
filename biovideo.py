@@ -8,7 +8,7 @@ from PIL import Image
 
 from video_processing import Video
 import tools as tl
-from np_analysis import np_analysis, is_np
+from global_var import *
 
 class BioVideo():
     def __init__(self, folder, file, channels):
@@ -39,7 +39,7 @@ class BioVideo():
             video.loadData()
             video.rng = [0, 1]
             self._videos.append(video)
-        self.orientation = self._videos[0].video_stats[1][1] < self._videos[0].video_stats[1][0]
+        self.orientation = self._videos[0].shape[2]< self._videos[0].shape[1]
                         
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
