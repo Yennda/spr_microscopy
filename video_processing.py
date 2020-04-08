@@ -244,14 +244,14 @@ class Video(object):
     def process_mask_image(self):
         volume_mask = np.zeros(list(self.shape) + [4])
         k_diff = self.k_diff
-#        k_diff = 1
+        k_diff = 1
         tri = [ahm.func_tri(i, k_diff, 0.5, k_diff) for i in range(int(k_diff*2))]
 
-#        for pm in self.px_for_image_mask:
-#            f, y, x = pm
-#            volume_mask[f, y, x, :3] = tl.hex_to_list(blue)
-#            volume_mask[f, y, x, 3] = 0.5
-#        return volume_mask     
+        for pm in self.px_for_image_mask:
+            f, y, x = pm
+            volume_mask[f, y, x, :3] = tl.hex_to_list(blue)
+            volume_mask[f, y, x, 3] = 0.5
+        return volume_mask     
     
         for pm in self.px_for_image_mask:
             f, y, x = pm

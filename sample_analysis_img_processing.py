@@ -23,8 +23,9 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 
 #folder = main_folder+'20_02_26_Q3/'
 #file = 'raw_21_1'
-folder=main_folder+'20_03_16_K4/'
-file = 'raw_06_1'
+folder=main_folder+'20_03_16_K5/'
+file = 'raw_12_1'
+
 #folder=main_folder+'20_02_26_L3/'
 #file = 'raw_03_1'
 
@@ -45,16 +46,16 @@ video.fouriere(level = 20)
 
 
 "gamma"
-video.load_idea()
-video.make_corr()
-video.image_process_gamma(threshold = 9.9)  
-video.characterize_nps(save = False)
-#video.info_add('\n--auto contrast--')
-#video.info_add(video.auto_contrast)
+#video.load_idea()
+#video.make_corr()
+#video.image_process_gamma(threshold = 13.6)  
+#video.characterize_nps(save = False)
+##video.info_add('\n--auto contrast--')
+##video.info_add(video.auto_contrast)
+#video.exclude_nps([3], exclude = True)
+#video.make_toggle(['diff', 'corr'], [10, 10])
 
-video.exclude_nps([2], exclude = True)
-video.make_toggle(['diff', 'corr'], [10, 10])
-video.statistics(29.1)
+video.statistics()
 
 #video.characterize_nps(save = True)
 
