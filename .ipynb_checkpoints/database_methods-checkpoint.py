@@ -1,5 +1,20 @@
 import sqlite3
 
+def to_show(row):
+    out = list()
+    for r in row:
+        if type(r) is float:
+            if r > 1:
+                out.append('{:.02f}'.format(r))
+            else:
+                out.append('{:.04f}'.format(r))
+        else:
+            out.append('{:.7}'.format(str(r)))
+    return out
+
+def head(columns):
+    print(str(to_show(columns.split(', '))).replace(', ', '\t').replace("'", "")[1:-1])
+    
 class Table():
     def __init__(self, connection, name):
         self.con = connection
@@ -22,10 +37,10 @@ class Table():
     def process_values(*args):
         values = str()
         for a in args:
-            if type(a) is int or type(a) is float:
-                values += str(a)
-            elif type(a) is str:
+            if type(a) is str:
                 values += "'{}'".format(a)
+            else: 
+                values += str(a)
             values += ', '
         return values[:-2]
         
@@ -49,9 +64,15 @@ class Table():
     def commit(self):
         self.con.commit()
         
+    def del_row(self, row_id):
+        delete = input('Really? y/n')
+        if delete == 'y':
+            self.con.execute("""
+            DELETE FROM {} WHERE ID = {};
+            """.format(self.name, row_id))
+            
     def clear_all(self):
         delete = input('Really? y/n')
-        
         if delete == 'y':
             self.con.execute("""
             DELETE FROM {};

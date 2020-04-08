@@ -64,10 +64,6 @@ class Video(object):
         self.frame_np_ids = []
         self._frame_np_ids_original = []
         
-        #AR
-        self._ip_parameters = None
-        self._exclude_thresholds = None
-        
         #statistics
         self.stats_std = None
         self.np_count_first_occurance = None
@@ -75,11 +71,15 @@ class Video(object):
         self.np_count_integral = None
         self.validity = None
         self.valid = None
+        self.binding_rate = None
         
         #settings
-        self.threshold = 4
-        self.dip = -0.003
-        self.noise_level = 0.001
+        self._threshold = 4
+        self._dip = -0.003
+        self._noise_level = 0.001
+        self._minimal_area = None
+        self._condition = None
+        self._exclude_thresholds = None
         self._idea_frame = None
         self._idea_span_x = None
         self._idea_span_y = None
@@ -480,8 +480,7 @@ class Video(object):
             dip = -0.003, 
             noise_level = 0.001
             ):
-        self._ip_parameters = (threshold, dip, noise_level)
-        
+            
         self._img_proc_type = 'alpha'
         
         if  'diff' not in self._img_type:
@@ -489,9 +488,9 @@ class Video(object):
                   'Use make_diff method first.')
             return
         
-        self.threshold = threshold
-        self.dip = dip
-        self.noise_level = noise_level
+        self._threshold = threshold
+        self._dip = dip
+        self._noise_level = noise_level
               
         self.frame_np_ids = [[] for i in range(self.length)]
         self.candidates = set()
@@ -647,7 +646,7 @@ class Video(object):
         return nanoparticle, points_excluded
         
     def image_process_beta(self, threshold = 100):
-        self._ip_parameters = (threshold)
+        self._threshold = threshold
         self.make_corr()
 
         self.frame_np_ids = [[] for i in range(self.length)]
@@ -763,8 +762,9 @@ class Video(object):
         return nanoparticle, points_excluded
           
     def image_process_gamma(self, threshold = 100):
-        self._ip_parameters = (threshold)
-        self.threshold = threshold
+
+        
+        self._threshold = threshold
         self.make_corr()
         
         self.frame_np_ids = [[] for i in range(self.length)]
@@ -778,12 +778,12 @@ class Video(object):
 #        condition = True
         
         #650
-#        minimal_area = 4
+        minimal_area = 6
 #        condition = (size[1] >= size[0])
         
         #750
-        minimal_area = 10
-
+#        minimal_area = 10
+        self._minimal_area = minimal_area
         number = 0
         fit_failed = 0
         omitted = 0
@@ -822,9 +822,14 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-                    condition = (75 < angle < 105 and size[1] > size[0])
-#                    condition = (size[1] >= size[0])
+#                    condition = (75 < angle < 105 and size[1] > size[0])
+#                    self._condition = 2
+                    
+                    condition = (size[1] >= size[0])
+                    self._condition = 1
+                    
 #                    condition = True
+#                    self._condition = 0
                     
                     if condition:
                         candidate = (
@@ -938,7 +943,7 @@ class Video(object):
                         self.np_database.append(nanoparticle)
                         last_np_id += 1
 
-    def statistics(self):
+    def statistics(self, binding_rate_0 = 1):
         self.make_frame_stats()
         self.show_stats = True
         
@@ -990,13 +995,13 @@ class Video(object):
                     self.np_count_integral[end] - 
                     self.np_count_integral[start]
                     )/(end - start) * 100
-            
+            self.binding_rate = binding_rate
             self.info_add('Rate per 100 frames: {:.01f}'.format(
                     binding_rate)
             )
             
             self.info_add('Compared to reference: {:.01f} %'.format(
-                    binding_rate/47.9*100)
+                    binding_rate/binding_rate_0*100)
             )
             
             
@@ -1079,7 +1084,7 @@ class Video(object):
         ax.add_patch(sigma3)
         
         threshold = mpatches.Rectangle(
-                (self.threshold, 0),
+                (self._threshold, 0),
                 width, 
                 height, 
                 color = black
@@ -1093,7 +1098,7 @@ class Video(object):
 threshold = {}'''.format(
                 5 * sigma, 
                 6 * sigma,
-                self.threshold
+                self._threshold
                 )
                 )
 #    return int(round(sigma * 5))
@@ -1220,7 +1225,7 @@ threshold = {}'''.format(
         con.close()
         print('saved')
         
-    def save_info_measurement(self, np_diam, wl):
+    def save_info_measurement(self, np_diam, wl, note = '-', exp_type = '-'):
         ind = self.folder[-2::-1].index('/') + 1
         folder = self.folder[- ind:]  
         
@@ -1243,10 +1248,19 @@ threshold = {}'''.format(
                 np_diam,
                 wl,
                 self.file,
-                str(self._ip_parameters),
+                self._threshold,
+                self._dip,
+                self._noise_level,
+                str(self._exclude_thresholds),
+                self.binding_rate,
+                self.info,
                 info_stat[2],
                 *info_stat[0],
-                *info_stat[1]
+                *info_stat[1],
+                note,
+                self._minimal_area,
+                self._condition,
+                exp_type
                 )
         
         meas.commit()
@@ -1523,8 +1537,8 @@ threshold = {}'''.format(
                 ahm.correlation_temporal(
                         ax.volume[: , y, x], 
                         k_diff = self.k_diff, 
-                        step = self.dip, 
-                        threshold = self.threshold,  
+                        step = self._dip, 
+                        threshold = self._threshold,  
                         show = True
                         )
                 

@@ -15,16 +15,16 @@ def change(video, thresholds):
     
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 
-folder = main_folder+'20_02_25_P3/'
-file = 'raw_16_1'
+#folder = main_folder+'20_02_25_P3/'
+#file = 'raw_18_1'
 #file = 'raw_11_1'
 #file = 'raw_16_1'
 
 
-folder = main_folder+'20_02_26_Q3/'
-file = 'raw_05_1'
-#folder=main_folder+'20_03_16_K5/'
-#file = 'raw_20_1'
+#folder = main_folder+'20_02_26_Q3/'
+#file = 'raw_21_1'
+folder=main_folder+'20_03_16_K4/'
+file = 'raw_06_1'
 #folder=main_folder+'20_02_26_L3/'
 #file = 'raw_03_1'
 
@@ -47,23 +47,25 @@ video.fouriere(level = 20)
 "gamma"
 video.load_idea()
 video.make_corr()
-video.image_process_gamma(threshold = 48)  
+video.image_process_gamma(threshold = 9.9)  
 video.characterize_nps(save = False)
 #video.info_add('\n--auto contrast--')
 #video.info_add(video.auto_contrast)
+
 video.exclude_nps([2], exclude = True)
-video.make_toggle(['diff', 'int'], [10, 10])
-video.statistics()
+video.make_toggle(['diff', 'corr'], [10, 10])
+video.statistics(29.1)
 
 #video.characterize_nps(save = True)
 
 
-video.statistics()
 video.explore()
 
-video.histogram('diff')
+video.histogram()
 
 
+#video.save_info_measurement(80, 734)
+
+video.info_add('\n--elapsed time--\n{:.2f} s'.format(t.time()-time_start))
 
 print(video.info)
-print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))
