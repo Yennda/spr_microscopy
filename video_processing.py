@@ -8,6 +8,7 @@ import copy
 import time as tt
 import sqlite3
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.ticker import MaxNLocator
@@ -27,7 +28,10 @@ from nanoparticle import NanoParticle
 from database_methods import Table
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
-
+#matplotlib.rc('font', family='serif') 
+#matplotlib.rc('font', serif='Palatino Linotype') 
+#matplotlib.rc('text', usetex='false') 
+#matplotlib.rcParams.update({'font.size': 30})
 
             
 class Video(object):
@@ -45,7 +49,7 @@ class Video(object):
                 'corr': None
                 }
         self.__toggle = False
-        self._img_type = 'raw'
+        self._img_type = ['raw']
         self.rng = [-1, 1]
         self.time_info = None
 
@@ -396,7 +400,6 @@ class Video(object):
             
         self._video['raw'] = out
         self.time_info=t_out
-        self.refresh()
                 
     def image_properties(self, it = 'int', level = 20):
         f = np.fft.fft2(self._video[it][:, :, -1])
@@ -761,8 +764,9 @@ class Video(object):
         
         return nanoparticle, points_excluded
           
-    def image_process_gamma(self, threshold = 100):
-
+    def image_process_gamma(self, threshold = None):
+        if threshold is None:
+            threshold = self.histogram(show = False)
         
         self._threshold = threshold
         self.make_corr()
@@ -774,16 +778,17 @@ class Video(object):
         self.mask = (self._video['corr'] > threshold)*1  
         
         #600
-        minimal_area = 0
-#        condition = True
+#        minimal_area = 0
         
         #650
 #        minimal_area = 6
-#        condition = (size[1] >= size[0])
+
         
         #750
-        minimal_area = 10
-#        self._minimal_area = minimal_area
+        minimal_area = 2
+        
+        self._minimal_area = minimal_area
+        
         number = 0
         fit_failed = 0
         omitted = 0
@@ -1027,7 +1032,7 @@ class Video(object):
         else:
             self.valid = [True]*self.length
             
-    def histogram(self, what = 'corr'):
+    def histogram(self, what = 'corr', show = True):
         if self._video[what] is None:
             return
         
@@ -1061,47 +1066,48 @@ class Video(object):
         span_x = ax.get_xlim()
         x = np.arange(span_x[0], span_x[1], (span_x[1] - span_x[0]) / 1e3)
         
-        ax.plot(x, gauss(x, *coeff), color = red, ls = '--')
-                    
-        height = ax.get_ylim()[1]
-        width = np.abs(span_x[1] - span_x[0]) / 1000
-        
-        sigma2 = mpatches.Rectangle(
-                (sigma * 5, 0), 
-                width, 
-                height, 
-                color = red
-                ) 
-        ax.add_patch(sigma2)
-
-        
-        sigma3 = mpatches.Rectangle(
-                (sigma * 6, 0), 
-                width, 
-                height, 
-                color = red
-                )  
-        ax.add_patch(sigma3)
-        
-        threshold = mpatches.Rectangle(
-                (self._threshold, 0),
-                width, 
-                height, 
-                color = black
-                ) 
-        ax.add_patch(threshold)
-        
-        self.info_add('\n--histogram--')
-        self.info_add(
-'''5 x sigma = {:.02f}
-6 x sigma = {:.02f}
-threshold = {}'''.format(
-                5 * sigma, 
-                6 * sigma,
-                self._threshold
-                )
-                )
-#    return int(round(sigma * 5))
+        if show:
+            ax.plot(x, gauss(x, *coeff), color = red, ls = '--')
+                        
+            height = ax.get_ylim()[1]
+            width = np.abs(span_x[1] - span_x[0]) / 1000
+            
+            sigma2 = mpatches.Rectangle(
+                    (sigma * 5, 0), 
+                    width, 
+                    height, 
+                    color = red
+                    ) 
+            ax.add_patch(sigma2)
+    
+            
+            sigma3 = mpatches.Rectangle(
+                    (sigma * 6, 0), 
+                    width, 
+                    height, 
+                    color = red
+                    )  
+            ax.add_patch(sigma3)
+            
+            threshold = mpatches.Rectangle(
+                    (self._threshold, 0),
+                    width, 
+                    height, 
+                    color = black
+                    ) 
+            ax.add_patch(threshold)
+            
+            self.info_add('\n--histogram--')
+            self.info_add(
+    '''5 x sigma = {:.02f}
+    6 x sigma = {:.02f}
+    threshold = {}'''.format(
+                    5 * sigma, 
+                    6 * sigma,
+                    self._threshold
+                    )
+                    )
+        return int(round(sigma * 5))
         
     def characterize_nps(self, save = False):
         size = 25
@@ -1199,6 +1205,7 @@ threshold = {}'''.format(
                     
                 else:
                     break
+        print('')
                 
     def save_info_experiment(self, master, dip):
         ind = self.folder[-2::-1].index('/') + 1
@@ -1493,7 +1500,13 @@ threshold = {}'''.format(
 
             # saves the png file of the view
 
-            fig.savefig(name + '.png', dpi=300)
+            fig.savefig(
+                    name + '.png', 
+                    bbox_inches = 'tight',
+                    transparent = True,
+                    pad_inches = 0,
+                    pi=300
+                    )
             fig_stat.savefig(name + '_int.png', dpi=300)
 
             xlim = [int(i) for i in ax.get_xlim()]
@@ -1722,7 +1735,7 @@ threshold = {}'''.format(
         fig.canvas.mpl_connect('button_press_event', mouse_click)
         fig.canvas.mpl_connect('key_press_event', button_press)
 
-        fontprops = fm.FontProperties(size=10)
+        fontprops = fm.FontProperties(size=20)
         scalebar = AnchoredSizeBar(ax.transData,
                    34, '100 $\mu m$', 'lower right', 
                    pad=0.1,
@@ -1851,7 +1864,7 @@ threshold = {}'''.format(
                     (ax.index, stat_plot.get_ylim()[0]), 
                     1, 
                     rectangle_height, 
-                    color=red
+                    color=gray
                     )                
             stat_plot.add_patch(location)
             fig_stat.legend(loc=2)

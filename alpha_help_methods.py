@@ -80,11 +80,14 @@ def correlation_temporal(
     if show:             
         fig, axes = plt.subplots()
         axes.plot(
-                data, 
+                data*1000, 
                 ls = '-', 
                 color = COLORS[3], 
                 label='signal'
                 )
+#        axes.set_title('info')
+        axes.set_xlabel('Frame')
+        axes.set_ylabel('Intensity [a. u.]')
         axes.plot(
                 tri, 
                 ls = '-', 

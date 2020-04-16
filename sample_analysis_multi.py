@@ -19,15 +19,15 @@ folder=main_folder+'19_08_29_L3/'
 #folder=main_folder+'20_02_25_P3/'
 folder=main_folder+'20_02_25_M5/'
 #folder=main_folder+'20_02_26_L3/'
-#folder=main_folder+'20_02_26_Q3/'
+#folder=main_folder+'20_04_14_M5/'
 
 stds = []
 amplitude = []
 
-for i in range(1, 17):
+for i in [5, 10, 20, 50, 100]:
     plt.close("all")
     
-    file = 'raw_{:02d}_1'.format(i)
+    file = 'raw_36_1'
     
     
     
@@ -36,8 +36,6 @@ for i in range(1, 17):
     
     
     video._video['raw']=video._video['raw'][:,400:800,:200]
-    video.refresh()
-    
     
     video.make_int(10)
     amplitude.append(video.characterize())

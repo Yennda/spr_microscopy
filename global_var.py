@@ -10,7 +10,7 @@ red='#DD5544'
 blue='#0284C0'
 black='#000000'    
 green='#008000'
-
+gray='#333333'
 
 COLORS = [yellow, blue, red, black]
 
