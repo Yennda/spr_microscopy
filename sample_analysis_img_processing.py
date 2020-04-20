@@ -18,8 +18,9 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder = main_folder+'20_02_25_P3/'
 file = 'raw_10_1'
 
-#folder = main_folder+'20_02_26_Q3/'
-#file = 'raw_04_1'
+folder = main_folder+'20_02_26_Q3/'
+file = 'raw_04_1'
+
 #folder=main_folder+'20_03_16_K5/'
 #file = 'raw_01_1'
 
@@ -41,9 +42,8 @@ file = 'raw_10_1'
 #folder=main_folder+'20_03_23_L3_4x/'
 #file = 'raw_06_1'
 
-folder=main_folder+'20_04_14_M5/'
-file = 'raw_16_1'
-
+#folder=main_folder+'20_04_14_M5/'
+#file = 'raw_16_1'
 
 #folder=main_folder+'20_04_15_L3/'
 #file = 'raw_38_1'
