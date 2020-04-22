@@ -16,8 +16,8 @@ class NanoParticle():
         
         self.id = np_id
         self.good = True
-#        self.color = tl.random_color()
-        self.color = tl.hex_to_list(red)
+        self.color = tl.random_color()
+#        self.color = tl.hex_to_list(red)
 
         if method == 'beta':
             self.positions = positions
