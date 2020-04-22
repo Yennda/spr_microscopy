@@ -49,7 +49,7 @@ file = 'raw_18_1'
 #file = 'raw_07_1'
 #
 folder=main_folder+'20_04_20_Q4/'
-file = 'raw_15_1'
+file = 'raw_16_1'
 
 
 video = Video(folder, file)
@@ -69,14 +69,14 @@ video.fouriere(level = 20)
 #video.make_toggle(['diff', 'int'], [10, 10])
 
 "gamma"
-video.load_idea()
-video.make_corr()
-video.image_process_gamma()  
-video.characterize_nps(save = False)
-#video.info_add('\n--auto contrast--')
-#video.info_add(video.auto_contrast)
-video.exclude_nps([2], exclude = True)
-video.make_toggle(['diff', 'corr'], [10, 10])
+#video.load_idea()
+#video.make_corr()
+#video.image_process_gamma()  
+#video.characterize_nps(save = False)
+##video.info_add('\n--auto contrast--')
+##video.info_add(video.auto_contrast)
+#video.exclude_nps([2], exclude = True)
+#video.make_toggle(['diff', 'corr'], [10, 10])
 
 video.statistics()
 

@@ -54,6 +54,7 @@ class Video(object):
         self.time_info = None
 
         self.ref_frame = 0
+        self.reference = None
         self.k_diff = None
         self.k_int = None
         
@@ -211,14 +212,24 @@ class Video(object):
         print(' DONE')
         return out
     
+    def process_reference(self, f, k ):
+        self.reference = np.sum(
+            self._video['raw'][:, :, f: f + k], 
+            axis = 2
+            ) / k
+                
     def process_int(self, k = 1):
         sh = self._video['raw'].shape
         out = np.zeros(sh)
         out[:, :, 0] = np.zeros(sh[0: 2])
-        reference = np.sum(
-                self._video['raw'][:, :, self.ref_frame: self.ref_frame + k], 
-                axis = 2
-                ) / k
+        
+        if self.reference is None:
+            reference = np.sum(
+                    self._video['raw'][:, :, self.ref_frame: self.ref_frame + k], 
+                    axis = 2
+                    ) / k
+        else:
+            reference = self.reference
         
         print('Integral image')
         
@@ -1206,7 +1217,43 @@ class Video(object):
                 else:
                     break
         print('')
+                                      
+    def exclude_nps(self, thresholds, exclude = True):
+        self._exclude_thresholds = thresholds
+        method_lambdas = [
+                lambda x: x.contrast,
+                lambda x: x.size[0],
+                lambda x: len(x.masks[0])
+                ]
+        excluded = set()
+        self.frame_np_ids = copy.deepcopy(self._frame_np_ids_original)
+        
+        for f in range(self.length):
+            ids = copy.deepcopy(self.frame_np_ids[f])
+            frame_excluded = set()
+            
+            for np_id in ids:
                 
+                for i in range(len(thresholds)): 
+                    if np_id in frame_excluded:
+                        continue
+                        
+                    if method_lambdas[i](self.np_database[np_id]) < thresholds[i]:
+
+                        if exclude:
+                            self.frame_np_ids[f].remove(np_id)
+
+                        else:
+                            self.np_database[np_id].color = tl.hex_to_list(
+                                    green
+                                    )
+                        frame_excluded.add(np_id)
+                        self.np_database[np_id].good = False
+                        excluded.add(np_id)
+                
+        self.info_add('\n--exclusion--')       
+        self.info_add('Number of excluded nps: {}'.format(len(excluded)))
+        
     def save_info_experiment(self, master, dip):
         ind = self.folder[-2::-1].index('/') + 1
         folder = self.folder[- ind:]  
@@ -1273,43 +1320,34 @@ class Video(object):
         meas.commit()
         con.close()
         print('saved')
-                           
-    def exclude_nps(self, thresholds, exclude = True):
-        self._exclude_thresholds = thresholds
-        method_lambdas = [
-                lambda x: x.contrast,
-                lambda x: x.size[0],
-                lambda x: len(x.masks[0])
-                ]
-        excluded = set()
-        self.frame_np_ids = copy.deepcopy(self._frame_np_ids_original)
+
         
-        for f in range(self.length):
-            ids = copy.deepcopy(self.frame_np_ids[f])
-            frame_excluded = set()
+    def save_reference(self, name = None):
+        if not os.path.isdir(self.folder + FOLDER_IDEAS):
+            os.mkdir(self.folder + FOLDER_IDEAS)
             
-            for np_id in ids:
-                
-                for i in range(len(thresholds)): 
-                    if np_id in frame_excluded:
-                        continue
-                        
-                    if method_lambdas[i](self.np_database[np_id]) < thresholds[i]:
+        if name == None:
+            name = self.file
+            
+        file_name = self.folder + FOLDER_IDEAS + '/ref_' + name
+        
+        if tl.before_save_file(file_name) or name == self.file:
+            
+            np.save(file_name + '.npy', self.reference)
+            
+            print('Reference saved')
 
-                        if exclude:
-                            self.frame_np_ids[f].remove(np_id)
+        else:
+            print('Could not save the reference.')
+            
+    def load_reference(self, name = None):
+        if name == None:
+            name = self.file
+            
+        file_name = self.folder + FOLDER_IDEAS + '/ref_' + name
+        self.reference = np.load(file_name + '.npy')
+        print('Reference loaded')
 
-                        else:
-                            self.np_database[np_id].color = tl.hex_to_list(
-                                    green
-                                    )
-                        frame_excluded.add(np_id)
-                        self.np_database[np_id].good = False
-                        excluded.add(np_id)
-                
-        self.info_add('\n--exclusion--')       
-        self.info_add('Number of excluded nps: {}'.format(len(excluded)))
-           
     def save_idea(self, name = None):
         if not os.path.isdir(self.folder + FOLDER_IDEAS):
             os.mkdir(self.folder + FOLDER_IDEAS)
