@@ -18,11 +18,11 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder = main_folder+'20_02_25_P3/'
 file = 'raw_20_1'
 
-#folder = main_folder+'20_02_26_Q3/'
-#file = 'raw_15_1'
+folder = main_folder+'20_02_26_Q3/'
+file = 'raw_27_1'
 
-folder=main_folder+'20_03_16_K5/'
-file = 'raw_18_1'
+#folder=main_folder+'20_03_16_K5/'
+#file = 'raw_18_1'
 
 #folder=main_folder+'20_02_26_L3/'
 #file = 'raw_05_1'
@@ -37,7 +37,7 @@ file = 'raw_18_1'
 #file = 'raw_01_1'
 
 #folder=main_folder+'20_04_03_L3/'
-#file = 'raw_07_1'
+#file = 'raw_01_1'
 
 #folder=main_folder+'20_03_23_L3_4x/'
 #file = 'raw_06_1'
@@ -49,7 +49,7 @@ file = 'raw_18_1'
 #file = 'raw_07_1'
 #
 folder=main_folder+'20_04_20_Q4/'
-file = 'raw_16_1'
+file = 'raw_22_1'
 
 
 video = Video(folder, file)
@@ -66,7 +66,7 @@ video.fouriere(level = 20)
 #video.img_process_alpha(threshold = 2.5, noise_level = 0.0012U)
 #video.characterize_nps(save = False)
 #video.exclude_nps([3], exclude = True)
-#video.make_toggle(['diff', 'int'], [10, 10])
+video.make_toggle(['diff', 'int'], [10, 10])
 
 "gamma"
 #video.load_idea()
