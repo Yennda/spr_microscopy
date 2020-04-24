@@ -17,21 +17,24 @@ time_start=t.time()
 folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
 folder=main_folder+'19_08_29_L3/'
 #folder=main_folder+'20_02_06_Tomas_magnetic_nps/'
-file = 'raw_32_1'
+folder=main_folder+'20_04_15_L3/'
+file = 'raw_17_1'
 
 
 
 video = Video(folder, file)
 video.loadData()
-#video.change_fps(10)
+#video.change_fps(100)
 
 video.rng = [-0.01, 0.01]
 
-#video._video['raw']=video._video['raw'][:,:,:600]
+video._video['raw']=video._video['raw'][250:350,650:750,:]
 video.refresh()
 
 
-video.make_diff(k = 1)
+video.make_diff(k = 100)
+
+
 #video.fouriere()
 
 # t, y, x
@@ -41,7 +44,7 @@ video.make_diff(k = 1)
 #is_np(video.video[:, 212, 673], show=True)
 
 #b
-is_np(video.video[:, 88, 733], show=True)
+#is_np(video.video[:, 88, 733], show=True)
 
-#video.explore()
+video.explore()
 print('ELAPSED TIME: {:.2f} s'.format(t.time()-time_start))
