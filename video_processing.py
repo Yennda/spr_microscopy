@@ -46,6 +46,7 @@ class Video(object):
                 'raw': None,
                 'diff': None,
                 'int': None,
+                'inta': None,
                 'corr': None
                 }
         self.__toggle = False
@@ -241,6 +242,34 @@ class Video(object):
         print(' DONE')
         return out
     
+    def process_int_avg(self, k = 1):
+        sh = self._video['raw'].shape
+        out = np.zeros(sh)
+        out[:, :, :k] = np.zeros(list(sh[0: 2]) + [k])
+        
+        if self.reference is None:
+            reference = np.sum(
+                    self._video['raw'][:, :, self.ref_frame: self.ref_frame + k], 
+                    axis = 2
+                    ) / k
+        else:
+            reference = self.reference
+        
+        print('Integral image averaged')
+        
+        for i in range(k, sh[-1]):
+            print('\r\t{}/ {}'.format(i + 1, self.length), end = '')
+            
+            frame = np.average(
+                    self._video['raw'][:, :, i//k*k - k: i//k*k], 
+                    axis = 2
+                    )
+            out[:, :, i] = frame - reference
+        self.k_int = k
+            
+        print(' DONE')
+        return out
+    
     def process_corr(self):
         if type(self.idea3d) == type(None):
             raise ValueError('The image of the NP pattern not defined.') 
@@ -299,6 +328,8 @@ class Video(object):
             out = self.process_diff(k)
         elif name == 'int':
             out = self.process_int(k)
+        elif name == 'inta':
+            out = self.process_int_avg(k)
         elif name == 'corr':
             out = self.process_corr()
         elif name == 'raw':
@@ -335,6 +366,11 @@ class Video(object):
     def make_int(self, k = 1):
         self._video['int']= self.process_int(k)
         self._img_type = ['int']
+        self.rng = [-0.01, 0.01]
+        
+    def make_int_avg(self, k = 1):
+        self._video['inta']= self.process_int_avg(k)
+        self._img_type = ['inta']
         self.rng = [-0.01, 0.01]
         
     def make_corr(self):
