@@ -1720,7 +1720,7 @@ class Video(object):
             elif event.key == 'm':
                 "switch off/on the overlaying graphics"
                 if self.show_graphic:
-                    img.set_zorder(10)
+                    img.set_zorder(5)
                     self.show_graphic = False
                     
                 else:
@@ -1823,7 +1823,7 @@ class Video(object):
                    frameon=False,
                    size_vertical=1,
                    fontproperties=fontprops)
-
+        scalebar.set_zorder(6)
         ax.add_artist(scalebar)
         
         if self.show_stats:

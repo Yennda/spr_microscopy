@@ -64,7 +64,7 @@ video.fouriere(level = 20)
 "alpha"
 
 #video.img_process_alpha(threshold = 2.5, noise_level = 0.0012U)
-#video.characterize_nps(save = False)
+#video.characterize_nps(save = False)♣
 #video.exclude_nps([3], exclude = True)
 #video.make_toggle(['diff', 'inta'], [20, 20])
 
@@ -76,7 +76,7 @@ video.characterize_nps(save = False)
 #video.info_add('\n--auto contrast--')
 #video.info_add(video.auto_contrast)
 #video.exclude_nps([2], exclude = True)
-#video.make_toggle(['diff', 'corr'], [10, 10])
+video.make_toggle(['diff', 'corr'], [10, 10])
 #video.make_toggle(['diff', 'inta'], [20, 20])
 
 video.statistics()
