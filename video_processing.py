@@ -28,11 +28,14 @@ from nanoparticle import NanoParticle
 from database_methods import Table
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
-#matplotlib.rc('font', family='serif') 
-#matplotlib.rc('font', serif='Palatino Linotype') 
-#matplotlib.rc('text', usetex='false') 
-#matplotlib.rcParams.update({'font.size': 30})
-
+matplotlib.rc('font', family='serif') 
+matplotlib.rc('font', serif='Palatino Linotype') 
+matplotlib.rc('text', usetex='false') 
+matplotlib.rcParams.update({'font.size': 30})
+matplotlib.rcParams['mathtext.fontset'] = 'custom'
+matplotlib.rcParams['mathtext.rm'] = 'Palatino Linotype'
+matplotlib.rcParams['mathtext.it'] = 'Palatino Linotype:italic'
+matplotlib.rcParams['mathtext.bf'] = 'BiPalatino Linotype:bold'
             
 class Video(object):
 
@@ -1164,6 +1167,9 @@ class Video(object):
         waitting = ['/', '-', '\\', '|']
         
         for nanoparticle in self.np_database:
+            
+#        for i in [1]:
+#            nanoparticle = self.np_database[25]
             if not nanoparticle.good:
                 continue
             print('\r{}'.format(waitting[i%len(waitting)]), end = '')   

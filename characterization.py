@@ -1,6 +1,8 @@
 import math as m
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 SCALE = 2.93  # mu/px
 SHAPE = 50  # dimension of the image in px
@@ -32,8 +34,18 @@ def characterize(raw, mask_np, sizes):
             out[i] = 0
             
 #    fig, ax = plt.subplots()
-#    ax.imshow(raw)
-#    ax.imshow(mask_np, cmap = 'autumn', alpha = 0.8)      
+#    ax.imshow(raw, cmap = 'gray')
+#    ax.imshow(mask_np, cmap = 'autumn', alpha = 0.8)  
+#    fontprops = fm.FontProperties(size=20)
+#    scalebar = AnchoredSizeBar(ax.transData,
+#                   34, '100 $\mu m$', 'lower right', 
+#                   pad=0.1,
+#                   color='black',
+#                   frameon=False,
+#                   size_vertical=1,
+#                   fontproperties=fontprops)
+#
+#    ax.add_artist(scalebar)    
     return out
 
 def save(raw, measures, name):
