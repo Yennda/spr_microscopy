@@ -28,14 +28,14 @@ from nanoparticle import NanoParticle
 from database_methods import Table
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
-matplotlib.rc('font', family='serif') 
-matplotlib.rc('font', serif='Palatino Linotype') 
-matplotlib.rc('text', usetex='false') 
-matplotlib.rcParams.update({'font.size': 30})
-matplotlib.rcParams['mathtext.fontset'] = 'custom'
-matplotlib.rcParams['mathtext.rm'] = 'Palatino Linotype'
-matplotlib.rcParams['mathtext.it'] = 'Palatino Linotype:italic'
-matplotlib.rcParams['mathtext.bf'] = 'BiPalatino Linotype:bold'
+#matplotlib.rc('font', family='serif') 
+#matplotlib.rc('font', serif='Palatino Linotype') 
+#matplotlib.rc('text', usetex='false') 
+#matplotlib.rcParams.update({'font.size': 30})
+#matplotlib.rcParams['mathtext.fontset'] = 'custom'
+#matplotlib.rcParams['mathtext.rm'] = 'Palatino Linotype'
+#matplotlib.rcParams['mathtext.it'] = 'Palatino Linotype:italic'
+#matplotlib.rcParams['mathtext.bf'] = 'BiPalatino Linotype:bold'
             
 class Video(object):
 
@@ -86,8 +86,8 @@ class Video(object):
         self._threshold = 4
         self._dip = -0.003
         self._noise_level = 0.001
-        self._minimal_area = 0
-        self._condition = 0
+        self._minimal_area = None
+        self._condition = None
         self._exclude_thresholds = None
         self._idea_frame = None
         self._idea_span_x = None
@@ -827,17 +827,12 @@ class Video(object):
         
         self.mask = (self._video['corr'] > threshold)*1  
         
-        #600
-#        minimal_area = 0
+        minimal_area = 6
         
-        #650
-#        minimal_area = 6
-
-        
-        #750
-        minimal_area = 2
-        
-        self._minimal_area = minimal_area
+        if self._minimal_area != None:
+            minimal_area = self._minimal_area
+        else:
+            self._minimal_area = minimal_area
         
         number = 0
         fit_failed = 0
@@ -877,15 +872,15 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-                    condition = (75 < angle < 105 and size[1] > size[0])
-                    self._condition = 2
-                    
-#                    condition = (size[1] >= size[0])
-#                    self._condition = 1
-                    
-#                    condition = True
-#                    self._condition = 0
-                    
+                    if self._condition == None:
+                        self._condition = 2
+                    elif self._condition == 0:
+                        condition = True
+                    elif self._condition == 1:
+                        condition = (size[1] >= size[0])
+                    elif self._condition == 2:
+                        condition = (75 < angle < 105 and size[1] > size[0])
+            
                     if condition:
                         candidate = (
                                 f, 
@@ -1324,8 +1319,24 @@ class Video(object):
     def save_info_measurement(self, np_diam, wl, note = '-', exp_type = '-'):
         ind = self.folder[-2::-1].index('/') + 1
         folder = self.folder[- ind:]  
+        file = self.folder + 'exports_np/' + self.file
         
         con = sqlite3.connect('database_results.db')
+        
+        data = con.execute("""
+        SELECT COUNT(MEAS.ID), MEAS.ID
+        FROM 'masters' as MAS 
+        INNER JOIN 'experiments' as EXP 
+        ON MAS.ID = EXP.MASTER_ID
+        INNER JOIN 'measurements' as MEAS
+        ON EXP.ID = MEAS.EXPERIMENT_ID 
+        WHERE FOLDER = '{}' AND FILE = '{}'
+        ;
+           """.format(folder, self.file)
+           )
+        
+        count, mid = [d for d in data][0]
+        
         cursor = con.execute("""
         SELECT ID from 'experiments'
         WHERE FOLDER == '{}';
@@ -1335,7 +1346,15 @@ class Video(object):
         
         meas = Table(con, name = 'measurements')
         
-        file = self.folder + 'exports_np/' + self.file
+        print(count, mid)
+        if count != 0:
+            replace = input('The row already exists, do you want to replace it? y/n')
+            
+            if replace =='y':
+                meas.del_row(mid)
+            else:
+                return
+            
         info = tl.readinfo(file)
         info_stat = tl.statistics(info)
                 

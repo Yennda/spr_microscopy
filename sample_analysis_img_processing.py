@@ -19,7 +19,7 @@ folder = main_folder+'20_02_25_P3/'
 file = 'raw_20_1'
 
 folder = main_folder+'20_02_26_Q3/'
-file = 'raw_27_1'
+file = 'raw_10_1'
 
 #folder=main_folder+'20_03_16_K5/'
 #file = 'raw_18_1'
@@ -45,17 +45,17 @@ file = 'raw_27_1'
 #folder=main_folder+'20_04_14_M5/'
 #file = 'raw_28_1'
 #
-folder=main_folder+'20_04_15_L3/'
-file = 'raw_07_1'
+#folder=main_folder+'20_04_15_L3/'
+#file = 'raw_07_1'
 #
-#folder=main_folder+'20_04_20_Q4/'
-#file = 'raw_22_1'
+folder=main_folder+'20_04_20_Q4/'
+file = 'raw_15_1'
 
 
 video = Video(folder, file)
 video.loadData()
 
-video._video['raw']=video._video['raw'][100:,430:730,:]
+video._video['raw']=video._video['raw'][100:,430:730,1:]
 video.make_diff(k = 10)
 #video.change_fps(10)
 #video.make_int(k = 10)
@@ -75,8 +75,9 @@ video.image_process_gamma()
 video.characterize_nps(save = False)
 #video.info_add('\n--auto contrast--')
 #video.info_add(video.auto_contrast)
-#video.exclude_nps([2], exclude = True)
+video.exclude_nps([2], exclude = True)
 video.make_toggle(['diff', 'corr'], [10, 10])
+
 #video.make_toggle(['diff', 'inta'], [20, 20])
 
 video.statistics()

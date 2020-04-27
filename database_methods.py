@@ -15,6 +15,20 @@ def to_show(row):
 def head(columns):
     print(str(to_show(columns.split(', '))).replace(', ', '\t').replace("'", "")[1:-1])
     
+def process_data(data, columns):
+    out = dict()
+    
+    for row in data:
+        i = 0
+        for r in row:
+            if type(r) == str:
+                out[columns[i]] = [float(f) for f in r[1:-1].split(', ')]
+            else:
+                out[columns[i]] = r
+            i += 1
+    return out
+
+    
 class Table():
     def __init__(self, connection, name):
         self.con = connection
