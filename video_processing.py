@@ -871,6 +871,7 @@ class Video(object):
                         continue
                     
                     loc, size, angle = ellipse
+                    condition = 2
                     
                     if self._condition == None:
                         self._condition = 2
@@ -880,7 +881,7 @@ class Video(object):
                         condition = (size[1] >= size[0])
                     elif self._condition == 2:
                         condition = (75 < angle < 105 and size[1] > size[0])
-            
+                        
                     if condition:
                         candidate = (
                                 f, 
@@ -1345,8 +1346,7 @@ class Video(object):
         experiment_id = [row[0] for row in cursor][0]
         
         meas = Table(con, name = 'measurements')
-        
-        print(count, mid)
+
         if count != 0:
             replace = input('The row already exists, do you want to replace it? y/n')
             

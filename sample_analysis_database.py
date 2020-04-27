@@ -15,7 +15,7 @@ cursor = con.cursor()
    
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder = '20_04_20_Q4/'
-file = 'raw_17_1'
+file = 'raw_28_1'
 
 #folder = '20_04_15_L3/'
 #file = 'raw_07_1'

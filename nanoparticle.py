@@ -52,10 +52,10 @@ class NanoParticle():
         return self.positions[frame-self.first_frame][1:]
     
     def last_position_xy(self):
-        return self.position_yx(self.last_frame)
+        return self.position_xy(self.last_frame)
     
     def first_position_xy(self):
-        return self.position_yx(self.first_frame)
+        return self.position_xy(self.first_frame)
     
     @property
     def mask_for_characterization(self):
