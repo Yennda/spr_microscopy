@@ -14,8 +14,8 @@ con = sqlite3.connect('database_results.db')
 cursor = con.cursor()
    
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
-folder = '20_04_20_Q4/'
-file = 'raw_28_1'
+folder = '20_04_15_L3/'
+file = 'raw_31_1'
 
 #folder = '20_04_15_L3/'
 #file = 'raw_07_1'
@@ -42,7 +42,7 @@ if len(data) == 0:
 video = Video(main_folder + folder, file)
 video.loadData()
 
-video._video['raw']=video._video['raw'][100:,430:730,1:]
+video._video['raw']=video._video['raw'][100:,430:730,:]
 video.make_diff(k = 10)
 video.fouriere(level = 20)
 
@@ -53,7 +53,7 @@ video.make_corr()
 video._condition = data['AR_COND']
 video._minimal_area = data['AR_MIN']
 
-video.image_process_gamma(data['AR_TH'])  
+video.image_process_gamma()  
 video.characterize_nps(save = False)
 video.exclude_nps(data['EXC_THS'], exclude = True)
 video.make_toggle(['diff', 'corr'], [10, 10])
