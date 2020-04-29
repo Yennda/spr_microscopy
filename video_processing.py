@@ -28,14 +28,14 @@ from nanoparticle import NanoParticle
 from database_methods import Table
 
 warnings.filterwarnings('ignore', category=RuntimeWarning)
-#matplotlib.rc('font', family='serif') 
-#matplotlib.rc('font', serif='Palatino Linotype') 
-#matplotlib.rc('text', usetex='false') 
+matplotlib.rc('font', family='serif') 
+matplotlib.rc('font', serif='Palatino Linotype') 
+matplotlib.rc('text', usetex='false') 
 #matplotlib.rcParams.update({'font.size': 30})
-#matplotlib.rcParams['mathtext.fontset'] = 'custom'
-#matplotlib.rcParams['mathtext.rm'] = 'Palatino Linotype'
-#matplotlib.rcParams['mathtext.it'] = 'Palatino Linotype:italic'
-#matplotlib.rcParams['mathtext.bf'] = 'BiPalatino Linotype:bold'
+matplotlib.rcParams['mathtext.fontset'] = 'custom'
+matplotlib.rcParams['mathtext.rm'] = 'Palatino Linotype'
+matplotlib.rcParams['mathtext.it'] = 'Palatino Linotype:italic'
+matplotlib.rcParams['mathtext.bf'] = 'BiPalatino Linotype:bold'
             
 class Video(object):
 
@@ -827,7 +827,7 @@ class Video(object):
         
         self.mask = (self._video['corr'] > threshold)*1  
         
-        minimal_area = 6
+        minimal_area = 2
         
         if self._minimal_area != None:
             minimal_area = self._minimal_area
@@ -871,7 +871,8 @@ class Video(object):
                         continue
                     
                     loc, size, angle = ellipse
-                    condition = 2
+                    
+                    condition = 0
                     
                     if self._condition == None:
                         self._condition = 2
@@ -1636,6 +1637,66 @@ class Video(object):
             fig.canvas.draw()
 
         def mouse_click(event):
+            if event.button == 3:
+                fig = event.canvas.figure
+                ax = fig.axes[0]
+                
+                x = int(event.xdata)
+                y = int(event.ydata)
+                raw = ax.volume[ax.index][y - 25: y + 25, x - 25:x + 25]
+                
+                show_fig, show_ax = plt.subplots()
+                show_img = show_ax.imshow(raw, cmap = 'gray')
+                
+                lim = [i for i in img.get_clim()]
+                show_img.set_clim(lim)
+                
+                for tick in show_ax.get_yticklines():
+                    tick.set_visible(False)
+                    
+                for tick in show_ax.get_yticklabels():
+                    tick.set_visible(False)
+                    
+                for tick in show_ax.get_xticklines():
+                    tick.set_visible(False)
+                    
+                for tick in show_ax.get_xticklabels():
+                    tick.set_visible(False)
+                
+                fontprops = fm.FontProperties(size=20)
+                show_scalebar = AnchoredSizeBar(show_ax.transData,
+                               34, '100 $\mu m$', 'lower right', 
+                               pad=0.1,
+                               color='black',
+                               frameon=False,
+                               size_vertical=1,
+                               fontproperties=fontprops)
+            
+                show_ax.add_artist(show_scalebar)  
+                
+                if not os.path.isdir(self.folder + FOLDER_EXPORTS):
+                    os.mkdir(self.folder + FOLDER_EXPORTS)
+
+                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(
+                        self.folder+FOLDER_EXPORTS, 
+                        self.file,
+                        self.time_info[ax.index][0],
+                        self.time_info[ax.index][1] * 100
+                        )
+    
+                i = 1
+                while os.path.isfile(name + '_{:02d}.png'.format(i)):
+                    i += 1
+                name += '_{:02d}'.format(i)
+    
+                show_fig.savefig(
+                        name + '.png', 
+                        bbox_inches = 'tight',
+                        transparent = True,
+                        pad_inches = 0,
+                        pi=300
+                        )
+
             
             if event.dblclick:
                 fig = event.canvas.figure

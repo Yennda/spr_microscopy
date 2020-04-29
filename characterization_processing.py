@@ -8,7 +8,7 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder=main_folder+'20_02_25_P3/'
 #folder=main_folder+'20_02_26_Q3/'
 #folder=main_folder+'20_02_26_L3/'
-folder=main_folder+'20_03_16_K4/'
+#folder=main_folder+'20_03_16_K4/'
 folder=main_folder+'20_04_20_Q4/'
 
 if __name__ == "__main__":
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 #            'raw_{:02.0f}_1'.format(f) for f in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 #            'raw_{:02.0f}_1'.format(f) for f in [4, 5, 6, 7, 8, 9, 10, 18, 21]
 #            'raw_{:02.0f}_1'.format(f) for f in [3, 4, 5, 6, 7, 8]
-            'raw_{:02.0f}_1'.format(f) for f in [28]
+            'raw_{:02.0f}_1'.format(f) for f in [2, 17, 15]
             ]
 
     print('\tx \ty \tcon \tI_np \tI_np px\tI_bg px\tstd')

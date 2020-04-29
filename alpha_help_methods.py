@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 
-from global_var import COLORS
+from global_var import *
 
 
 def func_tri(x, x0, h, w):
@@ -82,16 +82,17 @@ def correlation_temporal(
         axes.plot(
                 data*1000, 
                 ls = '-', 
-                color = COLORS[3], 
+                color = black, 
                 label='signal'
                 )
 #        axes.set_title('info')
         axes.set_xlabel('Frame')
         axes.set_ylabel('Intensity [a. u.]')
+        
         axes.plot(
                 tri, 
                 ls = '-', 
-                color = COLORS[0], 
+                color = yellow, 
                 label='tri. f-n'
                 )
         
@@ -100,20 +101,20 @@ def correlation_temporal(
         axes_corr.plot(
                 correlation, 
                 ls = '-', 
-                color = COLORS[1], 
+                color = blue, 
                 label='corr.'
                 )
         axes_corr.scatter(
                 peaks_binding,
                 [correlation[p] for p in peaks_binding], 
                 label = 'bind.', 
-                color  =COLORS[4]
+                color  = green
                 )
         axes_corr.scatter(
                 peaks_unbinding, 
                 [correlation[p] for p in peaks_unbinding], 
                 label = 'unbind.', 
-                color = COLORS[2]
+                color = red
                 )
         fig.legend(loc = 3)
     

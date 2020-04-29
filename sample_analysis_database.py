@@ -14,13 +14,19 @@ con = sqlite3.connect('database_results.db')
 cursor = con.cursor()
    
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
-folder = '20_04_15_L3/'
-file = 'raw_31_1'
+#folder = '20_04_15_L3/'
+#file = 'raw_31_1'
 
 #folder = '20_04_15_L3/'
 #file = 'raw_07_1'
 
-columns = 'AR_TH, EXC_THS, AR_COND, AR_MIN'
+#folder = '20_03_16_K4/'
+#file = 'raw_27_1'
+
+folder = '20_02_25_P3/'
+file = 'raw_32_1'
+
+columns = 'AR_TH, EXC_THS, AR_COND, AR_MIN, AR_TH, AR_DIP, AR_NOISE'
 data = process_data(
         con.execute("""
 SELECT {}
@@ -42,22 +48,30 @@ if len(data) == 0:
 video = Video(main_folder + folder, file)
 video.loadData()
 
-video._video['raw']=video._video['raw'][100:,430:730,:]
+#video._video['raw']=video._video['raw'][100:,600:900,120:]
+video._video['raw']=video._video['raw'][100:,400:600,:]
 video.make_diff(k = 10)
 video.fouriere(level = 20)
 
+"alpha"
+
+#video.img_process_alpha(threshold = data['AR_TH'], noise_level = data['AR_NOISE'], dip = data['AR_DIP'])
+#video.characterize_nps(save = False)
+#video.exclude_nps(data['EXC_THS'], exclude = True)
+#video.make_toggle(['diff', 'inta'], [10, 10])
 
 "gamma"
-video.load_idea()
-video.make_corr()
-video._condition = data['AR_COND']
-video._minimal_area = data['AR_MIN']
+#video.load_idea()
+#video.make_corr()
+#video._condition = data['AR_COND']
+#video._minimal_area = data['AR_MIN']
+#
+#video.image_process_gamma()  
+#video.characterize_nps(save = False)
+#video.exclude_nps(data['EXC_THS'], exclude = True)
+#video.make_toggle(['diff', 'corr'], [10, 10])
 
-video.image_process_gamma()  
-video.characterize_nps(save = False)
-video.exclude_nps(data['EXC_THS'], exclude = True)
-video.make_toggle(['diff', 'corr'], [10, 10])
-
+video.characterize_nps(save = True)
 video.statistics()
 
 video.explore()
