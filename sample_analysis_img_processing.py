@@ -18,11 +18,11 @@ main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
 folder = main_folder+'20_02_25_P3/'
 file = 'raw_19_1'
 
-#folder = main_folder+'20_02_26_Q3/'
-#file = 'raw_10_1'
+folder = main_folder+'20_02_26_Q3/'
+file = 'raw_27_1'
 
-folder=main_folder+'20_03_16_K5/'
-file = 'raw_21_1'
+#folder=main_folder+'20_03_16_K5/'
+#file = 'raw_21_1'
 
 #folder=main_folder+'20_03_16_K4/'
 #file = 'raw_04_1'
@@ -58,7 +58,7 @@ file = 'raw_21_1'
 video = Video(folder, file)
 video.loadData()
 
-video._video['raw'] = video._video['raw'][100:,430:730,100:]
+video._video['raw'] = video._video['raw'][100:,430:730,:]
 #video._video['raw']=video._video['raw'][100:,600:900,120:]
 video.make_diff(k = 10)
 #video._video['diff'] = np.abs(video._video['diff'])
@@ -80,7 +80,7 @@ video.image_process_gamma()
 video.characterize_nps(save = False)
 #video.info_add('\n--auto contrast--')
 #video.info_add(video.auto_contrast)
-video.exclude_nps([1.5], exclude = True)
+video.exclude_nps([2], exclude = True)
 
 video.make_toggle(['diff', 'corr'], [10, 10])
 
