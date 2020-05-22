@@ -827,7 +827,7 @@ class Video(object):
         
         self.mask = (self._video['corr'] > threshold)*1  
         
-        minimal_area = 2
+        minimal_area = 1
         
         if self._minimal_area != None:
             minimal_area = self._minimal_area
@@ -1711,6 +1711,7 @@ class Video(object):
                         ax.volume[: , y, x], 
                         k_diff = self.k_diff, 
                         step = self._dip, 
+#                        step = -1, 
                         threshold = self._threshold,  
                         show = True
                         )
@@ -1838,7 +1839,7 @@ class Video(object):
                     self.show_mask = False
                     
                 else:
-                    mask.set_zorder(1)
+                    mask.set_zorder(6)
                     self.show_mask = True
                 fig.canvas.draw()
                 
