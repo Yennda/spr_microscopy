@@ -58,18 +58,20 @@ file = 'raw_01_2'
 folder=main_folder+'20_04_21_L3_tomas/'
 file = 'raw_01_4'
 
+folder=main_folder+'20_05_26_K5/'
+file = 'raw_02_2'
 
 video = Video(folder, file)
 video.loadData()
 
 #video._video['raw'] = video._video['raw'][100:,430:730,:]
-#video._video['raw'] = video._video['raw'][430:730,:,:]
+video._video['raw'] = video._video['raw'][600:,:,:]
 #video._video['raw']=video._video['raw'][100:,600:900,120:]
 #video.make_diff(k = 10)
 #video._video['diff'] = np.abs(video._video['diff'])
-#video.change_fps(10)
 #video.make_int(k = 10)
-video.fouriere(level = 20)
+#video.fouriere(level = 20)
+#video.change_fps(100)
 
 "alpha"
 
@@ -97,7 +99,7 @@ video.statistics()
 
 #video.rng = [0, 0.01]
 video.explore()
-video.histogram('corr')
+video.histogram('diff')
 
 #video.save_info_measurement(80, 734)
 
