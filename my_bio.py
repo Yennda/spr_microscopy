@@ -9,37 +9,33 @@ tl.clear_all()
 plt.close("all")
 
 main_folder='C:/SPRUP_data_Jenda/2019_03_13_Jenda_microscopy/'
-
-folder=main_folder+'19_11_29_L3_first_experiment/'
-folder=main_folder+'19_12_04_second_poc/'
+#folder=main_folder+'19_12_04_second_poc/'
 folder=main_folder+'20_01_24_third/'
 
-#folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
-#folder=main_folder+'20_02_05_Tomas_distance_from_surface/'
-#folder=main_folder+'20_02_18_P3/'
-#folder=main_folder+'20_03_13_Q3/'
-folder=main_folder+'20_04_21_L3_tomas/'
+folder=main_folder+'20_01_30_Tomas_low_concentration_miRNA/'
+file = 'raw_01'
+#file = 'raw_03'
 
-#file = 'raw_09'
-file = 'raw_08'
+folder=main_folder+'20_02_18_P3/'
+file = 'raw_14'
 
-video = BioVideo(folder, file, 3)
-#video.spr = False
 
+video = BioVideo(folder, file, 1)
 video.loadData()
 
-#for vid in video._videos:
-#    vid._video['raw'] = vid._video['raw'][:, 400:800, :100*10]
-#    vid._video['raw'] = vid._video['raw'][:, 400:800, :100*10]
-#    vid.refresh()
-
+for vid in video._videos:
+#    vid._video['raw'] = vid._video['raw'][600:600+273, :, :]
+#    vid._video['raw'] = vid._video['raw'][:, :, :600]
+    vid._video['raw']=vid._video['raw'][100:150,500:600,:200]
+    
+#video.change_fps(10)
 
 #video.ref_frame = 1159
 video.ref_frame = 0
 
-#video.make_diff(10)
-#video.make_int(10)
-video.make_toggle(kd=10, ki=10)
+#video.make_diff()
+#video.make_int(20)
+video.make_toggle(kd=1, ki=1)
 #video.make_both()
 
 #video.fouriere()

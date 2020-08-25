@@ -1,31 +1,14 @@
+import os
 import numpy as np
-from video_processing import Video
-import tools as tl
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import os
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
-#from matplotlib.backend_bases import LocationEvent
-
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from PIL import Image
-from np_analysis import np_analysis, is_np
-from classes import Cursor
 
-
-FOLDER_NAME = '/exports_bio'
-NAME_LOCAL_SPR = 'spr'
-NAME_GLOBAL_SPR = 'spr_integral'
-
-
-yellow='#ffb200'
-red='#DD5544'
-blue='#0284C0'
-black='#000000'
-
-COLORS = [yellow, blue, red, black]
-SIDES = ['left', 'right', 'bottom', 'top']
-
+from video_processing import Video
+import tools as tl
+from global_var import *
 
 class BioVideo():
     def __init__(self, folder, file, channels):
@@ -56,7 +39,7 @@ class BioVideo():
             video.loadData()
             video.rng = [0, 1]
             self._videos.append(video)
-        self.orientation = self._videos[0].video_stats[1][1] < self._videos[0].video_stats[1][0]
+        self.orientation = self._videos[0].shape[2]< self._videos[0].shape[1]
                         
         self.time_info=self._videos[0].time_info
         self.rng=self._videos[0].rng
@@ -92,6 +75,11 @@ class BioVideo():
     def fouriere(self):
         for video in self._videos:
             video.fouriere()
+            
+    def change_fps(self, n):
+        for video in self._videos:
+            video.change_fps(n)
+            video.refresh()
         
     def make_diff(self, k = 1):
         for video in self._videos:
@@ -154,7 +142,7 @@ class BioVideo():
         channel=int(channel)
         frame=int(frame)
         video = self._videos[channel-1].video
-        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_NAME, self._img_type,
+        name = '{}/{}_{}-{}'.format(self.folder+FOLDER_BIOEXPORTS, self._img_type,
                                                               video.shape[0],
                                                               frame)
         
@@ -201,11 +189,11 @@ class BioVideo():
                 else:
                     img_type = axes_chosen.get_xlabel()
                 
-                if not os.path.isdir(self.folder + FOLDER_NAME):
-                    os.mkdir(self.folder + FOLDER_NAME)
+                if not os.path.isdir(self.folder + FOLDER_BIOEXPORTS):
+                    os.mkdir(self.folder + FOLDER_BIOEXPORTS)
                     
                 name = '{}/{}_frame_{}-{}'.format( 
-                        self.folder+FOLDER_NAME,
+                        self.folder+FOLDER_BIOEXPORTS,
                         img_type.replace(' ', '_'),
                         axes_chosen.index,
                         axes_chosen.volume.shape[0])
@@ -309,12 +297,12 @@ class BioVideo():
                  
             elif event.key == 'a':
                 # checks and eventually creates the folder 'export_image' in the folder of data
-                if not os.path.isdir(self.folder + FOLDER_NAME):
-                    os.mkdir(self.folder + FOLDER_NAME)
+                if not os.path.isdir(self.folder + FOLDER_BIOEXPORTS):
+                    os.mkdir(self.folder + FOLDER_BIOEXPORTS)
 
                 # creates the name, appends the rigth numeb at the end
 
-                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_NAME, self.file,
+                name = '{}/{}_T{:03.0f}_dt{:03.0f}'.format(self.folder+FOLDER_BIOEXPORTS, self.file,
                                                                       self.time_info[axes[1].index][0],
                                                                       self.time_info[axes[1].index][1] * 100)
 
