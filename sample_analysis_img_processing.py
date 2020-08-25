@@ -54,39 +54,49 @@ file = 'raw_21_1'
 #folder=main_folder+'20_04_20_Q4/'
 #file = 'raw_17_1'
 
-folder=main_folder+'20_04_30_K5/'
-file = 'raw_22_2'
+#folder=main_folder+'20_04_30_K5/'
+#file = 'raw_22_2'
+
+# folder = main_folder + '20_06_05_K5/'
+# file = 'raw_03_1'
+
+folder = main_folder + '20_08_07_Q4/'
+file = 'raw_01_3'
 
 video = Video(folder, file)
 video.loadData()
 
 #video._video['raw'] = video._video['raw'][100:,430:730,100:]
 #video._video['raw']=video._video['raw'][100:,600:900,120:]
+#video._video['raw']=video._video['raw'][500:900,:,:1000]
+#video._video['raw']=video._video['raw'][700:,:,:]
+video._video['raw']=video._video['raw'][400:800,:,:1000]
 video.make_diff(k = 10)
 #video._video['diff'] = np.abs(video._video['diff'])
 #video.change_fps(10)
 #video.make_int(k = 10)
-video.fouriere(level = 20)
+#video.fouriere(level = 20)
 
 "alpha"
 
-#video.img_process_alpha(threshold = 2.5, noise_level = 0.0012)
+#video.img_process_alpha(threshold = 2.5, noise_level = 0.001)
 #video.characterize_nps(save = False)
 #video.exclude_nps([3], exclude = True)
-#video.make_toggle(['diff', 'inta'], [20, 20])
+# video.make_toggle(['diff', 'inta'], [10, 10])
 
 "gamma"
-#video.load_idea()
-#video.make_corr()
-#video.image_process_gamma()  
-#video.characterize_nps(save = False)
+video._condition = 3
+video.load_idea()
+video.make_corr()
+video.image_process_gamma()  
+video.characterize_nps(save = False)
 ##video.info_add('\n--auto contrast--')
 ##video.info_add(video.auto_contrast)
-#video.exclude_nps([1.2], exclude = True)
+video.exclude_nps([2], exclude = True)
 
 #video.make_toggle(['diff', 'corr'], [10, 10])
 
-video.make_toggle(['diff', 'inta'], [10, 10])
+video.make_toggle(['diff', 'corr'], [10, 10])
 
 video.statistics()
 
@@ -94,7 +104,7 @@ video.statistics()
 
 #video.rng = [0, 0.01]
 video.explore()
-video.histogram('corr')
+video.histogram()
 
 #video.save_info_measurement(80, 734)
 

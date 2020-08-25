@@ -81,6 +81,7 @@ class Video(object):
         self.validity = None
         self.valid = None
         self.binding_rate = None
+        self.manual_count = 0
         
         #settings
         self._threshold = 4
@@ -827,7 +828,7 @@ class Video(object):
         
         self.mask = (self._video['corr'] > threshold)*1  
         
-        minimal_area = 2
+        minimal_area = 6
         
         if self._minimal_area != None:
             minimal_area = self._minimal_area
@@ -872,7 +873,8 @@ class Video(object):
                     
                     loc, size, angle = ellipse
                     
-                    condition = 0
+                    condition = 2
+                    
                     
                     if self._condition == None:
                         self._condition = 2
@@ -882,6 +884,11 @@ class Video(object):
                         condition = (size[1] >= size[0])
                     elif self._condition == 2:
                         condition = (75 < angle < 105 and size[1] > size[0])
+                    elif self._condition == 3:
+                        if angle > 90:
+                            angle -= 180
+                        print('uhel: {}'.format(angle))
+                        condition = (75 < angle + 90 < 105 and size[1] > size[0])
                         
                     if condition:
                         candidate = (
@@ -1536,7 +1543,7 @@ class Video(object):
                 mask.set_array(volume_mask[ax.index])  
                 
             if self.show_detected:                
-                [p.remove() for p in reversed(ax.patches)]
+                [p.remove() for p in reversed(ax.patches) if p.get_radius() == 5]
 #                if self._img_type[not self._toggle] == 'diff' or self._img_type[not self._toggle] == 'corr':
                 for np_id in self.frame_np_ids[ax.index]:
                     p = mpatches.Circle(
@@ -1637,6 +1644,24 @@ class Video(object):
             fig.canvas.draw()
 
         def mouse_click(event):
+            if event.button == 1:
+                self.manual_count += 1
+                fig = event.canvas.figure
+                ax = fig.axes[0]
+                
+                p = mpatches.Circle(
+                            (event.xdata, event.ydata), 
+                            2, 
+                            color=green, 
+                            fill = False,
+                            alpha = 0.5,
+                            lw = 2)
+                ax.add_patch(p)
+                
+                fig.canvas.draw()
+                
+                print('\r{:03.0f}'.format(self.manual_count), end = '')
+                    
             if event.button == 3:
                 fig = event.canvas.figure
                 ax = fig.axes[0]

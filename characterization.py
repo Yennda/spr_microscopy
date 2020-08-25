@@ -10,10 +10,14 @@ SHAPE = 50  # dimension of the image in px
 def characterize(raw, mask_np, sizes):
     mask_background = mask_np == False
     
-    std = np.std(raw[mask_background])
-    int_np = sum(abs(raw[mask_np]))
-    int_bg_px = sum(abs(raw[mask_background])) / len(raw[mask_background])
-    
+    try:
+        std = np.std(raw[mask_background])
+        int_np = sum(abs(raw[mask_np]))
+        int_bg_px = sum(abs(raw[mask_background])) / len(raw[mask_background])
+    except ZeroDivisionError:
+        print('ZeroDivisionError')
+        return [0]*7
+        
     int_np_norm = int_np - int_bg_px * len(raw[mask_np])
     int_np_norm_px = int_np_norm / len(raw[mask_np])
 
