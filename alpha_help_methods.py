@@ -97,27 +97,26 @@ def correlation_temporal(
                 )
         
         axes_corr = axes.twinx()
-        axes_corr.set_ylabel('Correlation [a. u.]')
+        
         axes_corr.plot(
                 correlation, 
                 ls = '-', 
-                color = gray, 
+                color = blue, 
                 label='corr.'
                 )
-#        axes_corr.scatter(
-#                peaks_binding,
-#                [correlation[p] for p in peaks_binding], 
-#                label = 'bind.', 
-#                color  = green
-#                )
-#        axes_corr.scatter(
-#                peaks_unbinding, 
-#                [correlation[p] for p in peaks_unbinding], 
-#                label = 'unbind.', 
-#                color = red
-#                )
-        lgd = fig.legend(loc=4)
-#        fig.legend(loc = 3)
+        axes_corr.scatter(
+                peaks_binding,
+                [correlation[p] for p in peaks_binding], 
+                label = 'bind.', 
+                color  = green
+                )
+        axes_corr.scatter(
+                peaks_unbinding, 
+                [correlation[p] for p in peaks_unbinding], 
+                label = 'unbind.', 
+                color = red
+                )
+        fig.legend(loc = 3)
     
 
     return {
